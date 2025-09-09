@@ -29,7 +29,7 @@ import lombok.ToString;
 @AllArgsConstructor
 @Builder
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
-@ToString(exclude = { "documents", "salaries", "shifts", "identifications", "dependents", "roles" })
+@ToString(exclude = { "documents", "salaries", "shifts", "identifications", "dependents", "roles", "company" })
 @Entity
 @Table(name = "employee_informations")
 public class EmployeeInformation {
@@ -71,4 +71,8 @@ public class EmployeeInformation {
 
     @OneToMany(mappedBy = "employee", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<EmployeeRole> roles;
+
+    @ManyToOne
+    @JoinColumn(name = "company_code", nullable = false)
+    private Company company;
 }

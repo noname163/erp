@@ -1,7 +1,6 @@
 package com.dat.erp.entities;
 
 import java.time.LocalDateTime;
-
 import java.util.List;
 
 import jakarta.persistence.CascadeType;
