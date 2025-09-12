@@ -1,15 +1,14 @@
 package com.dat.erp.entities;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.List;
 
-import jakarta.persistence.CascadeType;
-import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-import jakarta.persistence.OneToMany;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
@@ -26,10 +25,10 @@ import lombok.ToString;
 @AllArgsConstructor
 @Builder
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
-@ToString(exclude = { "apis", "employees" })
 @Entity
-@Table(name = "roles")
-public class Role {
+@Table(name = "employee_shifts")
+@ToString(onlyExplicitlyIncluded = true)
+public class WorkSchedule {
     @Id
     @EqualsAndHashCode.Include
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -37,20 +36,16 @@ public class Role {
 
     private String code;
 
-    @Column(unique = true, nullable = false)
-    private String name;
+    @ManyToOne
+    @JoinColumn(name = "employee_code", nullable = false)
+    private EmployeeInformation employee;
 
-    private Integer permission;
-    private String description;
-    private Integer level;
+    private LocalDate shiftDate;
+    private Integer quantity;
+    private String shiftType;
+    private String status;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
-
-    @OneToMany(mappedBy = "role", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<RoleHasApi> apis;
-
-    @OneToMany(mappedBy = "role", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<EmployeeRole> employees;
 
     protected void onCreate() {
         this.createdAt = LocalDateTime.now();

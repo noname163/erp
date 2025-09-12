@@ -14,6 +14,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
+import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -29,7 +30,8 @@ import lombok.ToString;
 @AllArgsConstructor
 @Builder
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
-@ToString(exclude = { "documents", "salaries", "shifts", "identifications", "dependents", "roles", "company" })
+@ToString(exclude = { "documents", "salaries", "shifts", "identifications", "dependents", "roles", "company",
+        "attendanceRecords" })
 @Entity
 @Table(name = "employee_informations")
 public class EmployeeInformation {
@@ -44,7 +46,10 @@ public class EmployeeInformation {
     private UserInformation user;
 
     private String nickname;
-    private String department;
+    @ManyToOne
+    @JoinColumn(name = "department_code", nullable = false)
+    private Department department;
+
     private String jobTitle;
 
     @Column(name = "employment_status")
@@ -55,13 +60,13 @@ public class EmployeeInformation {
     private LocalDateTime updatedAt;
 
     @OneToMany(mappedBy = "employee", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<EmployeeDocument> documents;
+    private List<Document> documents;
 
     @OneToMany(mappedBy = "employee", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<EmployeeSalary> salaries;
+    private List<Salary> salaries;
 
     @OneToMany(mappedBy = "employee", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<EmployeeShift> shifts;
+    private List<WorkSchedule> shifts;
 
     @OneToMany(mappedBy = "employee", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<EmployeeIdentification> identifications;
@@ -69,10 +74,24 @@ public class EmployeeInformation {
     @OneToMany(mappedBy = "employee", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<EmployeeDependent> dependents;
 
+    @ManyToOne
+    @JoinColumn(name = "role_code", nullable = false)
+    private EmployeeRole role;
+
     @OneToMany(mappedBy = "employee", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<EmployeeRole> roles;
+    private List<AttendanceRecord> attendanceRecords;
 
     @ManyToOne
     @JoinColumn(name = "company_code", nullable = false)
     private Company company;
+
+    protected void onCreate() {
+        this.createdAt = LocalDateTime.now();
+        this.updatedAt = LocalDateTime.now();
+    }
+
+    @PreUpdate
+    protected void onUpdate() {
+        this.updatedAt = LocalDateTime.now();
+    }
 }

@@ -3,6 +3,8 @@ package com.dat.erp.entities;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import com.dat.erp.customannotation.searchable.interfaces.Searchable;
+
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -36,7 +38,7 @@ public class Account {
     @EqualsAndHashCode.Include
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-
+    @Searchable(column = "code", condition = Searchable.Condition.EQUALS)
     private String code;
 
     @ManyToOne
@@ -58,4 +60,5 @@ public class Account {
 
     @OneToMany(mappedBy = "account", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Transaction> transactions;
+
 }

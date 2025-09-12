@@ -10,6 +10,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -25,8 +26,8 @@ import lombok.Setter;
 @Builder
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
 @Entity
-@Table(name = "employee_documents")
-public class EmployeeDocument {
+@Table(name = "salary")
+public class Salary {
     @Id
     @EqualsAndHashCode.Include
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -38,13 +39,23 @@ public class EmployeeDocument {
     @JoinColumn(name = "employee_code", nullable = false)
     private EmployeeInformation employee;
 
-    @Column(name = "document_type", nullable = false)
-    private String documentType;
+    private LocalDate effectiveDate;
+    private Double baseSalary;
+    private Double bonus;
+    private String currency;
 
-    private LocalDate startDate;
-    private LocalDate endDate;
-    private String status;
-    private String image;
+    @Column(name = "created_at")
     private LocalDateTime createdAt;
+
     private LocalDateTime updatedAt;
+
+    protected void onCreate() {
+        this.createdAt = LocalDateTime.now();
+        this.updatedAt = LocalDateTime.now();
+    }
+
+    @PreUpdate
+    protected void onUpdate() {
+        this.updatedAt = LocalDateTime.now();
+    }
 }

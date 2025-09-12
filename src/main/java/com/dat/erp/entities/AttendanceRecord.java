@@ -1,14 +1,12 @@
 package com.dat.erp.entities;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
-import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
@@ -27,33 +25,23 @@ import lombok.ToString;
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
 @ToString
 @Entity
-@Table(name = "addresses")
-public class Address {
-    @Id
-    @EqualsAndHashCode.Include
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
-
-    private String code;
-
-    @ManyToOne
-    @JoinColumn(name = "user_code", nullable = false)
-    private UserInformation user;
-
-    @Column(name = "address_type")
-    private String addressType;
-
-    private String street;
-    private String city;
-    private String state;
-
-    @Column(name = "postal_code")
-    private String postalCode;
-
-    private String country;
+@Table(name = "attendance_records")
+public class AttendanceRecord {
+    private Long recordId;
+    private Long employeeCode;
+    private LocalDateTime checkIn;
+    private LocalDateTime checkOut;
+    private BigDecimal workHours;
+    private BigDecimal quantity;
+    private BigDecimal overtimeHours;
+    private String status; // Present, Absent, Late, On Leave
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+    @ManyToOne
+    @JoinColumn(name = "employee_code", nullable = false)
+    private EmployeeInformation employee;
 
+    @PrePersist
     protected void onCreate() {
         this.createdAt = LocalDateTime.now();
         this.updatedAt = LocalDateTime.now();
