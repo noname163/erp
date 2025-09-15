@@ -4,6 +4,8 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import com.dat.erp.customannotation.encriptedcolumn.Encrypted;
+
 import jakarta.annotation.Generated;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
@@ -31,7 +33,7 @@ import lombok.ToString;
 @AllArgsConstructor
 @Builder
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
-@ToString(exclude = { "documents", "salaries", "shifts", "identifications", "dependents", "roles", "company",
+@ToString(exclude = { "documents", "salaries", "shifts", "identifications", "dependents", "role", "company",
         "attendanceRecords" })
 @Entity
 @Table(name = "employee_informations")
@@ -47,6 +49,11 @@ public class EmployeeInformation {
     private UserInformation user;
 
     private String nickname;
+    @Encrypted(mode = Encrypted.Mode.ENCRYPT)
+    private String email;
+    @Encrypted(mode = Encrypted.Mode.HASH)
+    private String password;
+
     @ManyToOne
     @JoinColumn(name = "department_code", nullable = false)
     private Department department;

@@ -3,6 +3,8 @@ package com.dat.erp.entities;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
+import com.dat.erp.customannotation.encriptedcolumn.Encrypted;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -45,12 +47,16 @@ public class UserIdentification {
     private String idType;
 
     @Column(name = "id_number", nullable = false)
+    @Encrypted(mode = Encrypted.Mode.ENCRYPT)
     private String idNumber;
 
-    private LocalDate issuedDate;
-    private LocalDate expiryDate;
+    @Encrypted(mode = Encrypted.Mode.ENCRYPT)
+    private String issuedDate;
+    @Encrypted(mode = Encrypted.Mode.ENCRYPT)
+    private String expiryDate;
 
     @Column(name = "issued_by")
+    @Encrypted(mode = Encrypted.Mode.ENCRYPT)
     private String issuedBy;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;

@@ -6,6 +6,8 @@ import java.util.List;
 
 import org.springframework.boot.autoconfigure.amqp.RabbitConnectionDetails.Address;
 
+import com.dat.erp.customannotation.encriptedcolumn.Encrypted;
+
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -42,19 +44,23 @@ public class UserInformation {
     private String code;
 
     @Column(name = "first_name", nullable = false, length = 50)
+    @Encrypted(mode = Encrypted.Mode.ENCRYPT)
     private String firstName;
 
     @Column(name = "last_name", nullable = false, length = 50)
+    @Encrypted(mode = Encrypted.Mode.ENCRYPT)
     private String lastName;
 
     @Column(name = "date_of_birth", nullable = false)
-    private LocalDate dateOfBirth;
+    @Encrypted(mode = Encrypted.Mode.ENCRYPT)
+    private String dateOfBirth;
 
     private String gender;
+
     private String nationality;
-    private String email;
 
     @Column(name = "phone_number")
+    @Encrypted(mode = Encrypted.Mode.ENCRYPT)
     private String phoneNumber;
 
     @Column(name = "created_at")

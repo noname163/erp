@@ -35,4 +35,19 @@ public interface EmployeeInformationRepository extends JpaRepository<EmployeeInf
     })
     @Query("SELECT emp FROM EmployeeInformation emp WHERE emp.code = :employeeCode")
     Optional<EmployeeInformation> findFullByEmployeeCode(@Param("employeeCode") String employeeCode);
+
+    @EntityGraph(attributePaths = {
+            "role",
+            "company",
+            "department",
+            "user",
+            "documents",
+            "salaries",
+            "shifts",
+            "identifications",
+            "dependents",
+            "attendanceRecords"
+    })
+    @Query("SELECT emp FROM EmployeeInformation emp WHERE emp.email = :email")
+    Optional<EmployeeInformation> findFullByEmployeeEmail(@Param("email") String email);
 }
