@@ -1,9 +1,17 @@
 package com.dat.erp.utils;
 
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
+
 import lombok.Getter;
+import lombok.Setter;
 
 @Getter
+@Setter
+@Component
 public class EnvironmentVariable {
-    private final String jwtSecret = System.getenv("JWT_SECRET");
-    private final long jwtExpirationMs = Long.parseLong(System.getenv("JWT_EXPIRATION_MS"));
+    @Value("${jwt.secret}")
+    private String jwtSecret;
+    @Value("${jwt.expirationMs}")
+    private long jwtExpirationMs;
 }

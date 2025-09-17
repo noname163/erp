@@ -3,7 +3,6 @@ package com.dat.erp.filters;
 import java.io.IOException;
 
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
@@ -33,10 +32,10 @@ public class AuthenticationFilter extends OncePerRequestFilter {
             FilterChain filterChain)
             throws ServletException, IOException {
 
-        // 1. Try to get token from Cookie first
+        // 2. Try to get token from Cookie first
         String token = extractTokenFromCookies(request);
 
-        // 2. Fallback: Authorization header (if you want to support both)
+        // 3. Fallback: Authorization header
         if (token == null) {
             String authHeader = request.getHeader("Authorization");
             if (authHeader != null && authHeader.startsWith("Bearer ")) {
@@ -44,16 +43,16 @@ public class AuthenticationFilter extends OncePerRequestFilter {
             }
         }
 
-        // 3. If no token → just continue
+        // 4. If no token → just continue (but not authenticated)
         if (token == null) {
             filterChain.doFilter(request, response);
             return;
         }
 
-        // 4. Extract employeeCode (subject)
+        // 5. Extract employeeCode (subject)
         String employeeCode = jwtUtils.extractEmployeeCode(token);
 
-        // 5. Authenticate if not already set
+        // 6. Authenticate if not already set
         if (employeeCode != null && SecurityContextHolder.getContext().getAuthentication() == null) {
             if (jwtUtils.validateToken(token, employeeCode)) {
                 securityContextService.setCurrentUser(employeeCode);

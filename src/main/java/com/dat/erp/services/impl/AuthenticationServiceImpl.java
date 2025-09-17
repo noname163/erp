@@ -1,6 +1,7 @@
 package com.dat.erp.services.impl;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 
 import com.dat.erp.dtos.requests.LoginRequest;
 import com.dat.erp.entities.EmployeeInformation;
@@ -10,8 +11,10 @@ import com.dat.erp.utils.CookieUtils;
 import com.dat.erp.utils.CryptoUtils;
 import com.dat.erp.utils.JwtUtils;
 
+import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletResponse;
 
+@Service
 public class AuthenticationServiceImpl implements AuthenticationService {
     @Autowired
     private EmployeeInformationRepository employeeInformationRepository;
@@ -33,8 +36,13 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 
     @Override
     public String logout(HttpServletResponse response) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'logout'");
+        Cookie cookie = new Cookie("AUTH_TOKEN", null);
+        cookie.setHttpOnly(true);
+        cookie.setSecure(true);
+        cookie.setPath("/");
+        cookie.setMaxAge(0); // delete immediately
+        response.addCookie(cookie);
+        return "Logout successful";
     }
 
 }

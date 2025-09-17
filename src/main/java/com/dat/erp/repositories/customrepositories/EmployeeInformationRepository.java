@@ -2,7 +2,7 @@ package com.dat.erp.repositories.customrepositories;
 
 import java.util.Optional;
 
-import org.springframework.data.jdbc.repository.query.Query;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.repository.query.Param;
@@ -25,7 +25,6 @@ public interface EmployeeInformationRepository extends JpaRepository<EmployeeInf
             "role",
             "company",
             "department",
-            "user",
             "documents",
             "salaries",
             "shifts",
@@ -40,7 +39,6 @@ public interface EmployeeInformationRepository extends JpaRepository<EmployeeInf
             "role",
             "company",
             "department",
-            "user",
             "documents",
             "salaries",
             "shifts",

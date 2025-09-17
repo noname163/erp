@@ -6,26 +6,8 @@ import java.util.List;
 
 import com.dat.erp.customannotation.encriptedcolumn.Encrypted;
 
-import jakarta.annotation.Generated;
-import jakarta.persistence.CascadeType;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.OneToMany;
-import jakarta.persistence.PreUpdate;
-import jakarta.persistence.Table;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.EqualsAndHashCode;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
-import lombok.ToString;
+import jakarta.persistence.*;
+import lombok.*;
 
 @Getter
 @Setter
@@ -33,15 +15,19 @@ import lombok.ToString;
 @AllArgsConstructor
 @Builder
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
-@ToString(exclude = { "documents", "salaries", "shifts", "identifications", "dependents", "role", "company",
-        "attendanceRecords" })
+@ToString(exclude = {
+        "documents", "salaries", "shifts", "identifications", "dependents",
+        "role", "company", "attendanceRecords"
+})
 @Entity
 @Table(name = "employee_informations")
 public class EmployeeInformation {
+
     @Id
     @EqualsAndHashCode.Include
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
     private String code;
 
     @ManyToOne
@@ -49,9 +35,11 @@ public class EmployeeInformation {
     private UserInformation user;
 
     private String nickname;
-    @Encrypted(mode = Encrypted.Mode.ENCRYPT)
+
+    @Encrypted(mode = Encrypted.Mode.ENCRYPT) // decryptable
     private String email;
-    @Encrypted(mode = Encrypted.Mode.HASH)
+
+    @Encrypted(mode = Encrypted.Mode.HASH) // non-decryptable
     private String password;
 
     @ManyToOne
@@ -64,7 +52,9 @@ public class EmployeeInformation {
     private String employmentStatus;
 
     private LocalDate hireDate;
+
     private LocalDateTime createdAt;
+
     private LocalDateTime updatedAt;
 
     @OneToMany(mappedBy = "employee", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
@@ -93,6 +83,7 @@ public class EmployeeInformation {
     @JoinColumn(name = "company_code", nullable = false)
     private Company company;
 
+    @PrePersist
     protected void onCreate() {
         this.createdAt = LocalDateTime.now();
         this.updatedAt = LocalDateTime.now();

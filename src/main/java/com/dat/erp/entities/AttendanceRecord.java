@@ -3,7 +3,10 @@ package com.dat.erp.entities;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
+import jakarta.persistence.Id;
 import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.PrePersist;
@@ -27,8 +30,11 @@ import lombok.ToString;
 @Entity
 @Table(name = "attendance_records")
 public class AttendanceRecord {
-    private Long recordId;
-    private Long employeeCode;
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @EqualsAndHashCode.Include
+    private Long Id;
+    private String code;
     private LocalDateTime checkIn;
     private LocalDateTime checkOut;
     private BigDecimal workHours;

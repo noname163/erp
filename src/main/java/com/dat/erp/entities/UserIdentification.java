@@ -1,6 +1,5 @@
 package com.dat.erp.entities;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 import com.dat.erp.customannotation.encriptedcolumn.Encrypted;

@@ -1,10 +1,7 @@
 package com.dat.erp.entities;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
-
-import org.springframework.boot.autoconfigure.amqp.RabbitConnectionDetails.Address;
 
 import com.dat.erp.customannotation.encriptedcolumn.Encrypted;
 
