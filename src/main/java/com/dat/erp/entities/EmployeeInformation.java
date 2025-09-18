@@ -3,11 +3,32 @@ package com.dat.erp.entities;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Set;
 
-import com.dat.erp.customannotation.encriptedcolumn.Encrypted;
+import com.dat.erp.converters.EncryptFieldConverter;
+import com.dat.erp.converters.HashFieldConverter;
 
-import jakarta.persistence.*;
-import lombok.*;
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.Column;
+import jakarta.persistence.Convert;
+import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.PrePersist;
+import jakarta.persistence.PreUpdate;
+import jakarta.persistence.Table;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+import lombok.ToString;
 
 @Getter
 @Setter
@@ -36,10 +57,10 @@ public class EmployeeInformation {
 
     private String nickname;
 
-    @Encrypted(mode = Encrypted.Mode.ENCRYPT) // decryptable
+    @Convert(converter = EncryptFieldConverter.class)
     private String email;
 
-    @Encrypted(mode = Encrypted.Mode.HASH) // non-decryptable
+    @Convert(converter = HashFieldConverter.class)
     private String password;
 
     @ManyToOne
@@ -58,26 +79,26 @@ public class EmployeeInformation {
     private LocalDateTime updatedAt;
 
     @OneToMany(mappedBy = "employee", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
-    private List<Document> documents;
+    private Set<Document> documents;
 
     @OneToMany(mappedBy = "employee", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
-    private List<Salary> salaries;
+    private Set<Salary> salaries;
 
     @OneToMany(mappedBy = "employee", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
-    private List<WorkSchedule> shifts;
+    private Set<WorkSchedule> shifts;
 
     @OneToMany(mappedBy = "employee", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
-    private List<EmployeeIdentification> identifications;
+    private Set<EmployeeIdentification> identifications;
 
     @OneToMany(mappedBy = "employee", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
-    private List<EmployeeDependent> dependents;
+    private Set<EmployeeDependent> dependents;
 
     @ManyToOne
     @JoinColumn(name = "role_code", nullable = false)
-    private EmployeeRole role;
+    private Role role;
 
     @OneToMany(mappedBy = "employee", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
-    private List<AttendanceRecord> attendanceRecords;
+    private Set<AttendanceRecord> attendanceRecords;
 
     @ManyToOne
     @JoinColumn(name = "company_code", nullable = false)

@@ -3,10 +3,11 @@ package com.dat.erp.entities;
 import java.time.LocalDateTime;
 import java.util.List;
 
-import com.dat.erp.customannotation.encriptedcolumn.Encrypted;
+import com.dat.erp.converters.EncryptFieldConverter;
 
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
+import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
@@ -41,15 +42,15 @@ public class UserInformation {
     private String code;
 
     @Column(name = "first_name", nullable = false, length = 50)
-    @Encrypted(mode = Encrypted.Mode.ENCRYPT)
+    @Convert(converter = EncryptFieldConverter.class)
     private String firstName;
 
     @Column(name = "last_name", nullable = false, length = 50)
-    @Encrypted(mode = Encrypted.Mode.ENCRYPT)
+    @Convert(converter = EncryptFieldConverter.class)
     private String lastName;
 
     @Column(name = "date_of_birth", nullable = false)
-    @Encrypted(mode = Encrypted.Mode.ENCRYPT)
+    @Convert(converter = EncryptFieldConverter.class)
     private String dateOfBirth;
 
     private String gender;
@@ -57,7 +58,7 @@ public class UserInformation {
     private String nationality;
 
     @Column(name = "phone_number")
-    @Encrypted(mode = Encrypted.Mode.ENCRYPT)
+    @Convert(converter = EncryptFieldConverter.class)
     private String phoneNumber;
 
     @Column(name = "created_at")
