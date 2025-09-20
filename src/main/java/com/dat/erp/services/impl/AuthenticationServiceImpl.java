@@ -24,9 +24,10 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     @Override
     public String login(LoginRequest request, HttpServletResponse response) {
         EmployeeInformation employee = employeeInformationRepository
-                .findFullByEmployeeEmail(request.getEmployeeEmail())
+                .findBasicByEmployeeEmail(request
+                        .getEmployeeEmail())
                 .orElseThrow(() -> new RuntimeException("Invalid credentials"));
-        if (CryptoUtils.verifyHash(request.getPassword(), employee.getPassword())) {
+        if (!CryptoUtils.verifyHash(request.getPassword(), employee.getPassword())) {
             throw new RuntimeException("Invalid credentials");
         }
         String token = jwtUtils.generateToken(employee.getUser().getFirstName(), employee.getCode());

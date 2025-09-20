@@ -18,6 +18,8 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.NamedAttributeNode;
+import jakarta.persistence.NamedEntityGraph;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
@@ -41,6 +43,23 @@ import lombok.ToString;
         "role", "company", "attendanceRecords"
 })
 @Entity
+@NamedEntityGraph(name = "Employee.basic", attributeNodes = {
+        @NamedAttributeNode("role"),
+        @NamedAttributeNode("company"),
+        @NamedAttributeNode("department"),
+        @NamedAttributeNode("user")
+})
+@NamedEntityGraph(name = "Employee.full", attributeNodes = {
+        @NamedAttributeNode("role"),
+        @NamedAttributeNode("company"),
+        @NamedAttributeNode("department"),
+        @NamedAttributeNode("documents"),
+        @NamedAttributeNode("salaries"),
+        @NamedAttributeNode("shifts"),
+        @NamedAttributeNode("identifications"),
+        @NamedAttributeNode("dependents"),
+        @NamedAttributeNode("attendanceRecords")
+})
 @Table(name = "employee_informations")
 public class EmployeeInformation {
 
