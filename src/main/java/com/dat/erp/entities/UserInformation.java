@@ -1,13 +1,13 @@
 package com.dat.erp.entities;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
-import org.springframework.boot.autoconfigure.amqp.RabbitConnectionDetails.Address;
+import com.dat.erp.converters.EncryptFieldConverter;
 
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
+import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
@@ -42,19 +42,23 @@ public class UserInformation {
     private String code;
 
     @Column(name = "first_name", nullable = false, length = 50)
+    @Convert(converter = EncryptFieldConverter.class)
     private String firstName;
 
     @Column(name = "last_name", nullable = false, length = 50)
+    @Convert(converter = EncryptFieldConverter.class)
     private String lastName;
 
     @Column(name = "date_of_birth", nullable = false)
-    private LocalDate dateOfBirth;
+    @Convert(converter = EncryptFieldConverter.class)
+    private String dateOfBirth;
 
     private String gender;
+
     private String nationality;
-    private String email;
 
     @Column(name = "phone_number")
+    @Convert(converter = EncryptFieldConverter.class)
     private String phoneNumber;
 
     @Column(name = "created_at")

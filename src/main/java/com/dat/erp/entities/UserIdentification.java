@@ -1,9 +1,11 @@
 package com.dat.erp.entities;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 
+import com.dat.erp.converters.EncryptFieldConverter;
+
 import jakarta.persistence.Column;
+import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -45,12 +47,16 @@ public class UserIdentification {
     private String idType;
 
     @Column(name = "id_number", nullable = false)
+    @Convert(converter = EncryptFieldConverter.class)
     private String idNumber;
 
-    private LocalDate issuedDate;
-    private LocalDate expiryDate;
+    @Convert(converter = EncryptFieldConverter.class)
+    private String issuedDate;
+    @Convert(converter = EncryptFieldConverter.class)
+    private String expiryDate;
 
     @Column(name = "issued_by")
+    @Convert(converter = EncryptFieldConverter.class)
     private String issuedBy;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
