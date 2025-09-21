@@ -7,8 +7,11 @@ import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-import com.dat.erp.entities.*;
-import com.dat.erp.repositories.*;
+import com.dat.erp.entities.Company;
+import com.dat.erp.entities.Department;
+import com.dat.erp.entities.EmployeeInformation;
+import com.dat.erp.entities.Role;
+import com.dat.erp.entities.UserInformation;
 import com.dat.erp.repositories.customrepositories.CompanyRepository;
 import com.dat.erp.repositories.customrepositories.DepartmentRepository;
 import com.dat.erp.repositories.customrepositories.EmployeeInformationRepository;
