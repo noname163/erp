@@ -18,6 +18,16 @@ public class CustomUserDetails extends EmployeeInformation implements UserDetail
     }
 
     @Override
+    public String getCode() {
+        return employee.getCode();
+    }
+
+    @Override
+    public String getEmail() {
+        return employee.getEmail();
+    }
+
+    @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
         return Collections.singleton(new SimpleGrantedAuthority(employee.getRole().getCode()));
     }
