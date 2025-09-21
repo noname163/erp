@@ -24,7 +24,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     @Override
     public String login(LoginRequest request, HttpServletResponse response) {
         EmployeeInformation employee = employeeInformationRepository
-                .findBasicByEmployeeEmail(request
+                .findByEmail(request
                         .getEmployeeEmail())
                 .orElseThrow(() -> new RuntimeException("Invalid credentials"));
         if (!CryptoUtils.verifyHash(request.getPassword(), employee.getPassword())) {
