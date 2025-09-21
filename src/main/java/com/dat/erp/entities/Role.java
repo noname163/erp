@@ -51,7 +51,7 @@ public class Role {
     private List<RoleHasApi> apis;
 
     @OneToMany(mappedBy = "role", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
-    private List<EmployeeRole> employees;
+    private List<EmployeeInformation> employees;
 
     protected void onCreate() {
         this.createdAt = LocalDateTime.now();

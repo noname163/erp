@@ -3,12 +3,11 @@ package com.dat.erp.customannotation.ownership;
 import java.lang.reflect.Field;
 import java.util.HashSet;
 import java.util.Set;
+
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Component;
 
 import com.dat.erp.systemconfigs.CustomUserDetails;
-
-import org.springframework.security.core.userdetails.UserDetails;
 
 @Component
 public class OwnershipChecker {

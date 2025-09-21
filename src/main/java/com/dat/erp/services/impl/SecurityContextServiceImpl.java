@@ -5,19 +5,21 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.stereotype.Service;
 
 import com.dat.erp.entities.EmployeeInformation;
 import com.dat.erp.repositories.customrepositories.EmployeeInformationRepository;
 import com.dat.erp.services.SecurityContextService;
 import com.dat.erp.systemconfigs.CustomUserDetails;
 
+@Service
 public class SecurityContextServiceImpl implements SecurityContextService {
     @Autowired
     private EmployeeInformationRepository employeeInformationRepository;
 
     @Override
     public void setCurrentUser(String employeeCode) {
-        EmployeeInformation employeeInformation = employeeInformationRepository.findBasicByEmployeeCode(employeeCode)
+        EmployeeInformation employeeInformation = employeeInformationRepository.findByCode(employeeCode)
                 .orElseThrow(() -> new RuntimeException("Employee not found"));
         UserDetails userDetails = new CustomUserDetails(employeeInformation);
         UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(userDetails, null,
