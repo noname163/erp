@@ -2,7 +2,7 @@ package com.dat.erp.builders;
 
 import org.springframework.http.ResponseEntity;
 
-import com.dat.erp.dtos.responses.CustomApiResponse;
+import com.dat.erp.dto.response.CustomApiResponse;
 
 public class ResponseBuilder {
     public static <T> ResponseEntity<CustomApiResponse<T>> ok(T data) {

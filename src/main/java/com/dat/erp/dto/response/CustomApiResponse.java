@@ -1,4 +1,4 @@
-package com.dat.erp.dtos.responses;
+package com.dat.erp.dto.response;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;

@@ -1,8 +1,6 @@
 package com.dat.erp.entities;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.util.List;
 import java.util.Set;
 
 import com.dat.erp.converters.EncryptFieldConverter;
@@ -21,8 +19,6 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.NamedAttributeNode;
 import jakarta.persistence.NamedEntityGraph;
 import jakarta.persistence.OneToMany;
-import jakarta.persistence.PrePersist;
-import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -37,7 +33,7 @@ import lombok.ToString;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-@EqualsAndHashCode(onlyExplicitlyIncluded = true)
+@EqualsAndHashCode(onlyExplicitlyIncluded = true, callSuper = true)
 @ToString(exclude = {
         "documents", "salaries", "shifts", "identifications", "dependents",
         "role", "company", "attendanceRecords"
@@ -61,14 +57,12 @@ import lombok.ToString;
         @NamedAttributeNode("attendanceRecords")
 })
 @Table(name = "employee_informations")
-public class EmployeeInformation {
+public class EmployeeInformation extends BaseAuditableEntity {
 
     @Id
     @EqualsAndHashCode.Include
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-
-    private String code;
 
     @ManyToOne
     @JoinColumn(name = "user_code")
@@ -92,10 +86,6 @@ public class EmployeeInformation {
     private String employmentStatus;
 
     private LocalDate hireDate;
-
-    private LocalDateTime createdAt;
-
-    private LocalDateTime updatedAt;
 
     @OneToMany(mappedBy = "employee", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private Set<Document> documents;
@@ -123,14 +113,4 @@ public class EmployeeInformation {
     @JoinColumn(name = "company_code", nullable = false)
     private Company company;
 
-    @PrePersist
-    protected void onCreate() {
-        this.createdAt = LocalDateTime.now();
-        this.updatedAt = LocalDateTime.now();
-    }
-
-    @PreUpdate
-    protected void onUpdate() {
-        this.updatedAt = LocalDateTime.now();
-    }
 }

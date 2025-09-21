@@ -14,8 +14,8 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.WebRequest;
 
-import com.dat.erp.dtos.responses.error.ProblemDetailsResponse;
-import com.dat.erp.dtos.responses.error.ValidationProblemDetailsReponse;
+import com.dat.erp.dto.response.error.ProblemDetailsResponse;
+import com.dat.erp.dto.response.error.ValidationProblemDetailsReponse;
 import com.dat.erp.exceptions.BadRequestException;
 import com.dat.erp.exceptions.ResourceNotFoundException;
 

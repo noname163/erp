@@ -1,4 +1,4 @@
-package com.dat.erp.dtos.requests;
+package com.dat.erp.dto.request;
 
 import lombok.Getter;
 import lombok.Setter;

@@ -3,14 +3,12 @@ package com.dat.erp.entities;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
-import jakarta.persistence.Id;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
-import jakarta.persistence.PrePersist;
-import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -25,36 +23,23 @@ import lombok.ToString;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-@EqualsAndHashCode(onlyExplicitlyIncluded = true)
+@EqualsAndHashCode(onlyExplicitlyIncluded = true, callSuper = true)
 @ToString
 @Entity
 @Table(name = "attendance_records")
-public class AttendanceRecord {
+public class AttendanceRecord extends BaseAuditableEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @EqualsAndHashCode.Include
     private Long Id;
-    private String code;
     private LocalDateTime checkIn;
     private LocalDateTime checkOut;
     private BigDecimal workHours;
     private BigDecimal quantity;
     private BigDecimal overtimeHours;
     private String status; // Present, Absent, Late, On Leave
-    private LocalDateTime createdAt;
-    private LocalDateTime updatedAt;
     @ManyToOne
     @JoinColumn(name = "employee_code", nullable = false)
     private EmployeeInformation employee;
 
-    @PrePersist
-    protected void onCreate() {
-        this.createdAt = LocalDateTime.now();
-        this.updatedAt = LocalDateTime.now();
-    }
-
-    @PreUpdate
-    protected void onUpdate() {
-        this.updatedAt = LocalDateTime.now();
-    }
 }

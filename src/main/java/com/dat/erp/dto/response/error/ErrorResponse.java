@@ -1,4 +1,4 @@
-package com.dat.erp.dtos.responses.error;
+package com.dat.erp.dto.response.error;
 
 import java.time.LocalDateTime;
 

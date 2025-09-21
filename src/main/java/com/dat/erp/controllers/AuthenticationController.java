@@ -7,8 +7,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.dat.erp.builders.ResponseBuilder;
-import com.dat.erp.dtos.requests.LoginRequest;
-import com.dat.erp.dtos.responses.CustomApiResponse;
+import com.dat.erp.dto.request.LoginRequest;
+import com.dat.erp.dto.response.CustomApiResponse;
 import com.dat.erp.services.AuthenticationService;
 
 import io.swagger.v3.oas.annotations.Operation;

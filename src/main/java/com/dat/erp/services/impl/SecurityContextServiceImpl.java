@@ -19,7 +19,7 @@ public class SecurityContextServiceImpl implements SecurityContextService {
 
     @Override
     public void setCurrentUser(String employeeCode) {
-        EmployeeInformation employeeInformation = employeeInformationRepository.findBasicByEmployeeCode(employeeCode)
+        EmployeeInformation employeeInformation = employeeInformationRepository.findByCode(employeeCode)
                 .orElseThrow(() -> new RuntimeException("Employee not found"));
         UserDetails userDetails = new CustomUserDetails(employeeInformation);
         UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(userDetails, null,

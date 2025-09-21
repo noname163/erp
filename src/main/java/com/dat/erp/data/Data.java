@@ -31,10 +31,10 @@ public class Data {
             user.setCode("USR001");
             user.setFirstName("Dat");
             user.setLastName("Huu");
+            user.setEmail("datpersonal@example.com");
             user.setDateOfBirth("1995-01-01");
             user.setGender("Male");
             user.setPhoneNumber("0123456789");
-            user.setCreatedAt(LocalDateTime.now());
             userRepo.save(user);
 
             // --- Create Company ---

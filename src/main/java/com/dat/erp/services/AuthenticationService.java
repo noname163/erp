@@ -1,6 +1,6 @@
 package com.dat.erp.services;
 
-import com.dat.erp.dtos.requests.LoginRequest;
+import com.dat.erp.dto.request.LoginRequest;
 
 import jakarta.servlet.http.HttpServletResponse;
 

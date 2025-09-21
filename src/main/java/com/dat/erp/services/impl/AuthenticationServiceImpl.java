@@ -3,7 +3,7 @@ package com.dat.erp.services.impl;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import com.dat.erp.dtos.requests.LoginRequest;
+import com.dat.erp.dto.request.LoginRequest;
 import com.dat.erp.entities.EmployeeInformation;
 import com.dat.erp.repositories.customrepositories.EmployeeInformationRepository;
 import com.dat.erp.services.AuthenticationService;
@@ -24,7 +24,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     @Override
     public String login(LoginRequest request, HttpServletResponse response) {
         EmployeeInformation employee = employeeInformationRepository
-                .findBasicByEmployeeEmail(request
+                .findByEmail(request
                         .getEmployeeEmail())
                 .orElseThrow(() -> new RuntimeException("Invalid credentials"));
         if (!CryptoUtils.verifyHash(request.getPassword(), employee.getPassword())) {
