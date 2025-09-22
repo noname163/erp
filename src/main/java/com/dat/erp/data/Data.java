@@ -53,6 +53,7 @@ public class Data {
             department.setName("IT Department");
             department.setStatus("ACTIVE");
             department.setCreatedAt(LocalDateTime.now());
+            department.setCompany(company);
             departmentRepo.save(department);
 
             // --- Create Role ---

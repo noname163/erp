@@ -59,7 +59,11 @@ public class AuthenticationFilter extends OncePerRequestFilter {
             }
         }
 
-        filterChain.doFilter(request, response);
+        try {
+            filterChain.doFilter(request, response);
+        } catch (Exception e) {
+            logger.error(e, e);
+        }
     }
 
     private String extractTokenFromCookies(HttpServletRequest request) {

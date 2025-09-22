@@ -5,6 +5,8 @@ import com.dat.erp.dto.response.RoleResponse;
 import com.dat.erp.entities.Role;
 import com.dat.erp.systemconfigs.CentralMapperConfig;
 
+import java.util.List;
+
 import org.mapstruct.Mapper;
 
 @Mapper(config = CentralMapperConfig.class)
@@ -12,4 +14,8 @@ public interface RoleMapper {
     Role toEntity(RoleRequest request);
 
     RoleResponse toResponse(Role entity);
+
+    List<RoleResponse> toResponseList(List<Role> entities);
+
+    List<Role> toEntityList(List<RoleRequest> requests);
 }

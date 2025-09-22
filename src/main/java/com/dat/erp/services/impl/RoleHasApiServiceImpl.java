@@ -1,0 +1,61 @@
+package com.dat.erp.services.impl;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.stereotype.Service;
+
+import com.dat.erp.dto.request.RoleHasApiRequest;
+import com.dat.erp.dto.response.PagedResponse;
+import com.dat.erp.dto.response.RoleHasApiResponse;
+import com.dat.erp.entities.Role;
+import com.dat.erp.entities.RoleHasApi;
+import com.dat.erp.mapper.interfaces.RoleHasApiMapper;
+import com.dat.erp.repositories.customrepositories.RoleHasApiRepository;
+import com.dat.erp.repositories.customrepositories.RoleRepository;
+import com.dat.erp.services.RoleHasApiService;
+import com.dat.erp.utils.PageableUtils;
+
+@Service
+public class RoleHasApiServiceImpl implements RoleHasApiService {
+    @Autowired
+    private RoleHasApiRepository roleHasApiRepository;
+    @Autowired
+    private RoleRepository roleRepository;
+
+    private RoleHasApiMapper roleHasApiMapper;
+
+    @Override
+    public String assignApisToRole(RoleHasApiRequest roleHasApiRequest) {
+        Role role = roleRepository.findByCode(roleHasApiRequest.getRoleCode())
+                .orElseThrow(
+                        () -> new RuntimeException("Role not found with code: " + roleHasApiRequest.getRoleCode()));
+        Optional.ofNullable(roleHasApiRequest)
+                .orElseThrow(() -> new RuntimeException("RoleHasApiRequest cannot be null"));
+        List<RoleHasApi> roleHasApis = new ArrayList<>();
+        for (String api : roleHasApiRequest.getEndpoint()) {
+            RoleHasApi roleHasApi = new RoleHasApi();
+            roleHasApi.setEndpoint(api);
+            roleHasApi.setRole(role);
+            roleHasApis.add(roleHasApi);
+        }
+        roleHasApiRepository.saveAll(roleHasApis);
+        return "APIs assigned to role successfully";
+    }
+
+    @Override
+    public PagedResponse<RoleHasApiResponse> getApisByRoleId(String roleCode, Integer page, Integer size,
+            String sortBy,
+            String sortDir) {
+        Pageable pageable = PageableUtils.create(page, size, sortBy, sortDir);
+
+        Page<RoleHasApi> roleHasApis = roleHasApiRepository.findByRoleCode(roleCode, pageable);
+
+        return PageableUtils.mapPage(roleHasApis, roleHasApiMapper::toResponse, sortDir);
+    }
+
+}
