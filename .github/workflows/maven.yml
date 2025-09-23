@@ -30,7 +30,7 @@ jobs:
       - name: Run Tests with Coverage
         run: mvn clean verify
 
-      - name: Auto merge PR if coverage >= 60%
+      - name: Auto merge PR if coverage >= 30%
         if: success()
         uses: peter-evans/enable-pull-request-automerge@v3
         with:

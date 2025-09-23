@@ -26,7 +26,7 @@ public class RoleHasApiServiceImpl implements RoleHasApiService {
     private RoleHasApiRepository roleHasApiRepository;
     @Autowired
     private RoleRepository roleRepository;
-
+    @Autowired
     private RoleHasApiMapper roleHasApiMapper;
 
     @Override
@@ -36,14 +36,9 @@ public class RoleHasApiServiceImpl implements RoleHasApiService {
                         () -> new RuntimeException("Role not found with code: " + roleHasApiRequest.getRoleCode()));
         Optional.ofNullable(roleHasApiRequest)
                 .orElseThrow(() -> new RuntimeException("RoleHasApiRequest cannot be null"));
-        List<RoleHasApi> roleHasApis = new ArrayList<>();
-        for (String api : roleHasApiRequest.getEndpoint()) {
-            RoleHasApi roleHasApi = new RoleHasApi();
-            roleHasApi.setEndpoint(api);
-            roleHasApi.setRole(role);
-            roleHasApis.add(roleHasApi);
-        }
-        roleHasApiRepository.saveAll(roleHasApis);
+        RoleHasApi roleHasApi = roleHasApiMapper.toEntity(roleHasApiRequest);
+        roleHasApi.setRole(role);
+        roleHasApiRepository.save(roleHasApi);
         return "APIs assigned to role successfully";
     }
 

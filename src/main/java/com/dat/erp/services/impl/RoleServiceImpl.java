@@ -23,12 +23,14 @@ public class RoleServiceImpl implements RoleService {
     @Autowired
     private RoleRepository roleRepository;
 
+    @Autowired
     private RoleMapper roleMapper;
 
     @Override
     public String createRole(RoleRequest roleRequest) {
         Optional.ofNullable(roleRequest).orElseThrow(() -> new RuntimeException("RoleRequest cannot be null"));
         Role role = roleMapper.toEntity(roleRequest);
+        role.setCode(roleRequest.getName().toUpperCase().replace(" ", "_"));
         roleRepository.save(role);
         return "Role created successfully";
     }

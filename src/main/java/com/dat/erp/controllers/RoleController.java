@@ -36,13 +36,14 @@ public class RoleController {
     /**
      * Create a new role.
      *
-     * @param roleRequest the request body containing role details
+     * @param roleRequest
+     *            the request body containing role details
      * @return ResponseEntity with creation result
      */
     @Operation(summary = "Create a new role", description = "Creates a new role in the system.")
     @ApiResponses(value = {
-        @ApiResponse(responseCode = "201", description = "Role created successfully"),
-        @ApiResponse(responseCode = "400", description = "Invalid input")
+            @ApiResponse(responseCode = "201", description = "Role created successfully"),
+            @ApiResponse(responseCode = "400", description = "Invalid input")
     })
     @PostMapping("")
     public ResponseEntity<CustomApiResponse<String>> createRole(@RequestBody RoleRequest roleRequest) {
@@ -52,26 +53,28 @@ public class RoleController {
     /**
      * Get a paginated list of roles with optional search and sorting.
      *
-     * @param searchValue the search keyword for filtering roles
-     * @param page the page number to retrieve
-     * @param size the number of items per page
-     * @param sortBy the field to sort by
-     * @param sortDir the sort direction (ASC or DESC)
+     * @param searchValue
+     *            the search keyword for filtering roles
+     * @param page
+     *            the page number to retrieve
+     * @param size
+     *            the number of items per page
+     * @param sortBy
+     *            the field to sort by
+     * @param sortDir
+     *            the sort direction (ASC or DESC)
      * @return paginated list of roles
      */
-    @Operation(
-        summary = "Get list of roles",
-        description = "Returns a paginated list of roles, optionally filtered by search value and sorted."
-    )
+    @Operation(summary = "Get list of roles", description = "Returns a paginated list of roles, optionally filtered by search value and sorted.")
     @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "List of roles retrieved successfully")
+            @ApiResponse(responseCode = "200", description = "List of roles retrieved successfully")
     })
     @GetMapping("")
     public ResponseEntity<PagedResponse<RoleResponse>> getListRole(
-            @Parameter(description = "Search keyword for roles") @RequestParam String searchValue,
-            @Parameter(description = "Page number") @RequestParam Integer page,
-            @Parameter(description = "Page size") @RequestParam Integer size,
-            @Parameter(description = "Field to sort by") @RequestParam String sortBy,
+            @Parameter(description = "Search keyword for roles") @RequestParam(required = false) String searchValue,
+            @Parameter(description = "Page number") @RequestParam(required = false) Integer page,
+            @Parameter(description = "Page size") @RequestParam(required = false) Integer size,
+            @Parameter(description = "Field to sort by") @RequestParam(required = false) String sortBy,
             @Parameter(description = "Sort direction (ASC or DESC)", example = "DESC") @RequestParam(defaultValue = "DESC") String sortDir) {
         return ResponseEntity.ok(roleService.getRoleResponses(searchValue, page, size, sortBy, sortDir));
     }

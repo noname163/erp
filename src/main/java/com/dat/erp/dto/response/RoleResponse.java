@@ -6,7 +6,11 @@ import lombok.Data;
 public class RoleResponse {
     private Long id;
     private String name;
-    private Integer permission;
+    private String code;
+    private Boolean create;
+    private Boolean read;
+    private Boolean update;
+    private Boolean delete;
     private String description;
     private Integer level;
 }

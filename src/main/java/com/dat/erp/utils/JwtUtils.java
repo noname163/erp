@@ -53,7 +53,7 @@ public class JwtUtils {
      * Extract expiration date
      */
     public Date extractExpiration(String token) {
-        return extractClaim(token, claims -> claims.get("employeeCode", Date.class));
+        return extractClaim(token, claims -> claims.get("iat", Date.class));
     }
 
     /**

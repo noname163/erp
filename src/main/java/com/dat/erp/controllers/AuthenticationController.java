@@ -3,6 +3,7 @@ package com.dat.erp.controllers;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -30,23 +31,24 @@ public class AuthenticationController {
     private AuthenticationService authenticationService;
 
     /**
-     * Authenticate user with credentials and return JWT token in cookie and response body.
+     * Authenticate user with credentials and return JWT token in cookie and
+     * response body.
      *
-     * @param request  the login request containing user credentials
-     * @param response the HTTP response to set cookies
+     * @param request
+     *            the login request containing user credentials
+     * @param response
+     *            the HTTP response to set cookies
      * @return ResponseEntity with JWT token and authentication result
      */
-    @Operation(
-        summary = "User login",
-        description = "Authenticate user with credentials and return JWT token in cookie + response body."
-    )
+    @Operation(summary = "User login", description = "Authenticate user with credentials and return JWT token in cookie + response body.")
     @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "Login successful", content = @Content(mediaType = "application/json", schema = @Schema(implementation = CustomApiResponse.class))),
-        @ApiResponse(responseCode = "400", description = "Invalid credentials"),
-        @ApiResponse(responseCode = "500", description = "Internal server error")
+            @ApiResponse(responseCode = "200", description = "Login successful", content = @Content(mediaType = "application/json", schema = @Schema(implementation = CustomApiResponse.class))),
+            @ApiResponse(responseCode = "400", description = "Invalid credentials"),
+            @ApiResponse(responseCode = "500", description = "Internal server error")
     })
     @PostMapping("/login")
-    public ResponseEntity<CustomApiResponse<Object>> login(LoginRequest request, HttpServletResponse response) {
+    public ResponseEntity<CustomApiResponse<Object>> login(@RequestBody LoginRequest request,
+            HttpServletResponse response) {
         String result = authenticationService.login(request, response);
         return ResponseBuilder.ok(result);
     }

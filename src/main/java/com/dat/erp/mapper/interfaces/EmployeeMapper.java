@@ -11,10 +11,9 @@ import org.mapstruct.Mapping;
 @Mapper(config = CentralMapperConfig.class)
 public interface EmployeeMapper {
 
-    @Mapping(source = "userCode", target = "user.code")
-    @Mapping(source = "departmentCode", target = "department.code")
-    @Mapping(source = "roleCode", target = "role.code")
-    @Mapping(source = "companyCode", target = "company.code")
+    @Mapping(target = "company", ignore = true) // will be set in service layer
+    @Mapping(target = "department", ignore = true) // will be set in service layer
+    @Mapping(target = "role", ignore = true) // will be set in service layer
     EmployeeInformation toEntity(EmployeeInformationRequest request);
 
     @Mapping(source = "company.name", target = "companyName")

@@ -11,5 +11,5 @@ public class RoleHasApiRequest {
     @NotBlank(message = "Role is required")
     @Size(max = 50, message = "Role must be at most 50 characters")
     private String roleCode;
-    private List<String> endpoint;
+    private List<String> endpoints;
 }
