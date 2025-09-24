@@ -1,7 +1,7 @@
 package com.dat.erp.utils;
 
-import com.dat.erp.dto.request.RoleRequest;
-import com.dat.erp.dto.response.RoleResponse;
+import com.dat.erp.dto.request.RoleHasApiRequest;
+import com.dat.erp.dto.response.RoleHasApiResponse;
 
 public class PermissionUtils {
 
@@ -13,19 +13,19 @@ public class PermissionUtils {
     /**
      * Convert RoleRequest permissions into an integer bitmask
      */
-    public static int toInt(RoleRequest roleRequest) {
+    public static int toInt(RoleHasApiRequest roleHasApiRequest) {
         int permissions = 0;
 
-        if (Boolean.TRUE.equals(roleRequest.getCreate())) {
+        if (Boolean.TRUE.equals(roleHasApiRequest.getCreate())) {
             permissions |= CREATE;
         }
-        if (Boolean.TRUE.equals(roleRequest.getRead())) {
+        if (Boolean.TRUE.equals(roleHasApiRequest.getRead())) {
             permissions |= READ;
         }
-        if (Boolean.TRUE.equals(roleRequest.getUpdate())) {
+        if (Boolean.TRUE.equals(roleHasApiRequest.getUpdate())) {
             permissions |= UPDATE;
         }
-        if (Boolean.TRUE.equals(roleRequest.getDelete())) {
+        if (Boolean.TRUE.equals(roleHasApiRequest.getDelete())) {
             permissions |= DELETE;
         }
 
@@ -33,12 +33,12 @@ public class PermissionUtils {
     }
 
     /**
-     * Decode integer back into RoleRequest booleans
+     * Decode integer back into roleHasApiRequest booleans
      */
-    public static void fromInt(RoleResponse roleRequest, int permissions) {
-        roleRequest.setCreate((permissions & CREATE) != 0);
-        roleRequest.setRead((permissions & READ) != 0);
-        roleRequest.setUpdate((permissions & UPDATE) != 0);
-        roleRequest.setDelete((permissions & DELETE) != 0);
+    public static void fromInt(RoleHasApiResponse roleHasApiResponse, int permissions) {
+        roleHasApiResponse.setCreate((permissions & CREATE) != 0);
+        roleHasApiResponse.setRead((permissions & READ) != 0);
+        roleHasApiResponse.setUpdate((permissions & UPDATE) != 0);
+        roleHasApiResponse.setDelete((permissions & DELETE) != 0);
     }
 }

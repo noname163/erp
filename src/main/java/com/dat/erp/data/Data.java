@@ -60,7 +60,6 @@ public class Data {
             Role role = new Role();
             role.setCode("ROLE001");
             role.setName("ADMIN");
-            role.setPermission(10);
             role.setLevel(1);
             role.setCreatedAt(LocalDateTime.now());
             roleRepo.save(role);

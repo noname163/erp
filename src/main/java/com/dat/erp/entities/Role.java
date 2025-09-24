@@ -37,7 +37,6 @@ public class Role extends BaseAuditableEntity {
     @Column(unique = true, nullable = false)
     private String name;
 
-    private Integer permission;
     private String description;
     private Integer level;
 

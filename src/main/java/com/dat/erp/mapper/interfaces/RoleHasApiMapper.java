@@ -1,35 +1,34 @@
 package com.dat.erp.mapper.interfaces;
 
+import org.mapstruct.AfterMapping;
+import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
+import org.mapstruct.MappingTarget;
+
 import com.dat.erp.dto.request.RoleHasApiRequest;
 import com.dat.erp.dto.response.RoleHasApiResponse;
 import com.dat.erp.entities.RoleHasApi;
 import com.dat.erp.systemconfigs.CentralMapperConfig;
-
-import java.util.List;
-
-import org.mapstruct.Mapper;
-import org.mapstruct.Mapping;
+import com.dat.erp.utils.PermissionUtils;
 
 @Mapper(config = CentralMapperConfig.class)
 public interface RoleHasApiMapper {
 
     // Request → Entity
-    @Mapping(target = "endpoints", source = "endpoints")
+
+    @Mapping(target = "permission", expression = "java(com.dat.erp.utils.PermissionUtils.toInt(request))")
     RoleHasApi toEntity(RoleHasApiRequest request);
 
     // Entity → Response
+    @Mapping(target = "create", ignore = true) // will be set in @AfterMapping
+    @Mapping(target = "read", ignore = true)
+    @Mapping(target = "update", ignore = true)
+    @Mapping(target = "delete", ignore = true)
     @Mapping(source = "role.name", target = "roleName")
-    @Mapping(target = "endpoints", source = "endpoints")
     RoleHasApiResponse toResponse(RoleHasApi entity);
 
-    // Support methods for MapStruct
-    default String map(List<String> endpoints) {
-        return endpoints == null ? null : String.join(",", endpoints);
-    }
-
-    default List<String> map(String endpoints) {
-        return endpoints == null || endpoints.isBlank()
-                ? List.of()
-                : List.of(endpoints.split(","));
+    @AfterMapping
+    default void setPermission(RoleHasApi entity, @MappingTarget RoleHasApiResponse response) {
+        PermissionUtils.fromInt(response, entity.getPermission());
     }
 }

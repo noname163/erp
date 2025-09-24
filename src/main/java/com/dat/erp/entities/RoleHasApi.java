@@ -34,6 +34,7 @@ public class RoleHasApi extends BaseAuditableEntity {
     @JoinColumn(name = "role_code", nullable = false)
     private Role role;
 
-    private String endpoints;
+    private String endpoint;
 
+    private Integer permission;
 }

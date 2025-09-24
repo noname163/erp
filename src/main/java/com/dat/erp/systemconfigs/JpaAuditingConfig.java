@@ -14,6 +14,9 @@ import com.dat.erp.services.SecurityContextService;
 public class JpaAuditingConfig {
     @Bean
     public AuditorAware<String> auditorProvider(SecurityContextService securityContextService) {
-        return () -> Optional.ofNullable(securityContextService.getCurrentUser().getCode());
+        return () -> Optional.ofNullable(
+                Optional.ofNullable(securityContextService.getCurrentUser())
+                        .map(user -> user.getCode())
+                        .orElse("SYSTEM"));
     }
 }

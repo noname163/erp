@@ -30,8 +30,11 @@ public class SecurityContextServiceImpl implements SecurityContextService {
     @Override
     public EmployeeInformation getCurrentUser() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        Object principal = authentication.getPrincipal();
-        return ((EmployeeInformation) principal);
+        if (authentication != null) {
+            Object principal = authentication.getPrincipal();
+            return ((EmployeeInformation) principal);
+        }
+        return null;
     }
 
 }
