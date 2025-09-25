@@ -1,9 +1,11 @@
 package com.dat.erp.repositories.customrepositories;
 
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
 import com.dat.erp.entities.EmployeeInformation;
@@ -24,4 +26,7 @@ public interface EmployeeInformationRepository extends JpaRepository<EmployeeInf
 
     @EntityGraph(value = "Employee.full")
     Optional<EmployeeInformation> findDetailedByEmail(String email);
+
+    @Query("SELECT e.code FROM EmployeeInformation e WHERE e.managerCode = :managerCode")
+    List<String> findAllCodesByManagerCode(String managerCode);
 }

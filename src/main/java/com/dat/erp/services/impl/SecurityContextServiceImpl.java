@@ -1,5 +1,7 @@
 package com.dat.erp.services.impl;
 
+import java.util.List;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -21,9 +23,12 @@ public class SecurityContextServiceImpl implements SecurityContextService {
     public void setCurrentUser(String employeeCode) {
         EmployeeInformation employeeInformation = employeeInformationRepository.findByCode(employeeCode)
                 .orElseThrow(() -> new RuntimeException("Employee not found"));
-        UserDetails userDetails = new CustomUserDetails(employeeInformation);
-        UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(userDetails, null,
-                userDetails.getAuthorities());
+        List<String> employeeCodes = employeeInformationRepository.findAllCodesByManagerCode(employeeCode);
+        CustomUserDetails customUserDetails = new CustomUserDetails(employeeInformation);
+        customUserDetails.setEmployeeCodes(employeeCodes);
+        UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
+                customUserDetails, null,
+                customUserDetails.getAuthorities());
         SecurityContextHolder.getContext().setAuthentication(authentication);
     }
 
