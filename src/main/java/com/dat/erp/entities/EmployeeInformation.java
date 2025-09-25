@@ -74,6 +74,8 @@ public class EmployeeInformation {
     @JoinColumn(name = "user_code")
     private UserInformation user;
 
+    private String managerCode;
+
     private String nickname;
 
     @Convert(converter = EncryptFieldConverter.class)
