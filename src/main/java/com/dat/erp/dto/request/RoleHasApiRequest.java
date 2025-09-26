@@ -13,5 +13,7 @@ public class RoleHasApiRequest {
     private Boolean read;
     private Boolean update;
     private Boolean delete;
-    private String endpoint;
+    private Boolean viewAll;
+    private Boolean viewOwnedOnly;
+    private String apiCode;
 }

@@ -2,6 +2,9 @@ package com.dat.erp.entities;
 
 import java.time.LocalDateTime;
 
+import org.hibernate.annotations.Filter;
+import org.hibernate.annotations.FilterDef;
+import org.hibernate.annotations.ParamDef;
 import org.springframework.data.annotation.CreatedBy;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedBy;
@@ -21,6 +24,11 @@ import lombok.Setter;
 @Getter
 @Setter
 @MappedSuperclass
+@FilterDef(name = "auditableFilter", parameters = {
+        @ParamDef(name = "createdByList", type = String.class),
+        @ParamDef(name = "updatedByList", type = String.class)
+})
+@Filter(name = "auditableFilter", condition = " (created_by in (:createdByList) OR updated_by in (:updatedByList)) ")
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
 @EntityListeners(AuditingEntityListener.class)
 public abstract class BaseAuditableEntity {
@@ -47,4 +55,6 @@ public abstract class BaseAuditableEntity {
     @LastModifiedBy
     @Column(name = "updated_by")
     private String updatedBy;
+
+    private Boolean isDeleted = false;
 }

@@ -11,11 +11,15 @@ import com.dat.erp.entities.Company;
 import com.dat.erp.entities.Department;
 import com.dat.erp.entities.EmployeeInformation;
 import com.dat.erp.entities.Role;
+import com.dat.erp.entities.RoleHasApi;
+import com.dat.erp.entities.SystemApi;
 import com.dat.erp.entities.UserInformation;
 import com.dat.erp.repositories.customrepositories.CompanyRepository;
 import com.dat.erp.repositories.customrepositories.DepartmentRepository;
 import com.dat.erp.repositories.customrepositories.EmployeeInformationRepository;
+import com.dat.erp.repositories.customrepositories.RoleHasApiRepository;
 import com.dat.erp.repositories.customrepositories.RoleRepository;
+import com.dat.erp.repositories.customrepositories.SystemApiRepository;
 import com.dat.erp.repositories.customrepositories.UserInformationRepository;
 
 @Configuration
@@ -27,7 +31,9 @@ public class Data {
             DepartmentRepository departmentRepo,
             RoleRepository roleRepo,
             EmployeeInformationRepository employeeRepo,
-            CompanyRepository companyRepo) {
+            CompanyRepository companyRepo,
+            SystemApiRepository systemApiRepo,
+            RoleHasApiRepository roleHasApiRepo) {
         return args -> {
             // --- Create User ---
             UserInformation user = new UserInformation();
@@ -79,7 +85,35 @@ public class Data {
             emp.setCreatedAt(LocalDateTime.now());
             employeeRepo.save(emp);
 
-            System.out.println("✅ Sample data inserted!");
+            // --- Create SystemApi ---
+            SystemApi api1 = new SystemApi();
+            api1.setCode("API001");
+            api1.setEndpoint("/employeesdsds");
+            api1.setMethod("GET");
+            api1.setDescription("Get list of employees");
+            systemApiRepo.save(api1);
+
+            SystemApi api2 = new SystemApi();
+            api2.setCode("API002");
+            api2.setEndpoint("/emplosdasyees/{id}");
+            api2.setMethod("POST");
+            api2.setDescription("Create employee");
+            systemApiRepo.save(api2);
+
+            // --- Link Role to SystemApi with RoleHasApi ---
+            RoleHasApi roleHasApi1 = new RoleHasApi();
+            roleHasApi1.setRole(role);
+            roleHasApi1.setApi(api1);
+            roleHasApi1.setPermission(7); // Example permission (like read/write)
+            roleHasApiRepo.save(roleHasApi1);
+
+            RoleHasApi roleHasApi2 = new RoleHasApi();
+            roleHasApi2.setRole(role);
+            roleHasApi2.setApi(api2);
+            roleHasApi2.setPermission(3); // Example permission
+            roleHasApiRepo.save(roleHasApi2);
+
+            System.out.println("✅ Sample data inserted (User, Company, Dept, Role, Employee, APIs, RoleHasApi)!");
         };
     }
 }

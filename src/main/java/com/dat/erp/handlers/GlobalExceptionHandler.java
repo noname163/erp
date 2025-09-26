@@ -9,6 +9,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authorization.AuthorizationDeniedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -84,6 +85,24 @@ public class GlobalExceptionHandler {
                 errors);
 
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(problem);
+    }
+
+    @ExceptionHandler(AuthorizationDeniedException.class)
+    public ResponseEntity<ProblemDetailsResponse> handleAuthorizationDeniedException(
+            AuthorizationDeniedException ex,
+            WebRequest request) {
+
+        log.warn("Authorization denied: {} at {}", ex.getMessage(), request.getDescription(false));
+
+        ProblemDetailsResponse problem = new ProblemDetailsResponse(
+                URI.create("https://example.com/errors/forbidden"),
+                "Forbidden",
+                HttpStatus.FORBIDDEN.value(),
+                ex.getMessage(),
+                request.getDescription(false).replace("uri=", ""),
+                LocalDateTime.now());
+
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(problem);
     }
 
     // ✅ Handle @Validated on query params/path params

@@ -1,9 +1,9 @@
 package com.dat.erp.services;
 
-import com.dat.erp.entities.EmployeeInformation;
+import com.dat.erp.systemconfigs.CustomUserDetails;
 
 public interface SecurityContextService {
-    public void setCurrentUser(String employeeCode);
+    public CustomUserDetails setCurrentUser(String employeeCode);
 
-    public EmployeeInformation getCurrentUser();
+    public CustomUserDetails getCurrentUser();
 }

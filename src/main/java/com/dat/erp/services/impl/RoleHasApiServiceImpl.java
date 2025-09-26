@@ -1,8 +1,9 @@
 package com.dat.erp.services.impl;
 
-import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -51,6 +52,19 @@ public class RoleHasApiServiceImpl implements RoleHasApiService {
         Page<RoleHasApi> roleHasApis = roleHasApiRepository.findByRoleCode(roleCode, pageable);
 
         return PageableUtils.mapPage(roleHasApis, roleHasApiMapper::toResponse, sortDir);
+    }
+
+    @Override
+    public Map<String, Integer> getUserPermissionByUserCode(String userCode) {
+
+        List<Object[]> results = roleHasApiRepository.getCurrentUserPermission(userCode);
+        Map<String, Integer> map = results.stream()
+                .collect(Collectors.toMap(
+                        row -> (String) row[0],
+                        row -> (Integer) row[1]));
+
+        return map;
+
     }
 
 }

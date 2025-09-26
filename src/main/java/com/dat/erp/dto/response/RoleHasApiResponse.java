@@ -11,4 +11,6 @@ public class RoleHasApiResponse {
     private Boolean update;
     private Boolean delete;
     private String endpoint;
+    private Boolean viewAll;
+    private Boolean viewOwnedOnly;
 }

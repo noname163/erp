@@ -1,10 +1,14 @@
 package com.dat.erp.entities;
 
+import java.util.List;
+
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
+import jakarta.persistence.JoinTable;
+import jakarta.persistence.ManyToMany;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
@@ -26,7 +30,6 @@ import lombok.ToString;
 @Table(name = "role_has_apis")
 public class RoleHasApi extends BaseAuditableEntity {
     @Id
-    @EqualsAndHashCode.Include
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
@@ -34,7 +37,9 @@ public class RoleHasApi extends BaseAuditableEntity {
     @JoinColumn(name = "role_code", nullable = false)
     private Role role;
 
-    private String endpoint;
+    @ManyToOne
+    @JoinColumn(name = "api_code", nullable = false)
+    private SystemApi api;
 
     private Integer permission;
 }

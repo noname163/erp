@@ -1,5 +1,7 @@
 package com.dat.erp.services;
 
+import java.util.Map;
+
 import com.dat.erp.dto.request.RoleHasApiRequest;
 import com.dat.erp.dto.response.PagedResponse;
 import com.dat.erp.dto.response.RoleHasApiResponse;
@@ -9,4 +11,6 @@ public interface RoleHasApiService {
 
     public PagedResponse<RoleHasApiResponse> getApisByRoleId(String roleCode, Integer page, Integer size, String sortBy,
             String sortDir);
+
+    public Map<String, Integer> getUserPermissionByUserCode(String userCode);
 }

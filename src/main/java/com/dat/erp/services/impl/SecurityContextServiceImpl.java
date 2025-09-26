@@ -1,5 +1,8 @@
 package com.dat.erp.services.impl;
 
+import java.util.List;
+import java.util.Map;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -9,6 +12,7 @@ import org.springframework.stereotype.Service;
 
 import com.dat.erp.entities.EmployeeInformation;
 import com.dat.erp.repositories.customrepositories.EmployeeInformationRepository;
+import com.dat.erp.services.RoleHasApiService;
 import com.dat.erp.services.SecurityContextService;
 import com.dat.erp.systemconfigs.CustomUserDetails;
 
@@ -16,23 +20,33 @@ import com.dat.erp.systemconfigs.CustomUserDetails;
 public class SecurityContextServiceImpl implements SecurityContextService {
     @Autowired
     private EmployeeInformationRepository employeeInformationRepository;
+    @Autowired
+    private RoleHasApiService roleHasApiService;
 
     @Override
-    public void setCurrentUser(String employeeCode) {
+    public CustomUserDetails setCurrentUser(String employeeCode) {
         EmployeeInformation employeeInformation = employeeInformationRepository.findByCode(employeeCode)
                 .orElseThrow(() -> new RuntimeException("Employee not found"));
-        UserDetails userDetails = new CustomUserDetails(employeeInformation);
-        UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(userDetails, null,
-                userDetails.getAuthorities());
+        List<String> employeeCodes = employeeInformationRepository.findAllCodesByManagerCode(employeeCode);
+        CustomUserDetails customUserDetails = new CustomUserDetails(employeeInformation);
+        customUserDetails.setEmployeeCodes(employeeCodes);
+        Map<String, Integer> permission = roleHasApiService.getUserPermissionByUserCode(employeeCode);
+        if (!permission.isEmpty()) {
+            customUserDetails.setPermissionMap(permission);
+        }
+        UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
+                customUserDetails, null,
+                customUserDetails.getAuthorities());
         SecurityContextHolder.getContext().setAuthentication(authentication);
+        return customUserDetails;
     }
 
     @Override
-    public EmployeeInformation getCurrentUser() {
+    public CustomUserDetails getCurrentUser() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication != null) {
             Object principal = authentication.getPrincipal();
-            return ((EmployeeInformation) principal);
+            return ((CustomUserDetails) principal);
         }
         return null;
     }
