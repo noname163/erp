@@ -1,10 +1,10 @@
 package com.dat.erp.systemconfigs;
 
 import java.util.List;
+import java.util.Optional;
 
 import org.hibernate.Filter;
 import org.hibernate.Session;
-import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 
@@ -21,17 +21,23 @@ public class AuditableFilterManager {
 
     public void enable() {
         if (SecurityContextHolder.getContext().getAuthentication() != null) {
-            CustomUserDetails customUserDetails = (CustomUserDetails) SecurityContextHolder.getContext()
+            if (SecurityContextHolder.getContext()
                     .getAuthentication()
-                    .getPrincipal();
+                    .getPrincipal() instanceof CustomUserDetails) {
+                CustomUserDetails customUserDetails = (CustomUserDetails) SecurityContextHolder.getContext()
+                        .getAuthentication()
+                        .getPrincipal();
 
-            if (customUserDetails.getViewOwnedOnly() && !customUserDetails.getEmployeeCodes().isEmpty()) {
-                List<String> createdByCodes = customUserDetails.getEmployeeCodes();
-                List<String> updatedByCodes = customUserDetails.getEmployeeCodes();
-                Session session = entityManager.unwrap(Session.class);
-                Filter filter = session.enableFilter("auditableFilter");
-                filter.setParameterList("createdByList", createdByCodes);
-                filter.setParameterList("updatedByList", updatedByCodes);
+                if (Optional.ofNullable(
+                        customUserDetails.getViewOwnedOnly()).orElse(false)
+                        && !customUserDetails.getEmployeeCodes().isEmpty()) {
+                    List<String> createdByCodes = customUserDetails.getEmployeeCodes();
+                    List<String> updatedByCodes = customUserDetails.getEmployeeCodes();
+                    Session session = entityManager.unwrap(Session.class);
+                    Filter filter = session.enableFilter("auditableFilter");
+                    filter.setParameterList("createdByList", createdByCodes);
+                    filter.setParameterList("updatedByList", updatedByCodes);
+                }
             }
         }
     }

@@ -61,11 +61,12 @@ public class AuthenticationFilter extends OncePerRequestFilter {
         String method = request.getMethod();
         if (customUserDetails != null
                 && PermissionUtils.hasPermission(customUserDetails.getPermissionMap(), url, method)) {
-            filterChain.doFilter(request, response);
             customUserDetails.setViewAll(PermissionUtils.hasViewAllPermission(
                     customUserDetails.getPermissionMap(), url));
-            customUserDetails.setViewOwnedOnly(PermissionUtils.hasViewAllPermission(
+            customUserDetails.setViewOwnedOnly(PermissionUtils.hasViewOwnedPermission(
                     customUserDetails.getPermissionMap(), url));
+            filterChain.doFilter(request, response);
+
         } else {
             log.error("User {} not have permission {} on URL {} ", customUserDetails.getCode(), method, url);
             throw new AccessDeniedException("User not have permission");

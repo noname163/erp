@@ -28,12 +28,11 @@ public class SecurityContextServiceImpl implements SecurityContextService {
         EmployeeInformation employeeInformation = employeeInformationRepository.findByCode(employeeCode)
                 .orElseThrow(() -> new RuntimeException("Employee not found"));
         List<String> employeeCodes = employeeInformationRepository.findAllCodesByManagerCode(employeeCode);
+        employeeCodes.add(employeeCode);
         CustomUserDetails customUserDetails = new CustomUserDetails(employeeInformation);
         customUserDetails.setEmployeeCodes(employeeCodes);
         Map<String, Integer> permission = roleHasApiService.getUserPermissionByUserCode(employeeCode);
-        if (!permission.isEmpty()) {
-            customUserDetails.setPermissionMap(permission);
-        }
+        customUserDetails.setPermissionMap(permission);
         UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
                 customUserDetails, null,
                 customUserDetails.getAuthorities());

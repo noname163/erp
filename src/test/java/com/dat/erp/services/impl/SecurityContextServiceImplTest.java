@@ -3,6 +3,7 @@ package com.dat.erp.services.impl;
 import com.dat.erp.entities.EmployeeInformation;
 import com.dat.erp.entities.Role;
 import com.dat.erp.repositories.customrepositories.EmployeeInformationRepository;
+import com.dat.erp.services.RoleHasApiService;
 import com.dat.erp.systemconfigs.CustomUserDetails;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -23,6 +24,9 @@ class SecurityContextServiceImplTest {
 
     @InjectMocks
     private SecurityContextServiceImpl securityContextService;
+
+    @Mock
+    private RoleHasApiService roleHasApiService;
 
     private EmployeeInformation employee;
 
@@ -81,11 +85,23 @@ class SecurityContextServiceImplTest {
         securityContextService.setCurrentUser("E123");
 
         // when
-        EmployeeInformation currentUser = securityContextService.getCurrentUser();
+        CustomUserDetails currentUser = securityContextService.getCurrentUser();
 
         // then
         assertNotNull(currentUser);
         assertEquals("E123", currentUser.getCode());
         assertEquals("JohnDoe@test.com", currentUser.getEmail());
+    }
+
+    @Test
+    void testGetCurrentUser_Null() {
+        // given
+        SecurityContextHolder.clearContext();
+
+        // when
+        CustomUserDetails currentUser = securityContextService.getCurrentUser();
+
+        // then
+        assertNull(currentUser);
     }
 }

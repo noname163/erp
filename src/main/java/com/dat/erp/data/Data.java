@@ -7,6 +7,7 @@ import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+import com.dat.erp.dto.request.RoleHasApiRequest;
 import com.dat.erp.entities.Company;
 import com.dat.erp.entities.Department;
 import com.dat.erp.entities.EmployeeInformation;
@@ -21,6 +22,7 @@ import com.dat.erp.repositories.customrepositories.RoleHasApiRepository;
 import com.dat.erp.repositories.customrepositories.RoleRepository;
 import com.dat.erp.repositories.customrepositories.SystemApiRepository;
 import com.dat.erp.repositories.customrepositories.UserInformationRepository;
+import com.dat.erp.utils.PermissionUtils;
 
 @Configuration
 public class Data {
@@ -88,7 +90,7 @@ public class Data {
             // --- Create SystemApi ---
             SystemApi api1 = new SystemApi();
             api1.setCode("API001");
-            api1.setEndpoint("/employeesdsds");
+            api1.setEndpoint("/api/roles");
             api1.setMethod("GET");
             api1.setDescription("Get list of employees");
             systemApiRepo.save(api1);
@@ -100,17 +102,23 @@ public class Data {
             api2.setDescription("Create employee");
             systemApiRepo.save(api2);
 
+            RoleHasApiRequest roleHasApiRequest = new RoleHasApiRequest();
+            roleHasApiRequest.setCreate(true);
+            roleHasApiRequest.setRead(true);
+            roleHasApiRequest.setDelete(true);
+            roleHasApiRequest.setUpdate(true);
+            roleHasApiRequest.setViewOwnedOnly(true);
             // --- Link Role to SystemApi with RoleHasApi ---
             RoleHasApi roleHasApi1 = new RoleHasApi();
             roleHasApi1.setRole(role);
             roleHasApi1.setApi(api1);
-            roleHasApi1.setPermission(7); // Example permission (like read/write)
+            roleHasApi1.setPermission(PermissionUtils.toInt(roleHasApiRequest)); // Example permission (like read/write)
             roleHasApiRepo.save(roleHasApi1);
 
             RoleHasApi roleHasApi2 = new RoleHasApi();
             roleHasApi2.setRole(role);
             roleHasApi2.setApi(api2);
-            roleHasApi2.setPermission(3); // Example permission
+            roleHasApi2.setPermission(PermissionUtils.toInt(roleHasApiRequest)); // Example permission
             roleHasApiRepo.save(roleHasApi2);
 
             System.out.println("✅ Sample data inserted (User, Company, Dept, Role, Employee, APIs, RoleHasApi)!");

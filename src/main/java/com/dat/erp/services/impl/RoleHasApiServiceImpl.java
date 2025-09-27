@@ -32,11 +32,11 @@ public class RoleHasApiServiceImpl implements RoleHasApiService {
 
     @Override
     public String assignApisToRole(RoleHasApiRequest roleHasApiRequest) {
+        Optional.ofNullable(roleHasApiRequest)
+                .orElseThrow(() -> new RuntimeException("RoleHasApiRequest cannot be null"));
         Role role = roleRepository.findByCode(roleHasApiRequest.getRoleCode())
                 .orElseThrow(
                         () -> new RuntimeException("Role not found with code: " + roleHasApiRequest.getRoleCode()));
-        Optional.ofNullable(roleHasApiRequest)
-                .orElseThrow(() -> new RuntimeException("RoleHasApiRequest cannot be null"));
         RoleHasApi roleHasApi = roleHasApiMapper.toEntity(roleHasApiRequest);
         roleHasApi.setRole(role);
         roleHasApiRepository.save(roleHasApi);
