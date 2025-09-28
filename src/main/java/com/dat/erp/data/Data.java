@@ -7,6 +7,7 @@ import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+import com.dat.erp.constants.CommonStatus;
 import com.dat.erp.dto.request.RoleHasApiRequest;
 import com.dat.erp.entities.Company;
 import com.dat.erp.entities.Department;
@@ -59,7 +60,7 @@ public class Data {
             Department department = new Department();
             department.setCode("DEP001");
             department.setName("IT Department");
-            department.setStatus("ACTIVE");
+            department.setStatus(CommonStatus.ACTIVATE);
             department.setCreatedAt(LocalDateTime.now());
             department.setCompany(company);
             departmentRepo.save(department);
@@ -82,7 +83,7 @@ public class Data {
             emp.setCompany(company);
             emp.setRole(role);
             emp.setJobTitle("Java Developer");
-            emp.setEmploymentStatus("FULL_TIME");
+            emp.setEmploymentStatus(CommonStatus.ACTIVATE);
             emp.setHireDate(LocalDate.now());
             emp.setCreatedAt(LocalDateTime.now());
             employeeRepo.save(emp);
@@ -91,14 +92,12 @@ public class Data {
             SystemApi api1 = new SystemApi();
             api1.setCode("API001");
             api1.setEndpoint("/api/roles");
-            api1.setMethod("GET");
             api1.setDescription("Get list of employees");
             systemApiRepo.save(api1);
 
             SystemApi api2 = new SystemApi();
             api2.setCode("API002");
             api2.setEndpoint("/emplosdasyees/{id}");
-            api2.setMethod("POST");
             api2.setDescription("Create employee");
             systemApiRepo.save(api2);
 

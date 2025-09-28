@@ -3,12 +3,15 @@ package com.dat.erp.mapper.interfaces;
 import com.dat.erp.dto.request.EmployeeInformationRequest;
 import com.dat.erp.dto.response.EmployeeInformationResponse;
 import com.dat.erp.entities.EmployeeInformation;
+import com.dat.erp.mapper.decorator.EmployeeMapperDecorator;
 import com.dat.erp.systemconfigs.CentralMapperConfig;
 
+import org.mapstruct.DecoratedWith;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 
 @Mapper(config = CentralMapperConfig.class)
+@DecoratedWith(EmployeeMapperDecorator.class)
 public interface EmployeeMapper {
 
     @Mapping(target = "company", ignore = true) // will be set in service layer

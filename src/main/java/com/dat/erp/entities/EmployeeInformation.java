@@ -3,6 +3,7 @@ package com.dat.erp.entities;
 import java.time.LocalDate;
 import java.util.Set;
 
+import com.dat.erp.constants.CommonStatus;
 import com.dat.erp.converters.EncryptFieldConverter;
 import com.dat.erp.converters.HashFieldConverter;
 
@@ -85,7 +86,7 @@ public class EmployeeInformation extends BaseAuditableEntity {
     private String jobTitle;
 
     @Column(name = "employment_status")
-    private String employmentStatus;
+    private CommonStatus employmentStatus;
 
     private LocalDate hireDate;
 

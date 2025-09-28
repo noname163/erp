@@ -7,6 +7,8 @@ import lombok.Data;
 
 import java.time.LocalDate;
 
+import com.dat.erp.constants.CommonStatus;
+
 @Data
 public class EmployeeInformationRequest {
 
@@ -24,7 +26,7 @@ public class EmployeeInformationRequest {
 
     private String jobTitle;
 
-    private String employmentStatus; // e.g., ACTIVE, INACTIVE, TERMINATED
+    private CommonStatus employmentStatus; // e.g., ACTIVE, INACTIVE, TERMINATED
 
     @NotNull(message = "Hire date is required")
     private LocalDate hireDate;

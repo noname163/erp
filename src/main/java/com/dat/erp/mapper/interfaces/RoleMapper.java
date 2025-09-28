@@ -3,7 +3,6 @@ package com.dat.erp.mapper.interfaces;
 import java.util.List;
 
 import org.mapstruct.Mapper;
-import org.mapstruct.Mapping;
 
 import com.dat.erp.dto.request.RoleRequest;
 import com.dat.erp.dto.response.RoleResponse;

@@ -12,6 +12,7 @@ import org.springframework.web.method.HandlerMethod;
 import org.springframework.web.servlet.mvc.method.RequestMappingInfo;
 import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerMapping;
 
+import com.dat.erp.constants.CommonEnum;
 import com.dat.erp.entities.SystemApi;
 import com.dat.erp.repositories.customrepositories.SystemApiRepository;
 
@@ -57,7 +58,7 @@ public class ApiScanner implements ApplicationListener<ContextRefreshedEvent> {
                     .map(url -> {
                         SystemApi api = new SystemApi();
                         api.setEndpoint(url);
-                        api.setType("BACKEND");
+                        api.setSystemType(CommonEnum.BACKEND);
                         api.setDescription("Auto-discovered");
                         return api;
                     })
@@ -67,7 +68,7 @@ public class ApiScanner implements ApplicationListener<ContextRefreshedEvent> {
                 try {
                     List<SystemApi> insertedApi = systemApiRepository.saveAll(newApis);
                     for (SystemApi systemApi : insertedApi) {
-                        log.info("Discovered new API: {} {}", systemApi.getMethod(), systemApi.getEndpoint());
+                        log.info("Discovered new API: {}", systemApi.getEndpoint());
                     }
                 } catch (Exception e) {
                     // TODO: handle exception

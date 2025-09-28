@@ -1,7 +1,8 @@
 package com.dat.erp.entities;
 
-import java.time.LocalDate;
+import com.dat.erp.converters.EncryptFieldConverter;
 
+import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -37,9 +38,12 @@ public class EmployeeIdentification extends BaseAuditableEntity {
     private EmployeeInformation employee;
 
     private String idType;
+    @Convert(converter = EncryptFieldConverter.class)
     private String idNumber;
-    private LocalDate issuedDate;
-    private LocalDate expiryDate;
+    @Convert(converter = EncryptFieldConverter.class)
+    private String issuedDate;
+    @Convert(converter = EncryptFieldConverter.class)
+    private String expiryDate;
     private String issuedBy;
 
 }

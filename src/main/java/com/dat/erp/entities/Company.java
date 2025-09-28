@@ -5,8 +5,11 @@ import java.util.List;
 import org.hibernate.annotations.Fetch;
 import org.hibernate.annotations.FetchMode;
 
+import com.dat.erp.converters.EncryptFieldConverter;
+
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
+import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
@@ -43,6 +46,10 @@ public class Company extends BaseAuditableEntity {
 
     @Column(length = 100)
     private String industry;
+
+    @Column(length = 100)
+    @Convert(converter = EncryptFieldConverter.class)
+    private String taxNumber;
 
     @Column(columnDefinition = "TEXT")
     private String address;

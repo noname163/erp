@@ -2,6 +2,8 @@ package com.dat.erp.entities;
 
 import java.util.List;
 
+import com.dat.erp.constants.CommonStatus;
+
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -36,8 +38,7 @@ public class Department extends BaseAuditableEntity {
     private Long id;
 
     private String name;
-    private String description;
-    private String status;
+    private CommonStatus status;
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "company_code", nullable = false)
     private Company company;

@@ -5,6 +5,8 @@ import lombok.Data;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
+import com.dat.erp.constants.CommonStatus;
+
 @Data
 public class EmployeeInformationResponse {
 
@@ -12,7 +14,7 @@ public class EmployeeInformationResponse {
     private String nickname;
     private String email;
     private String jobTitle;
-    private String employmentStatus;
+    private CommonStatus employmentStatus;
     private LocalDate hireDate;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;

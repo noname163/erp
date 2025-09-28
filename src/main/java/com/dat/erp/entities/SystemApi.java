@@ -1,5 +1,8 @@
 package com.dat.erp.entities;
 
+import com.dat.erp.constants.ApiType;
+import com.dat.erp.constants.CommonEnum;
+
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -33,8 +36,8 @@ public class SystemApi extends BaseAuditableEntity {
 
     private String description;
 
-    private String method;
+    private ApiType type;
 
-    private String type;
+    private CommonEnum systemType;
 
 }

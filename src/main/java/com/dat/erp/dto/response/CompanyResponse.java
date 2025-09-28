@@ -7,6 +7,7 @@ public class CompanyResponse {
     private Long id;
     private String name;
     private String industry;
+    private String taxNumber;
     private String address;
     private String phoneNumber;
 }
