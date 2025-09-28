@@ -19,7 +19,7 @@ import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.MockitoAnnotations;
 
-import com.dat.erp.dtos.requests.LoginRequest;
+import com.dat.erp.dto.request.LoginRequest;
 import com.dat.erp.entities.EmployeeInformation;
 import com.dat.erp.entities.UserInformation;
 import com.dat.erp.repositories.customrepositories.EmployeeInformationRepository;

@@ -3,8 +3,6 @@ package com.dat.erp.entities;
 import java.time.LocalDateTime;
 import java.util.List;
 
-import com.dat.erp.customannotation.searchable.interfaces.Searchable;
-
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -29,17 +27,15 @@ import lombok.ToString;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-@EqualsAndHashCode(onlyExplicitlyIncluded = true)
+@EqualsAndHashCode(onlyExplicitlyIncluded = true, callSuper = true)
 @ToString(exclude = "transactions")
 @Entity
 @Table(name = "accounts")
-public class Account {
+public class Account extends BaseAuditableEntity {
     @Id
     @EqualsAndHashCode.Include
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    @Searchable(column = "code", condition = Searchable.Condition.EQUALS)
-    private String code;
 
     @ManyToOne
     @JoinColumn(name = "user_code", nullable = false)

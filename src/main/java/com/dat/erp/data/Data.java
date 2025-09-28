@@ -7,16 +7,22 @@ import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+import com.dat.erp.dto.request.RoleHasApiRequest;
 import com.dat.erp.entities.Company;
 import com.dat.erp.entities.Department;
 import com.dat.erp.entities.EmployeeInformation;
 import com.dat.erp.entities.Role;
+import com.dat.erp.entities.RoleHasApi;
+import com.dat.erp.entities.SystemApi;
 import com.dat.erp.entities.UserInformation;
 import com.dat.erp.repositories.customrepositories.CompanyRepository;
 import com.dat.erp.repositories.customrepositories.DepartmentRepository;
 import com.dat.erp.repositories.customrepositories.EmployeeInformationRepository;
+import com.dat.erp.repositories.customrepositories.RoleHasApiRepository;
 import com.dat.erp.repositories.customrepositories.RoleRepository;
+import com.dat.erp.repositories.customrepositories.SystemApiRepository;
 import com.dat.erp.repositories.customrepositories.UserInformationRepository;
+import com.dat.erp.utils.PermissionUtils;
 
 @Configuration
 public class Data {
@@ -27,17 +33,19 @@ public class Data {
             DepartmentRepository departmentRepo,
             RoleRepository roleRepo,
             EmployeeInformationRepository employeeRepo,
-            CompanyRepository companyRepo) {
+            CompanyRepository companyRepo,
+            SystemApiRepository systemApiRepo,
+            RoleHasApiRepository roleHasApiRepo) {
         return args -> {
             // --- Create User ---
             UserInformation user = new UserInformation();
             user.setCode("USR001");
             user.setFirstName("Dat");
             user.setLastName("Huu");
+            user.setEmail("datpersonal@example.com");
             user.setDateOfBirth("1995-01-01");
             user.setGender("Male");
             user.setPhoneNumber("0123456789");
-            user.setCreatedAt(LocalDateTime.now());
             userRepo.save(user);
 
             // --- Create Company ---
@@ -53,13 +61,13 @@ public class Data {
             department.setName("IT Department");
             department.setStatus("ACTIVE");
             department.setCreatedAt(LocalDateTime.now());
+            department.setCompany(company);
             departmentRepo.save(department);
 
             // --- Create Role ---
             Role role = new Role();
             role.setCode("ROLE001");
             role.setName("ADMIN");
-            role.setPermission(10);
             role.setLevel(1);
             role.setCreatedAt(LocalDateTime.now());
             roleRepo.save(role);
@@ -79,7 +87,41 @@ public class Data {
             emp.setCreatedAt(LocalDateTime.now());
             employeeRepo.save(emp);
 
-            System.out.println("✅ Sample data inserted!");
+            // --- Create SystemApi ---
+            SystemApi api1 = new SystemApi();
+            api1.setCode("API001");
+            api1.setEndpoint("/api/roles");
+            api1.setMethod("GET");
+            api1.setDescription("Get list of employees");
+            systemApiRepo.save(api1);
+
+            SystemApi api2 = new SystemApi();
+            api2.setCode("API002");
+            api2.setEndpoint("/emplosdasyees/{id}");
+            api2.setMethod("POST");
+            api2.setDescription("Create employee");
+            systemApiRepo.save(api2);
+
+            RoleHasApiRequest roleHasApiRequest = new RoleHasApiRequest();
+            roleHasApiRequest.setCreate(true);
+            roleHasApiRequest.setRead(true);
+            roleHasApiRequest.setDelete(true);
+            roleHasApiRequest.setUpdate(true);
+            roleHasApiRequest.setViewOwnedOnly(true);
+            // --- Link Role to SystemApi with RoleHasApi ---
+            RoleHasApi roleHasApi1 = new RoleHasApi();
+            roleHasApi1.setRole(role);
+            roleHasApi1.setApi(api1);
+            roleHasApi1.setPermission(PermissionUtils.toInt(roleHasApiRequest)); // Example permission (like read/write)
+            roleHasApiRepo.save(roleHasApi1);
+
+            RoleHasApi roleHasApi2 = new RoleHasApi();
+            roleHasApi2.setRole(role);
+            roleHasApi2.setApi(api2);
+            roleHasApi2.setPermission(PermissionUtils.toInt(roleHasApiRequest)); // Example permission
+            roleHasApiRepo.save(roleHasApi2);
+
+            System.out.println("✅ Sample data inserted (User, Company, Dept, Role, Employee, APIs, RoleHasApi)!");
         };
     }
 }

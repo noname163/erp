@@ -14,7 +14,6 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.OneToMany;
-import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -29,17 +28,15 @@ import lombok.ToString;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-@EqualsAndHashCode(onlyExplicitlyIncluded = true)
+@EqualsAndHashCode(onlyExplicitlyIncluded = true, callSuper = true)
 @ToString(exclude = { "identifications", "addresses", "accounts" })
 @Entity
 @Table(name = "user_informations")
-public class UserInformation {
+public class UserInformation extends BaseAuditableEntity {
     @Id
     @EqualsAndHashCode.Include
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-
-    private String code;
 
     @Column(name = "first_name", nullable = false, length = 50)
     @Convert(converter = EncryptFieldConverter.class)
@@ -52,6 +49,10 @@ public class UserInformation {
     @Column(name = "date_of_birth", nullable = false)
     @Convert(converter = EncryptFieldConverter.class)
     private String dateOfBirth;
+
+    @Column(name = "email", nullable = false)
+    @Convert(converter = EncryptFieldConverter.class)
+    private String email;
 
     private String gender;
 
@@ -76,14 +77,4 @@ public class UserInformation {
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private List<Account> accounts;
-
-    protected void onCreate() {
-        this.createdAt = LocalDateTime.now();
-        this.updatedAt = LocalDateTime.now();
-    }
-
-    @PreUpdate
-    protected void onUpdate() {
-        this.updatedAt = LocalDateTime.now();
-    }
 }

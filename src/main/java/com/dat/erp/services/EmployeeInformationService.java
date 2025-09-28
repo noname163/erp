@@ -2,7 +2,9 @@ package com.dat.erp.services;
 
 import org.springframework.stereotype.Service;
 
+import com.dat.erp.dto.request.EmployeeInformationRequest;
+
 @Service
 public interface EmployeeInformationService {
-    // TODO: Define service methods related to EmployeeInformation
+    public String createEmployeeInformation(EmployeeInformationRequest request);
 }

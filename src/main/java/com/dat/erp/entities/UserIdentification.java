@@ -1,7 +1,5 @@
 package com.dat.erp.entities;
 
-import java.time.LocalDateTime;
-
 import com.dat.erp.converters.EncryptFieldConverter;
 
 import jakarta.persistence.Column;
@@ -12,7 +10,6 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
-import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -27,17 +24,15 @@ import lombok.ToString;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-@EqualsAndHashCode(onlyExplicitlyIncluded = true)
+@EqualsAndHashCode(onlyExplicitlyIncluded = true, callSuper = true)
 @ToString(exclude = "user")
 @Entity
 @Table(name = "user_identifications")
-public class UserIdentification {
+public class UserIdentification extends BaseAuditableEntity {
     @Id
     @EqualsAndHashCode.Include
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-
-    private String code;
 
     @ManyToOne
     @JoinColumn(name = "user_code", nullable = false)
@@ -58,16 +53,4 @@ public class UserIdentification {
     @Column(name = "issued_by")
     @Convert(converter = EncryptFieldConverter.class)
     private String issuedBy;
-    private LocalDateTime createdAt;
-    private LocalDateTime updatedAt;
-
-    protected void onCreate() {
-        this.createdAt = LocalDateTime.now();
-        this.updatedAt = LocalDateTime.now();
-    }
-
-    @PreUpdate
-    protected void onUpdate() {
-        this.updatedAt = LocalDateTime.now();
-    }
 }
