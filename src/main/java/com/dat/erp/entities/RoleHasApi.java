@@ -30,11 +30,11 @@ public class RoleHasApi extends BaseAuditableEntity {
     private Long id;
 
     @ManyToOne
-    @JoinColumn(name = "role_code", nullable = false)
+    @JoinColumn(name = "role_code", referencedColumnName = "code", nullable = false)
     private Role role;
 
     @ManyToOne
-    @JoinColumn(name = "api_code", nullable = false)
+    @JoinColumn(name = "api_code", referencedColumnName = "code", nullable = false)
     private SystemApi api;
 
     private Integer permission;

@@ -34,7 +34,7 @@ public class EmployeeIdentification extends BaseAuditableEntity {
     private Long id;
 
     @ManyToOne
-    @JoinColumn(name = "employee_code", nullable = false)
+    @JoinColumn(name = "employee_code", referencedColumnName = "code", nullable = false)
     private EmployeeInformation employee;
 
     private String idType;

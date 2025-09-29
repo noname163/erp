@@ -40,7 +40,7 @@ public class Department extends BaseAuditableEntity {
     private String name;
     private CommonStatus status;
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "company_code", nullable = false)
+    @JoinColumn(name = "company_code", referencedColumnName = "code", nullable = false)
     private Company company;
     @OneToMany(mappedBy = "department", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private List<EmployeeInformation> employees;

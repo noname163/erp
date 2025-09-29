@@ -18,6 +18,5 @@ public class SystemApiResponse {
 
     private CommonEnum systemType;
 
-    private String code; // inherited from BaseAuditableEntity
-
+    private String code;
 }

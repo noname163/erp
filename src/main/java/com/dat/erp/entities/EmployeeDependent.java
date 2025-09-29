@@ -32,11 +32,11 @@ public class EmployeeDependent extends BaseAuditableEntity {
     private Long id;
 
     @ManyToOne
-    @JoinColumn(name = "employee_code", nullable = false)
+    @JoinColumn(name = "employee_code", referencedColumnName = "code", nullable = false)
     private EmployeeInformation employee;
 
     @ManyToOne
-    @JoinColumn(name = "dependent_code")
+    @JoinColumn(name = "dependent_code", referencedColumnName = "code")
     private UserInformation dependent;
 
     private String relationship;

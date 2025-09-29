@@ -58,6 +58,7 @@ public class ApiScanner implements ApplicationListener<ContextRefreshedEvent> {
                     .map(url -> {
                         SystemApi api = new SystemApi();
                         api.setEndpoint(url);
+                        api.setCode(url.replace("/", "_").toUpperCase());
                         api.setSystemType(CommonEnum.BACKEND);
                         api.setDescription("Auto-discovered");
                         return api;

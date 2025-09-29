@@ -39,7 +39,7 @@ public class AttendanceRecord extends BaseAuditableEntity {
     private BigDecimal overtimeHours;
     private String status; // Present, Absent, Late, On Leave
     @ManyToOne
-    @JoinColumn(name = "employee_code", nullable = false)
+    @JoinColumn(name = "employee_code", referencedColumnName = "code", nullable = false)
     private EmployeeInformation employee;
 
 }

@@ -5,10 +5,12 @@ import java.io.IOException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
+import org.springframework.util.AntPathMatcher;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import com.dat.erp.services.SecurityContextService;
 import com.dat.erp.systemconfigs.CustomUserDetails;
+import com.dat.erp.utils.EnvironmentVariable;
 import com.dat.erp.utils.JwtUtils;
 import com.dat.erp.utils.PermissionUtils;
 
@@ -24,11 +26,21 @@ import lombok.extern.log4j.Log4j2;
 public class AuthenticationFilter extends OncePerRequestFilter {
     private final JwtUtils jwtUtils;
     private final SecurityContextService securityContextService;
+    private final EnvironmentVariable environmentVariable;
 
     public AuthenticationFilter(JwtUtils jwtUtils,
-            SecurityContextService securityContextService) {
+            SecurityContextService securityContextService, EnvironmentVariable environmentVariable) {
         this.jwtUtils = jwtUtils;
         this.securityContextService = securityContextService;
+        this.environmentVariable = environmentVariable;
+    }
+
+    @Override
+    protected boolean shouldNotFilter(HttpServletRequest request) {
+        String path = request.getRequestURI();
+        AntPathMatcher matcher = new AntPathMatcher();
+        return environmentVariable.getWhitelistAsList().stream()
+                .anyMatch(pattern -> matcher.match(pattern, path));
     }
 
     @Override
@@ -37,6 +49,10 @@ public class AuthenticationFilter extends OncePerRequestFilter {
             FilterChain filterChain)
             throws ServletException, IOException {
 
+        if (shouldNotFilter(request)) {
+            filterChain.doFilter(request, response);
+            return;
+        }
         // 2. Try to get token from Cookie first
         String token = extractTokenFromCookies(request);
 

@@ -52,11 +52,11 @@ public class SystemApiController {
     })
     @GetMapping("")
     public ResponseEntity<PagedResponse<SystemApiResponse>> getMethodName(
-            @Parameter(description = "API code to filter APIs", required = true) @RequestParam(required = true) String apiCode,
-            @Parameter(description = "Page number") @RequestParam Integer page,
-            @Parameter(description = "Page size") @RequestParam Integer size,
-            @Parameter(description = "Field to sort by") @RequestParam String sortBy,
-            @Parameter(description = "Sort direction (ASC or DESC)", example = "DESC") @RequestParam(defaultValue = "DESC") String sortDir) {
+            @Parameter(description = "API code to filter APIs", required = false) @RequestParam(required = false) String apiCode,
+            @Parameter(description = "Page number") @RequestParam(required = false) Integer page,
+            @Parameter(description = "Page size") @RequestParam(required = false) Integer size,
+            @Parameter(description = "Field to sort by") @RequestParam(required = false) String sortBy,
+            @Parameter(description = "Sort direction (ASC or DESC)", example = "DESC") @RequestParam(defaultValue = "DESC", required = false) String sortDir) {
         return ResponseEntity.ok(systemApiService.getListSystemApi(apiCode, page, size, sortBy, sortDir));
     }
 

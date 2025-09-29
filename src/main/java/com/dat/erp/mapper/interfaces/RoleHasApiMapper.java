@@ -1,6 +1,7 @@
 package com.dat.erp.mapper.interfaces;
 
 import org.mapstruct.AfterMapping;
+import org.mapstruct.DecoratedWith;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.MappingTarget;
@@ -8,15 +9,19 @@ import org.mapstruct.MappingTarget;
 import com.dat.erp.dto.request.RoleHasApiRequest;
 import com.dat.erp.dto.response.RoleHasApiResponse;
 import com.dat.erp.entities.RoleHasApi;
+import com.dat.erp.mapper.decorator.RoleHasApiMapperDecorator;
 import com.dat.erp.systemconfigs.CentralMapperConfig;
 import com.dat.erp.utils.PermissionUtils;
 
 @Mapper(config = CentralMapperConfig.class)
+@DecoratedWith(RoleHasApiMapperDecorator.class)
 public interface RoleHasApiMapper {
 
     // Request → Entity
 
     @Mapping(target = "permission", expression = "java(com.dat.erp.utils.PermissionUtils.toInt(request))")
+    @Mapping(target = "role", ignore = true)
+    @Mapping(target = "api", ignore = true)
     RoleHasApi toEntity(RoleHasApiRequest request);
 
     // Entity → Response
