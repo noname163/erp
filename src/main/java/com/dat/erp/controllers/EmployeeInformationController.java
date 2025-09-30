@@ -18,6 +18,7 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 
@@ -49,7 +50,7 @@ public class EmployeeInformationController {
     })
     @PostMapping("")
     public ResponseEntity<CustomApiResponse<String>> createEmployeeInformation(
-            @RequestBody EmployeeInformationRequest employeeRequest) {
+            @Valid @RequestBody EmployeeInformationRequest employeeRequest) {
         return ResponseBuilder.created(employeeInformationService.createEmployeeInformation(employeeRequest));
     }
 

@@ -20,6 +20,7 @@ import com.dat.erp.services.RoleHasApiService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 
@@ -36,8 +37,9 @@ public class RoleHasApiController {
     /**
      * Assign APIs to a role.
      *
-     * @param roleHasApiRequest the request body containing role and API assignment
-     *                          details
+     * @param roleHasApiRequest
+     *            the request body containing role and API assignment
+     *            details
      * @return ResponseEntity with assignment result
      */
     @Operation(summary = "Assign APIs to a role", description = "Assigns one or more APIs to a specified role.")
@@ -47,18 +49,23 @@ public class RoleHasApiController {
     })
     @PostMapping("")
     public ResponseEntity<CustomApiResponse<String>> createRoleHasApis(
-            @RequestBody RoleHasApiRequest roleHasApiRequest) {
+            @Valid @RequestBody RoleHasApiRequest roleHasApiRequest) {
         return ResponseBuilder.created(roleHasApiService.assignApisToRole(roleHasApiRequest));
     }
 
     /**
      * Get a paginated list of APIs assigned to a role.
      *
-     * @param roleCode the code of the role to filter APIs
-     * @param page     the page number to retrieve
-     * @param size     the number of items per page
-     * @param sortBy   the field to sort by
-     * @param sortDir  the sort direction (ASC or DESC)
+     * @param roleCode
+     *            the code of the role to filter APIs
+     * @param page
+     *            the page number to retrieve
+     * @param size
+     *            the number of items per page
+     * @param sortBy
+     *            the field to sort by
+     * @param sortDir
+     *            the sort direction (ASC or DESC)
      * @return paginated list of APIs assigned to the role
      */
     @Operation(summary = "Get APIs assigned to a role", description = "Returns a paginated list of APIs assigned to the specified role.")

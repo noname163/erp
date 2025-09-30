@@ -17,6 +17,7 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 
@@ -48,7 +49,7 @@ public class CompanyController {
             @ApiResponse(responseCode = "400", description = "Invalid input")
     })
     @PostMapping("")
-    public ResponseEntity<CustomApiResponse<String>> createCompany(@RequestBody CompanyRequest companyRequest) {
+    public ResponseEntity<CustomApiResponse<String>> createCompany(@Valid @RequestBody CompanyRequest companyRequest) {
         return ResponseBuilder.created(companyService.createCompany(companyRequest));
     }
 

@@ -8,6 +8,7 @@ import com.dat.erp.dto.response.RoleHasApiResponse;
 import com.dat.erp.entities.Role;
 import com.dat.erp.entities.RoleHasApi;
 import com.dat.erp.entities.SystemApi;
+import com.dat.erp.exceptions.ResourceNotFoundException;
 import com.dat.erp.mapper.interfaces.RoleHasApiMapper;
 import com.dat.erp.repositories.customrepositories.RoleRepository;
 import com.dat.erp.repositories.customrepositories.SystemApiRepository;
@@ -26,9 +27,11 @@ public abstract class RoleHasApiMapperDecorator implements RoleHasApiMapper {
         RoleHasApi roleHasApi = delegate.toEntity(request);
         Role role = roleRepository.findByCode(request.getRoleCode())
                 .orElseThrow(
-                        () -> new RuntimeException("Role not found with code: " + request.getRoleCode()));
+                        () -> new ResourceNotFoundException(
+                                "Unable to find role with code " + request.getRoleCode()));
         SystemApi systemApi = systemApiRepository.findByCode(request.getApiCode()).orElseThrow(
-                () -> new RuntimeException("Api not found with code: " + request.getRoleCode()));
+                () -> new ResourceNotFoundException(
+                        "Unable to find system api with code " + request.getApiCode()));
         roleHasApi.setApi(systemApi);
         roleHasApi.setRole(role);
         return roleHasApi;

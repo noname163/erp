@@ -1,5 +1,7 @@
 package com.dat.erp.services.impl;
 
+import java.util.UUID;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -25,6 +27,7 @@ public class CompanyServiceImpl implements CompanyService {
     @Override
     public String createCompany(CompanyRequest companyRequest) {
         Company company = companyMapper.toEntity(companyRequest);
+        company.setCode("CMP-" + UUID.randomUUID());
         companyRepository.save(company);
         return company.getCode();
     }

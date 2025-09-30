@@ -1,5 +1,7 @@
 package com.dat.erp.services.impl;
 
+import java.util.UUID;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -25,6 +27,7 @@ public class UserInformationServiceImpl implements UserInformationService {
     @Override
     public String createUserInformation(UserInformationRequest request) {
         UserInformation userInformation = userMapper.toEntity(request);
+        userInformation.setCode("USR-" + UUID.randomUUID());
         userInformationRepository.save(userInformation);
         return userInformation.getCode();
     }

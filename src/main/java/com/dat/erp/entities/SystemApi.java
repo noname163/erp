@@ -24,7 +24,7 @@ import lombok.Setter;
 @EqualsAndHashCode(onlyExplicitlyIncluded = true, callSuper = true)
 @Entity
 @Table(name = "system_api", uniqueConstraints = {
-        @UniqueConstraint(columnNames = { "endpoint", "type" })
+        @UniqueConstraint(columnNames = { "endpoint", "systemType" })
 })
 public class SystemApi extends BaseAuditableEntity {
     @Id

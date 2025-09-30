@@ -4,6 +4,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.springframework.context.ApplicationListener;
 import org.springframework.context.event.ContextRefreshedEvent;
@@ -32,6 +33,7 @@ public class ApiScanner implements ApplicationListener<ContextRefreshedEvent> {
         Map<RequestMappingInfo, HandlerMethod> handlerMethods = handlerMapping.getHandlerMethods();
 
         // Use a set to avoid duplicates in memory
+        Set<String> normalizedUrls = new HashSet<>();
         Set<String> discoveredUrls = new HashSet<>();
 
         for (Map.Entry<RequestMappingInfo, HandlerMethod> entry : handlerMethods.entrySet()) {
@@ -43,10 +45,20 @@ public class ApiScanner implements ApplicationListener<ContextRefreshedEvent> {
                 mappingInfo.getPathPatternsCondition().getPatterns()
                         .forEach(pathPattern -> urls.add(pathPattern.getPatternString()));
             }
-
             for (String url : urls) {
                 String normalizedUrl = normalizeUrl(url);
-                discoveredUrls.add(normalizedUrl);
+                if (!normalizedUrls.contains(normalizedUrl)) {
+                    normalizedUrls.add(normalizedUrl);
+                }
+            }
+        }
+        List<SystemApi> systemApis = systemApiRepository.findByEndpointIn(normalizedUrls);
+        Map<String, SystemApi> map = systemApis.stream()
+                .collect(Collectors.toMap(SystemApi::getEndpoint, sa -> sa));
+
+        for (String url : normalizedUrls) {
+            if (!map.containsKey(url)) {
+                discoveredUrls.add(url);
             }
         }
 

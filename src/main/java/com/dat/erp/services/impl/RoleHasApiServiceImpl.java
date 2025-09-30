@@ -3,6 +3,7 @@ package com.dat.erp.services.impl;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -30,7 +31,9 @@ public class RoleHasApiServiceImpl implements RoleHasApiService {
     public String assignApisToRole(RoleHasApiRequest roleHasApiRequest) {
         Optional.ofNullable(roleHasApiRequest)
                 .orElseThrow(() -> new RuntimeException("RoleHasApiRequest cannot be null"));
-        roleHasApiRepository.save(roleHasApiMapper.toEntity(roleHasApiRequest));
+        RoleHasApi roleHasApi = roleHasApiMapper.toEntity(roleHasApiRequest);
+        roleHasApi.setCode("RHA-" + UUID.randomUUID());
+        roleHasApiRepository.save(roleHasApi);
         return "APIs assigned to role successfully";
     }
 

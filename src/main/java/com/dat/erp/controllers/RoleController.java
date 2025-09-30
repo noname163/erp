@@ -20,6 +20,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 
@@ -46,7 +47,7 @@ public class RoleController {
             @ApiResponse(responseCode = "400", description = "Invalid input")
     })
     @PostMapping("")
-    public ResponseEntity<CustomApiResponse<String>> createRole(@RequestBody RoleRequest roleRequest) {
+    public ResponseEntity<CustomApiResponse<String>> createRole(@Valid @RequestBody RoleRequest roleRequest) {
         return ResponseBuilder.created(roleService.createRole(roleRequest));
     }
 

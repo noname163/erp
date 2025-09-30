@@ -30,6 +30,7 @@ public interface RoleHasApiMapper {
     @Mapping(target = "update", ignore = true)
     @Mapping(target = "delete", ignore = true)
     @Mapping(source = "role.name", target = "roleName")
+    @Mapping(source = "api.endpoint", target = "endpoint")
     RoleHasApiResponse toResponse(RoleHasApi entity);
 
     @AfterMapping

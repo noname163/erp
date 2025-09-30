@@ -1,10 +1,13 @@
 package com.dat.erp.services.impl;
 
+import java.util.UUID;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
+import com.dat.erp.constants.CommonStatus;
 import com.dat.erp.dto.request.EmployeeInformationRequest;
 import com.dat.erp.dto.response.EmployeeInformationResponse;
 import com.dat.erp.dto.response.PagedResponse;
@@ -24,6 +27,8 @@ public class EmployeeInformationServiceImpl implements EmployeeInformationServic
     @Override
     public String createEmployeeInformation(EmployeeInformationRequest request) {
         EmployeeInformation employeeInformation = employeeMapper.toEntity(request);
+        employeeInformation.setCode("EMPI-" + UUID.randomUUID());
+        employeeInformation.setEmploymentStatus(CommonStatus.ACTIVATE);
         employeeInformationRepository.save(employeeInformation);
         return employeeInformation.getCode();
     }

@@ -1,13 +1,11 @@
 package com.dat.erp.dto.request;
 
+import java.time.LocalDate;
+
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
-
-import java.time.LocalDate;
-
-import com.dat.erp.constants.CommonStatus;
 
 @Data
 public class EmployeeInformationRequest {
@@ -25,8 +23,6 @@ public class EmployeeInformationRequest {
     private String email;
 
     private String jobTitle;
-
-    private CommonStatus employmentStatus; // e.g., ACTIVE, INACTIVE, TERMINATED
 
     @NotNull(message = "Hire date is required")
     private LocalDate hireDate;

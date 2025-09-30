@@ -16,6 +16,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.validation.Valid;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -47,7 +48,7 @@ public class AuthenticationController {
             @ApiResponse(responseCode = "500", description = "Internal server error")
     })
     @PostMapping("/login")
-    public ResponseEntity<CustomApiResponse<Object>> login(@RequestBody LoginRequest request,
+    public ResponseEntity<CustomApiResponse<Object>> login(@Valid @RequestBody LoginRequest request,
             HttpServletResponse response) {
         String result = authenticationService.login(request, response);
         return ResponseBuilder.ok(result);
