@@ -9,7 +9,6 @@ import com.dat.erp.constants.CommonStatus;
 
 @Data
 public class EmployeeInformationResponse {
-
     private String code;
     private String nickname;
     private String email;
@@ -18,7 +17,6 @@ public class EmployeeInformationResponse {
     private LocalDate hireDate;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
-
     private String roleName;
     private String departmentName;
     private String companyName;

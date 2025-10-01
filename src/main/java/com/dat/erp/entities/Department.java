@@ -12,6 +12,8 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.NamedAttributeNode;
+import jakarta.persistence.NamedEntityGraph;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
@@ -30,7 +32,11 @@ import lombok.ToString;
 @EqualsAndHashCode(onlyExplicitlyIncluded = true, callSuper = true)
 @Entity
 @Table(name = "departments")
-@ToString(exclude = { "employees" })
+@ToString(exclude = { "employees", "company" })
+@NamedEntityGraph(name = "Department.full", attributeNodes = {
+        @NamedAttributeNode("company"),
+        @NamedAttributeNode("employees")
+})
 public class Department extends BaseAuditableEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

@@ -9,11 +9,8 @@ import org.springframework.stereotype.Service;
 
 import com.dat.erp.constants.CommonStatus;
 import com.dat.erp.dto.request.EmployeeInformationRequest;
-import com.dat.erp.dto.response.EmployeeInformationResponse;
 import com.dat.erp.dto.response.PagedResponse;
 import com.dat.erp.entities.EmployeeInformation;
-import com.dat.erp.mapper.interfaces.EmployeeMapper;
-import com.dat.erp.repositories.customrepositories.EmployeeInformationRepository;
 import com.dat.erp.services.EmployeeInformationService;
 import com.dat.erp.utils.PageableUtils;
 
@@ -28,6 +25,8 @@ public class EmployeeInformationServiceImpl implements EmployeeInformationServic
     public String createEmployeeInformation(EmployeeInformationRequest request) {
         EmployeeInformation employeeInformation = employeeMapper.toEntity(request);
         employeeInformation.setCode("EMPI-" + UUID.randomUUID());
+        employeeInformation
+                .setPassword(request.getEmail() + employeeInformation.getUser().getCreatedBy().replace("-", ""));
         employeeInformation.setEmploymentStatus(CommonStatus.ACTIVATE);
         employeeInformationRepository.save(employeeInformation);
         return employeeInformation.getCode();

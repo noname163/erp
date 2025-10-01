@@ -7,11 +7,11 @@ public class RoleHasApiResponse {
     private Long id;
     private String code;
     private String roleName;
+    private String endpoint;
     private Boolean create;
     private Boolean read;
     private Boolean update;
     private Boolean delete;
-    private String endpoint;
     private Boolean viewAll;
     private Boolean viewOwnedOnly;
 }

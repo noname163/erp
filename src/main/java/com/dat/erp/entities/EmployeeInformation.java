@@ -79,7 +79,7 @@ public class EmployeeInformation extends BaseAuditableEntity {
     @Convert(converter = HashFieldConverter.class)
     private String password;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "department_code", referencedColumnName = "code", nullable = false)
     private Department department;
 
@@ -112,7 +112,7 @@ public class EmployeeInformation extends BaseAuditableEntity {
     @OneToMany(mappedBy = "employee", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private Set<AttendanceRecord> attendanceRecords;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "company_code", referencedColumnName = "code", nullable = false)
     private Company company;
 

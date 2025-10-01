@@ -9,6 +9,8 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.NamedAttributeNode;
+import jakarta.persistence.NamedEntityGraph;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -27,6 +29,9 @@ import lombok.ToString;
 @Entity
 @Table(name = "documents")
 @ToString(exclude = "employee")
+@NamedEntityGraph(name = "Document.full", attributeNodes = {
+        @NamedAttributeNode("employee")
+})
 public class Document extends BaseAuditableEntity {
     @Id
     @EqualsAndHashCode.Include

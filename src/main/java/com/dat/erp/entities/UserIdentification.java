@@ -10,6 +10,8 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.NamedAttributeNode;
+import jakarta.persistence.NamedEntityGraph;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -28,6 +30,9 @@ import lombok.ToString;
 @ToString(exclude = "user")
 @Entity
 @Table(name = "user_identifications")
+@NamedEntityGraph(name = "UserIdentification.full", attributeNodes = {
+        @NamedAttributeNode("user")
+})
 public class UserIdentification extends BaseAuditableEntity {
     @Id
     @EqualsAndHashCode.Include

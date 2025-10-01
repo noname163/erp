@@ -13,6 +13,8 @@ import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.NamedAttributeNode;
+import jakarta.persistence.NamedEntityGraph;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
@@ -32,6 +34,11 @@ import lombok.ToString;
 @ToString(exclude = { "identifications", "addresses", "accounts" })
 @Entity
 @Table(name = "user_informations")
+@NamedEntityGraph(name = "UserInformation.full", attributeNodes = {
+        @NamedAttributeNode("identifications"),
+        @NamedAttributeNode("addresses"),
+        @NamedAttributeNode("accounts")
+})
 public class UserInformation extends BaseAuditableEntity {
     @Id
     @EqualsAndHashCode.Include

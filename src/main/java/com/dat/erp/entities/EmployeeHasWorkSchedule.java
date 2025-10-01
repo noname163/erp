@@ -1,8 +1,5 @@
 package com.dat.erp.entities;
 
-import java.math.BigDecimal;
-import java.time.LocalDateTime;
-
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -26,25 +23,24 @@ import lombok.ToString;
 @AllArgsConstructor
 @Builder
 @EqualsAndHashCode(onlyExplicitlyIncluded = true, callSuper = true)
-@ToString
+@ToString(exclude = { "employee", "workSchedule" })
 @Entity
-@Table(name = "attendance_records")
-@NamedEntityGraph(name = "AttendanceRecord.full", attributeNodes = {
-        @NamedAttributeNode("employee")
+@Table(name = "employee_shift")
+@NamedEntityGraph(name = "EmployeeHasWorkSchedule.full", attributeNodes = {
+        @NamedAttributeNode("employee"),
+        @NamedAttributeNode("workSchedule")
 })
-public class AttendanceRecord extends BaseAuditableEntity {
+public class EmployeeHasWorkSchedule extends BaseAuditableEntity {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @EqualsAndHashCode.Include
-    private Long Id;
-    private LocalDateTime checkIn;
-    private LocalDateTime checkOut;
-    private BigDecimal workHours;
-    private BigDecimal quantity;
-    private BigDecimal overtimeHours;
-    private String status; // Present, Absent, Late, On Leave
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
     @ManyToOne
     @JoinColumn(name = "employee_code", referencedColumnName = "code", nullable = false)
     private EmployeeInformation employee;
 
+    @ManyToOne
+    @JoinColumn(name = "schedule_code", referencedColumnName = "code", nullable = false)
+    private WorkSchedule workSchedule;
 }
