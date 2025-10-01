@@ -4,6 +4,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.springframework.context.ApplicationListener;
 import org.springframework.context.event.ContextRefreshedEvent;
@@ -12,6 +13,7 @@ import org.springframework.web.method.HandlerMethod;
 import org.springframework.web.servlet.mvc.method.RequestMappingInfo;
 import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerMapping;
 
+import com.dat.erp.constants.CommonEnum;
 import com.dat.erp.entities.SystemApi;
 import com.dat.erp.repositories.customrepositories.SystemApiRepository;
 
@@ -31,6 +33,7 @@ public class ApiScanner implements ApplicationListener<ContextRefreshedEvent> {
         Map<RequestMappingInfo, HandlerMethod> handlerMethods = handlerMapping.getHandlerMethods();
 
         // Use a set to avoid duplicates in memory
+        Set<String> normalizedUrls = new HashSet<>();
         Set<String> discoveredUrls = new HashSet<>();
 
         for (Map.Entry<RequestMappingInfo, HandlerMethod> entry : handlerMethods.entrySet()) {
@@ -42,10 +45,20 @@ public class ApiScanner implements ApplicationListener<ContextRefreshedEvent> {
                 mappingInfo.getPathPatternsCondition().getPatterns()
                         .forEach(pathPattern -> urls.add(pathPattern.getPatternString()));
             }
-
             for (String url : urls) {
                 String normalizedUrl = normalizeUrl(url);
-                discoveredUrls.add(normalizedUrl);
+                if (!normalizedUrls.contains(normalizedUrl)) {
+                    normalizedUrls.add(normalizedUrl);
+                }
+            }
+        }
+        List<SystemApi> systemApis = systemApiRepository.findByEndpointIn(normalizedUrls);
+        Map<String, SystemApi> map = systemApis.stream()
+                .collect(Collectors.toMap(SystemApi::getEndpoint, sa -> sa));
+
+        for (String url : normalizedUrls) {
+            if (!map.containsKey(url)) {
+                discoveredUrls.add(url);
             }
         }
 
@@ -57,7 +70,8 @@ public class ApiScanner implements ApplicationListener<ContextRefreshedEvent> {
                     .map(url -> {
                         SystemApi api = new SystemApi();
                         api.setEndpoint(url);
-                        api.setType("BACKEND");
+                        api.setCode(url.replace("/", "_").toUpperCase());
+                        api.setSystemType(CommonEnum.BACKEND);
                         api.setDescription("Auto-discovered");
                         return api;
                     })
@@ -67,7 +81,7 @@ public class ApiScanner implements ApplicationListener<ContextRefreshedEvent> {
                 try {
                     List<SystemApi> insertedApi = systemApiRepository.saveAll(newApis);
                     for (SystemApi systemApi : insertedApi) {
-                        log.info("Discovered new API: {} {}", systemApi.getMethod(), systemApi.getEndpoint());
+                        log.info("Discovered new API: {}", systemApi.getEndpoint());
                     }
                 } catch (Exception e) {
                     // TODO: handle exception

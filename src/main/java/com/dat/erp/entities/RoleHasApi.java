@@ -1,14 +1,10 @@
 package com.dat.erp.entities;
 
-import java.util.List;
-
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
-import jakarta.persistence.JoinTable;
-import jakarta.persistence.ManyToMany;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
@@ -34,11 +30,11 @@ public class RoleHasApi extends BaseAuditableEntity {
     private Long id;
 
     @ManyToOne
-    @JoinColumn(name = "role_code", nullable = false)
+    @JoinColumn(name = "role_code", referencedColumnName = "code", nullable = false)
     private Role role;
 
     @ManyToOne
-    @JoinColumn(name = "api_code", nullable = false)
+    @JoinColumn(name = "api_code", referencedColumnName = "code", nullable = false)
     private SystemApi api;
 
     private Integer permission;

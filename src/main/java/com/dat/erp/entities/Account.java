@@ -38,7 +38,7 @@ public class Account extends BaseAuditableEntity {
     private Long id;
 
     @ManyToOne
-    @JoinColumn(name = "user_code", nullable = false)
+    @JoinColumn(name = "user_code", referencedColumnName = "code", nullable = false)
     private UserInformation user;
 
     @Column(name = "account_number", nullable = false, unique = true)

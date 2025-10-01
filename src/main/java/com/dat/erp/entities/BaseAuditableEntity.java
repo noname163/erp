@@ -38,6 +38,7 @@ public abstract class BaseAuditableEntity {
     @EqualsAndHashCode.Include
     private Long id;
 
+    @Column(name = "code", unique = true, nullable = false)
     private String code;
 
     @CreatedDate

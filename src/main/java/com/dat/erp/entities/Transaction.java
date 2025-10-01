@@ -32,7 +32,7 @@ public class Transaction extends BaseAuditableEntity {
     private Long id;
 
     @ManyToOne
-    @JoinColumn(name = "account_code", nullable = false)
+    @JoinColumn(name = "account_code", referencedColumnName = "code", nullable = false)
     private Account account;
 
     private Double amount;

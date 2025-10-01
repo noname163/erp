@@ -5,6 +5,7 @@ import lombok.Data;
 @Data
 public class RoleHasApiResponse {
     private Long id;
+    private String code;
     private String roleName;
     private Boolean create;
     private Boolean read;

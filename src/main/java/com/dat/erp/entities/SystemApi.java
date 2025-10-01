@@ -1,5 +1,8 @@
 package com.dat.erp.entities;
 
+import com.dat.erp.constants.ApiType;
+import com.dat.erp.constants.CommonEnum;
+
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -21,7 +24,7 @@ import lombok.Setter;
 @EqualsAndHashCode(onlyExplicitlyIncluded = true, callSuper = true)
 @Entity
 @Table(name = "system_api", uniqueConstraints = {
-        @UniqueConstraint(columnNames = { "endpoint", "type" })
+        @UniqueConstraint(columnNames = { "endpoint", "systemType" })
 })
 public class SystemApi extends BaseAuditableEntity {
     @Id
@@ -33,8 +36,8 @@ public class SystemApi extends BaseAuditableEntity {
 
     private String description;
 
-    private String method;
+    private ApiType type;
 
-    private String type;
+    private CommonEnum systemType;
 
 }

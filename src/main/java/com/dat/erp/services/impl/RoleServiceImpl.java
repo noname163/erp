@@ -1,6 +1,7 @@
 package com.dat.erp.services.impl;
 
 import java.util.Optional;
+import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -29,9 +30,9 @@ public class RoleServiceImpl implements RoleService {
     public String createRole(RoleRequest roleRequest) {
         Optional.ofNullable(roleRequest).orElseThrow(() -> new RuntimeException("RoleRequest cannot be null"));
         Role role = roleMapper.toEntity(roleRequest);
-        role.setCode(roleRequest.getName().toUpperCase().replace(" ", "_"));
+        role.setCode("ROLE-" + UUID.randomUUID());
         roleRepository.save(role);
-        return "Role created successfully";
+        return role.getCode();
     }
 
     @Override

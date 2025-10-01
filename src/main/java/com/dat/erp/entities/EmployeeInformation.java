@@ -3,6 +3,7 @@ package com.dat.erp.entities;
 import java.time.LocalDate;
 import java.util.Set;
 
+import com.dat.erp.constants.CommonStatus;
 import com.dat.erp.converters.EncryptFieldConverter;
 import com.dat.erp.converters.HashFieldConverter;
 
@@ -65,7 +66,7 @@ public class EmployeeInformation extends BaseAuditableEntity {
     private Long id;
 
     @ManyToOne
-    @JoinColumn(name = "user_code")
+    @JoinColumn(name = "user_code", referencedColumnName = "code")
     private UserInformation user;
 
     private String managerCode;
@@ -79,13 +80,13 @@ public class EmployeeInformation extends BaseAuditableEntity {
     private String password;
 
     @ManyToOne
-    @JoinColumn(name = "department_code", nullable = false)
+    @JoinColumn(name = "department_code", referencedColumnName = "code", nullable = false)
     private Department department;
 
     private String jobTitle;
 
     @Column(name = "employment_status")
-    private String employmentStatus;
+    private CommonStatus employmentStatus;
 
     private LocalDate hireDate;
 
@@ -105,14 +106,14 @@ public class EmployeeInformation extends BaseAuditableEntity {
     private Set<EmployeeDependent> dependents;
 
     @ManyToOne
-    @JoinColumn(name = "role_code", nullable = false)
+    @JoinColumn(name = "role_code", referencedColumnName = "code", nullable = false)
     private Role role;
 
     @OneToMany(mappedBy = "employee", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private Set<AttendanceRecord> attendanceRecords;
 
     @ManyToOne
-    @JoinColumn(name = "company_code", nullable = false)
+    @JoinColumn(name = "company_code", referencedColumnName = "code", nullable = false)
     private Company company;
 
 }

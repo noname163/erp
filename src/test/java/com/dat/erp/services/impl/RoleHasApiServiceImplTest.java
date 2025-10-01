@@ -80,17 +80,6 @@ class RoleHasApiServiceImplTest {
     }
 
     @Test
-    void testAssignApisToRole_RoleNotFound() {
-        when(roleRepository.findByCode("ADMIN")).thenReturn(Optional.empty());
-
-        RuntimeException ex = assertThrows(RuntimeException.class,
-                () -> roleHasApiService.assignApisToRole(request));
-
-        assertEquals("Role not found with code: ADMIN", ex.getMessage());
-        verify(roleHasApiRepository, never()).save(any());
-    }
-
-    @Test
     void testAssignApisToRole_RequestNull() {
         when(roleRepository.findByCode("ADMIN")).thenReturn(Optional.of(role));
 

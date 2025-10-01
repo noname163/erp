@@ -3,6 +3,7 @@ package com.dat.erp.services.impl;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,11 +14,9 @@ import org.springframework.stereotype.Service;
 import com.dat.erp.dto.request.RoleHasApiRequest;
 import com.dat.erp.dto.response.PagedResponse;
 import com.dat.erp.dto.response.RoleHasApiResponse;
-import com.dat.erp.entities.Role;
 import com.dat.erp.entities.RoleHasApi;
 import com.dat.erp.mapper.interfaces.RoleHasApiMapper;
 import com.dat.erp.repositories.customrepositories.RoleHasApiRepository;
-import com.dat.erp.repositories.customrepositories.RoleRepository;
 import com.dat.erp.services.RoleHasApiService;
 import com.dat.erp.utils.PageableUtils;
 
@@ -26,19 +25,14 @@ public class RoleHasApiServiceImpl implements RoleHasApiService {
     @Autowired
     private RoleHasApiRepository roleHasApiRepository;
     @Autowired
-    private RoleRepository roleRepository;
-    @Autowired
     private RoleHasApiMapper roleHasApiMapper;
 
     @Override
     public String assignApisToRole(RoleHasApiRequest roleHasApiRequest) {
         Optional.ofNullable(roleHasApiRequest)
                 .orElseThrow(() -> new RuntimeException("RoleHasApiRequest cannot be null"));
-        Role role = roleRepository.findByCode(roleHasApiRequest.getRoleCode())
-                .orElseThrow(
-                        () -> new RuntimeException("Role not found with code: " + roleHasApiRequest.getRoleCode()));
         RoleHasApi roleHasApi = roleHasApiMapper.toEntity(roleHasApiRequest);
-        roleHasApi.setRole(role);
+        roleHasApi.setCode("RHA-" + UUID.randomUUID());
         roleHasApiRepository.save(roleHasApi);
         return "APIs assigned to role successfully";
     }

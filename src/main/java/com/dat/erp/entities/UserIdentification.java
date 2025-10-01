@@ -35,7 +35,7 @@ public class UserIdentification extends BaseAuditableEntity {
     private Long id;
 
     @ManyToOne
-    @JoinColumn(name = "user_code", nullable = false)
+    @JoinColumn(name = "user_code", referencedColumnName = "code", nullable = false)
     private UserInformation user;
 
     @Column(name = "id_type", nullable = false)

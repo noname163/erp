@@ -6,6 +6,7 @@ import lombok.Data;
 public class DepartmentResponse {
     private Long id;
     private String name;
+    private String code;
     private String description;
     private String status;
     private String companyCode;

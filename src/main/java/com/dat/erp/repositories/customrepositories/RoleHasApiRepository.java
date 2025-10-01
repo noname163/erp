@@ -1,7 +1,6 @@
 package com.dat.erp.repositories.customrepositories;
 
 import java.util.List;
-import java.util.Map;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -14,7 +13,7 @@ import com.dat.erp.entities.RoleHasApi;
 
 @Repository
 public interface RoleHasApiRepository extends JpaRepository<RoleHasApi, Long> {
-    @Query("SELECT r FROM RoleHasApi r WHERE r.role.code = :roleCode")
+    @Query("SELECT r FROM RoleHasApi r JOIN SystemApi sa ON sa.code = r.api.code WHERE r.role.code = :roleCode")
     Page<RoleHasApi> findByRoleCode(@Param("roleCode") String roleCode, Pageable pageable);
 
     @Query("""
