@@ -1,12 +1,16 @@
 package com.dat.erp.repositories.customrepositories;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.dat.erp.entities.EmployeeInformation;
 
@@ -29,4 +33,16 @@ public interface EmployeeInformationRepository extends JpaRepository<EmployeeInf
 
     @Query("SELECT e.code FROM EmployeeInformation e WHERE e.managerCode = :managerCode")
     List<String> findAllCodesByManagerCode(String managerCode);
+
+    // Delete single employee by code
+    @Modifying
+    @Transactional
+    @Query("DELETE FROM EmployeeInformation e WHERE e.code = :code")
+    void deleteByCode(@Param("code") String code);
+
+    // Delete multiple employees by codes
+    @Modifying
+    @Transactional
+    @Query("DELETE FROM EmployeeInformation e WHERE e.code IN :codes")
+    void deleteByCodes(@Param("codes") Collection<String> codes);
 }

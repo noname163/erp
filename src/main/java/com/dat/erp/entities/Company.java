@@ -2,9 +2,6 @@ package com.dat.erp.entities;
 
 import java.util.List;
 
-import org.hibernate.annotations.Fetch;
-import org.hibernate.annotations.FetchMode;
-
 import com.dat.erp.converters.EncryptFieldConverter;
 
 import jakarta.persistence.CascadeType;

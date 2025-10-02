@@ -16,6 +16,7 @@ import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandl
 import com.dat.erp.constants.CommonEnum;
 import com.dat.erp.entities.SystemApi;
 import com.dat.erp.repositories.customrepositories.SystemApiRepository;
+import com.dat.erp.utils.CustomStringUtils;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
@@ -46,7 +47,7 @@ public class ApiScanner implements ApplicationListener<ContextRefreshedEvent> {
                         .forEach(pathPattern -> urls.add(pathPattern.getPatternString()));
             }
             for (String url : urls) {
-                String normalizedUrl = normalizeUrl(url);
+                String normalizedUrl = CustomStringUtils.normalizeUrl(url);
                 if (!normalizedUrls.contains(normalizedUrl)) {
                     normalizedUrls.add(normalizedUrl);
                 }
@@ -89,25 +90,6 @@ public class ApiScanner implements ApplicationListener<ContextRefreshedEvent> {
             } else {
                 log.info("No new APIs discovered.");
             }
-        }
-    }
-
-    private String normalizeUrl(String url) {
-        if (url == null || url.isEmpty()) {
-            return url;
-        }
-
-        if (!url.startsWith("/")) {
-            url = "/" + url;
-        }
-
-        String[] parts = url.split("/");
-        if (parts.length >= 3) {
-            return "/" + parts[1] + "/" + parts[2]; // /xxx/xxxx
-        } else if (parts.length >= 2) {
-            return "/" + parts[1]; // /xxx
-        } else {
-            return url;
         }
     }
 

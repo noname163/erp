@@ -109,6 +109,7 @@ public class PermissionUtils {
     public static boolean hasPermission(Map<String, Integer> userPermissions,
             String url,
             String httpMethod) {
+        String normalizeUrl = CustomStringUtils.normalizeUrl(url);
         if (userPermissions == null || userPermissions.isEmpty()) {
             return false;
         }
@@ -122,7 +123,7 @@ public class PermissionUtils {
             String pattern = entry.getKey();
             int userPermission = entry.getValue();
 
-            if (pathMatcher.match(pattern, url)) {
+            if (pathMatcher.match(pattern, normalizeUrl)) {
                 return (userPermission & requiredPermission) == requiredPermission;
             }
         }
