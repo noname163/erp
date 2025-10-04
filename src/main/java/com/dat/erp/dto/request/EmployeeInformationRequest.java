@@ -30,6 +30,4 @@ public class EmployeeInformationRequest {
     @NotBlank(message = "Role code is required")
     private String roleCode;
 
-    @NotBlank(message = "Company code is required")
-    private String companyCode;
 }

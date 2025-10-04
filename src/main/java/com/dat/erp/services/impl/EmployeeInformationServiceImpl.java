@@ -6,6 +6,7 @@ import java.util.UUID;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
 import com.dat.erp.constants.CommonStatus;
@@ -17,6 +18,7 @@ import com.dat.erp.entities.EmployeeInformation;
 import com.dat.erp.exceptions.ResourceNotFoundException;
 import com.dat.erp.mapper.interfaces.EmployeeMapper;
 import com.dat.erp.repositories.customrepositories.EmployeeInformationRepository;
+import com.dat.erp.repositories.specifications.EmployeeSpecifications;
 import com.dat.erp.services.EmployeeInformationService;
 import com.dat.erp.utils.PageableUtils;
 
@@ -41,10 +43,13 @@ public class EmployeeInformationServiceImpl implements EmployeeInformationServic
     }
 
     @Override
-    public PagedResponse<EmployeeInformationResponse> getListEmployeeInformationResponse(String searchKey,
-            String searchValue, Integer page, Integer pageSize, String sortBy, String sortDir) {
+    public PagedResponse<EmployeeInformationResponse> getListEmployeeInformationResponse(String companyCode,
+            String deparmentCode, String managerCode, String keyword,
+            Integer page, Integer pageSize, String sortBy, String sortDir) {
         Pageable pageable = PageableUtils.create(page, pageSize, sortBy, sortDir);
-        Page<EmployeeInformation> data = employeeInformationRepository.findAll(pageable);
+        Specification<EmployeeInformation> employeeSpecification = EmployeeSpecifications.build(deparmentCode,
+                companyCode, managerCode, keyword);
+        Page<EmployeeInformation> data = employeeInformationRepository.findAll(employeeSpecification, pageable);
         return PageableUtils.mapPage(data, employeeMapper::toResponse, "Success");
     }
 
@@ -63,6 +68,7 @@ public class EmployeeInformationServiceImpl implements EmployeeInformationServic
 
         employeeMapper.updateEmployeeFromDto(request, existing);
 
+        employeeInformationRepository.save(existing);
         return existing.getCode();
     }
 

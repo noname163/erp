@@ -66,10 +66,15 @@ public class EmployeeInformationController {
      * Get a paginated list of employee information records with optional search and
      * sorting.
      *
-     * @param searchKey
-     *            the key to search by
-     * @param searchValue
-     *            the value to search for
+     * @param companyCode
+     *            the companyCode search by
+     * @param departmentCode
+     *            the departmentCode search by
+     * @param managerCode
+     *            the managerCode search by
+     * @param keyword
+     *            the keyword search by it may email, nickname, first name, last
+     *            name
      * @param page
      *            the page number to retrieve
      * @param size
@@ -86,15 +91,17 @@ public class EmployeeInformationController {
     })
     @GetMapping("")
     public ResponseEntity<PagedResponse<EmployeeInformationResponse>> getListEmployee(
-            @Parameter(description = "Search key") @RequestParam(required = false) String searchKey,
-            @Parameter(description = "Search value") @RequestParam(required = false) String searchValue,
+            @RequestParam(required = false) String companyCode,
+            @RequestParam(required = false) String departmentCode,
+            @RequestParam(required = false) String managerCode,
+            @RequestParam(required = false) String keyword,
             @Parameter(description = "Page number") @RequestParam(required = false) Integer page,
             @Parameter(description = "Page size") @RequestParam(required = false) Integer size,
             @Parameter(description = "Field to sort by") @RequestParam(required = false) String sortBy,
             @Parameter(description = "Sort direction (ASC or DESC)", example = "DESC") @RequestParam(defaultValue = "DESC") String sortDir) {
         return ResponseEntity.ok(
-                employeeInformationService.getListEmployeeInformationResponse(
-                        searchKey, searchValue, page, size, sortBy, sortDir));
+                employeeInformationService.getListEmployeeInformationResponse(companyCode, departmentCode, managerCode,
+                        keyword, page, size, sortBy, sortDir));
     }
 
     /**
@@ -133,7 +140,7 @@ public class EmployeeInformationController {
     @PutMapping("/{code}")
     public ResponseEntity<CustomApiResponse<String>> updateEmployeeInformation(
             @Parameter(description = "Unique employee code") @PathVariable String code,
-            @Valid @RequestBody EmployeeInformationRequest request) {
+            @RequestBody EmployeeInformationRequest request) {
         return ResponseBuilder.created(employeeInformationService.updateEmployeeInformation(request, code));
     }
 
