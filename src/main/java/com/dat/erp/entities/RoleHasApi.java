@@ -6,6 +6,8 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.NamedAttributeNode;
+import jakarta.persistence.NamedEntityGraph;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -24,8 +26,13 @@ import lombok.ToString;
 @ToString(exclude = "role")
 @Entity
 @Table(name = "role_has_apis")
+@NamedEntityGraph(name = "RoleHasApi.full", attributeNodes = {
+        @NamedAttributeNode("role"),
+        @NamedAttributeNode("api")
+})
 public class RoleHasApi extends BaseAuditableEntity {
     @Id
+    @EqualsAndHashCode.Include
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 

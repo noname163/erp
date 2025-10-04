@@ -2,9 +2,6 @@ package com.dat.erp.entities;
 
 import java.util.List;
 
-import org.hibernate.annotations.Fetch;
-import org.hibernate.annotations.FetchMode;
-
 import com.dat.erp.converters.EncryptFieldConverter;
 
 import jakarta.persistence.CascadeType;
@@ -15,6 +12,8 @@ import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.NamedAttributeNode;
+import jakarta.persistence.NamedEntityGraph;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
@@ -34,6 +33,11 @@ import lombok.ToString;
 @EqualsAndHashCode(onlyExplicitlyIncluded = true, callSuper = false)
 @Builder
 @ToString(exclude = { "employees", "departments" })
+@NamedEntityGraph(name = "Company.full", attributeNodes = {
+        @NamedAttributeNode("departments"),
+        @NamedAttributeNode("employees"),
+        @NamedAttributeNode("roles")
+})
 public class Company extends BaseAuditableEntity {
 
     @Id
@@ -58,9 +62,9 @@ public class Company extends BaseAuditableEntity {
     private String phoneNumber;
 
     @OneToMany(mappedBy = "company", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
-    @Fetch(FetchMode.JOIN)
     private List<EmployeeInformation> employees;
     @OneToMany(mappedBy = "company", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
-    @Fetch(FetchMode.JOIN)
     private List<Department> departments;
+    @OneToMany(mappedBy = "company", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    private List<Role> roles;
 }

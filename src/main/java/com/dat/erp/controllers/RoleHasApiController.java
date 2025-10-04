@@ -74,10 +74,10 @@ public class RoleHasApiController {
     })
     @GetMapping("")
     public ResponseEntity<PagedResponse<RoleHasApiResponse>> getListRoleHasApiByRoleCode(
-            @Parameter(description = "Role code to filter APIs", required = true) @RequestParam(required = true) String roleCode,
-            @Parameter(description = "Page number") @RequestParam Integer page,
-            @Parameter(description = "Page size") @RequestParam Integer size,
-            @Parameter(description = "Field to sort by") @RequestParam String sortBy,
+            @Parameter(description = "Role code to filter APIs", required = false) @RequestParam(required = false) String roleCode,
+            @Parameter(description = "Page number") @RequestParam(required = false, defaultValue = "0") Integer page,
+            @Parameter(description = "Page size") @RequestParam(required = false, defaultValue = "20") Integer size,
+            @Parameter(description = "Field to sort by") @RequestParam(required = false) String sortBy,
             @Parameter(description = "Sort direction (ASC or DESC)", example = "DESC") @RequestParam(defaultValue = "DESC") String sortDir) {
         return ResponseEntity.ok().body(roleHasApiService.getApisByRoleId(roleCode, page, size, sortBy, sortDir));
     }

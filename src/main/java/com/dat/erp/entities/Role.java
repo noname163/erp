@@ -9,6 +9,10 @@ import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.NamedAttributeNode;
+import jakarta.persistence.NamedEntityGraph;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
@@ -28,6 +32,11 @@ import lombok.ToString;
 @ToString(exclude = { "apis", "employees" })
 @Entity
 @Table(name = "roles")
+@NamedEntityGraph(name = "role.full", attributeNodes = {
+        @NamedAttributeNode("apis"),
+        @NamedAttributeNode("employees"),
+        @NamedAttributeNode("company")
+})
 public class Role extends BaseAuditableEntity {
     @Id
     @EqualsAndHashCode.Include
@@ -45,5 +54,9 @@ public class Role extends BaseAuditableEntity {
 
     @OneToMany(mappedBy = "role", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private List<EmployeeInformation> employees;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "company_code", referencedColumnName = "code", nullable = true)
+    private Company company;
 
 }
