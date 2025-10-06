@@ -2,6 +2,8 @@ package com.dat.erp.entities;
 
 import java.time.LocalDate;
 
+import com.dat.erp.constants.ShiftType;
+
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -31,7 +33,7 @@ public class WorkSchedule extends BaseAuditableEntity {
     private Long id;
     private LocalDate shiftDate;
     private Integer quantity;
-    private String shiftType;
+    private ShiftType shiftType;
     private String status;
 
 }
