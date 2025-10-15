@@ -1,5 +1,5 @@
 package com.dat.erp.constants;
 
-public enum WorkScheduleEnum {
+public enum ListCodeTypeEnum {
     EMPLOYEE, WORK
 }
