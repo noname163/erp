@@ -47,4 +47,7 @@ public interface EmployeeInformationRepository
     @Transactional
     @Query("DELETE FROM EmployeeInformation e WHERE e.code IN :codes")
     void deleteByCodes(@Param("codes") Collection<String> codes);
+
+    @EntityGraph(value = "Employee.basic")
+    List<EmployeeInformation> findByCodeIn(List<String> code);
 }
