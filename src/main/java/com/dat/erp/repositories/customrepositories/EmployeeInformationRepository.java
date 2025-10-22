@@ -13,8 +13,8 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.dat.erp.entities.EmployeeInformation;
 import com.dat.erp.entities.Company;
+import com.dat.erp.entities.EmployeeInformation;
 
 @Repository
 public interface EmployeeInformationRepository

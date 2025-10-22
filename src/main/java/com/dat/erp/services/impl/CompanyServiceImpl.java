@@ -13,6 +13,7 @@ import com.dat.erp.dto.request.CompanyRequest;
 import com.dat.erp.dto.response.CompanyResponse;
 import com.dat.erp.dto.response.PagedResponse;
 import com.dat.erp.entities.Company;
+import com.dat.erp.exceptions.ConflictException;
 import com.dat.erp.mapper.interfaces.CompanyMapper;
 import com.dat.erp.repositories.customrepositories.CompanyRepository;
 import com.dat.erp.services.CompanyService;
@@ -31,7 +32,7 @@ public class CompanyServiceImpl implements CompanyService {
         Company company = companyMapper.toEntity(companyRequest);
         companyRepository.findByName(company.getName())
                 .ifPresent(existing -> {
-                    throw new com.dat.erp.exceptions.ConflictException(Messages.ERROR_COMPANY_NAME_EXISTS);
+                    throw new ConflictException(Messages.ERROR_COMPANY_NAME_EXISTS);
                 });
         company.setCode(CodePrefixes.COMPANY + UUID.randomUUID());
         companyRepository.save(company);

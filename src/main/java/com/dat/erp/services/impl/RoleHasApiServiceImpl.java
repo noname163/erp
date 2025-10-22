@@ -17,6 +17,8 @@ import com.dat.erp.dto.request.RoleHasApiRequest;
 import com.dat.erp.dto.response.PagedResponse;
 import com.dat.erp.dto.response.RoleHasApiResponse;
 import com.dat.erp.entities.RoleHasApi;
+import com.dat.erp.exceptions.BadRequestException;
+import com.dat.erp.exceptions.ConflictException;
 import com.dat.erp.mapper.interfaces.RoleHasApiMapper;
 import com.dat.erp.repositories.customrepositories.RoleHasApiRepository;
 import com.dat.erp.services.RoleHasApiService;
@@ -32,9 +34,10 @@ public class RoleHasApiServiceImpl implements RoleHasApiService {
     @Override
     public String assignApisToRole(RoleHasApiRequest roleHasApiRequest) {
         Optional.ofNullable(roleHasApiRequest)
-                .orElseThrow(() -> new com.dat.erp.exceptions.BadRequestException(Messages.ERROR_BAD_REQUEST_NULL_ROLE_HAS_API_REQUEST));
-        if (roleHasApiRepository.existsByRole_CodeAndApi_Code(roleHasApiRequest.getRoleCode(), roleHasApiRequest.getApiCode())) {
-            throw new com.dat.erp.exceptions.ConflictException(Messages.ERROR_ROLE_API_MAPPING_EXISTS);
+                .orElseThrow(() -> new BadRequestException(Messages.ERROR_BAD_REQUEST_NULL_ROLE_HAS_API_REQUEST));
+        if (roleHasApiRepository.existsByRole_CodeAndApi_Code(roleHasApiRequest.getRoleCode(),
+                roleHasApiRequest.getApiCode())) {
+            throw new ConflictException(Messages.ERROR_ROLE_API_MAPPING_EXISTS);
         }
         RoleHasApi roleHasApi = roleHasApiMapper.toEntity(roleHasApiRequest);
         roleHasApi.setCode(CodePrefixes.ROLE_HAS_API + UUID.randomUUID());
