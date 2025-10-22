@@ -72,6 +72,8 @@ class EmployeeInformationServiceImplTest {
 
         entity = new EmployeeInformation();
         entity.setNickname("John Doe");
+        entity.setCode("EMPI-001");
+        entity.setEmploymentStatus(com.dat.erp.constants.CommonStatus.ACTIVATE);
         company = new Company();
         company.setCode("COMPANY_001");
         userInformation = new UserInformation();
@@ -246,7 +248,7 @@ class EmployeeInformationServiceImplTest {
         when(employeeInformationRepository.findByCode("EMP404"))
                 .thenReturn(Optional.empty());
 
-        assertThrows(EntityNotFoundException.class, () -> {
+        assertThrows(ResourceNotFoundException.class, () -> {
             employeeInformationService.updateEmployeeInformation(request, "EMP404");
         });
     }
