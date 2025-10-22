@@ -9,11 +9,14 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
+import com.dat.erp.constants.Messages;
 import com.dat.erp.entities.EmployeeInformation;
+import com.dat.erp.exceptions.ResourceNotFoundException;
 import com.dat.erp.repositories.customrepositories.EmployeeInformationRepository;
 import com.dat.erp.services.RoleHasApiService;
 import com.dat.erp.services.SecurityContextService;
 import com.dat.erp.systemconfigs.CustomUserDetails;
+import com.dat.erp.exceptions.UnauthorizedException;
 
 @Service
 public class SecurityContextServiceImpl implements SecurityContextService {
@@ -25,7 +28,7 @@ public class SecurityContextServiceImpl implements SecurityContextService {
     @Override
     public CustomUserDetails setCurrentUser(String employeeCode) {
         EmployeeInformation employeeInformation = employeeInformationRepository.findByCode(employeeCode)
-                .orElseThrow(() -> new RuntimeException("Employee not found"));
+                .orElseThrow(() -> new ResourceNotFoundException(String.format(Messages.ERROR_EMPLOYEE_NOT_FOUND_WITH_CODE_ALT, employeeCode)));
         List<String> employeeCodes = employeeInformationRepository.findAllCodesByManagerCode(employeeCode);
         employeeCodes.add(employeeCode);
         CustomUserDetails customUserDetails = new CustomUserDetails(employeeInformation);
@@ -46,7 +49,7 @@ public class SecurityContextServiceImpl implements SecurityContextService {
             Object principal = authentication.getPrincipal();
             return ((CustomUserDetails) principal);
         }
-        return null;
+        throw new UnauthorizedException("User is not authenticated");
     }
 
 }

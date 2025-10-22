@@ -5,6 +5,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
+import com.dat.erp.constants.Messages;
 import com.dat.erp.dto.response.PagedResponse;
 import com.dat.erp.dto.response.SystemApiResponse;
 import com.dat.erp.entities.SystemApi;
@@ -25,7 +26,7 @@ public class SystemApiServiceImpl implements SystemApiService {
             String sortBy, String sortDir) {
         Pageable pageable = PageableUtils.create(page, size, sortBy, sortDir);
         Page<SystemApi> data = systemApiRepository.findAll(pageable);
-        return PageableUtils.mapPage(data, systemApiMapper::toResponse, "Success");
+        return PageableUtils.mapPage(data, systemApiMapper::toResponse, Messages.SUCCESS);
     }
 
 }

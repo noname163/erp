@@ -7,10 +7,13 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
+import com.dat.erp.constants.CodePrefixes;
+import com.dat.erp.constants.Messages;
 import com.dat.erp.dto.request.UserInformationRequest;
 import com.dat.erp.dto.response.PagedResponse;
 import com.dat.erp.dto.response.UserInformationResponse;
 import com.dat.erp.entities.UserInformation;
+import com.dat.erp.exceptions.ConflictException;
 import com.dat.erp.mapper.interfaces.UserMapper;
 import com.dat.erp.repositories.customrepositories.UserInformationRepository;
 import com.dat.erp.services.UserInformationService;
@@ -26,8 +29,11 @@ public class UserInformationServiceImpl implements UserInformationService {
 
     @Override
     public String createUserInformation(UserInformationRequest request) {
+        userInformationRepository.findByEmail(request.getEmail()).ifPresent(u -> {
+            throw new ConflictException(Messages.ERROR_USER_EMAIL_EXISTS);
+        });
         UserInformation userInformation = userMapper.toEntity(request);
-        userInformation.setCode("USR-" + UUID.randomUUID());
+        userInformation.setCode(CodePrefixes.USER + UUID.randomUUID());
         userInformationRepository.save(userInformation);
         return userInformation.getCode();
     }
@@ -39,7 +45,7 @@ public class UserInformationServiceImpl implements UserInformationService {
 
         Page<UserInformation> data = userInformationRepository.findAll(pageable);
 
-        return PageableUtils.mapPage(data, userMapper::toResponse, "Success");
+        return PageableUtils.mapPage(data, userMapper::toResponse, Messages.SUCCESS);
     }
 
 }

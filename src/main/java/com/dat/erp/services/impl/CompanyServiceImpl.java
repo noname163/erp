@@ -7,6 +7,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
+import com.dat.erp.constants.CodePrefixes;
+import com.dat.erp.constants.Messages;
 import com.dat.erp.dto.request.CompanyRequest;
 import com.dat.erp.dto.response.CompanyResponse;
 import com.dat.erp.dto.response.PagedResponse;
@@ -27,7 +29,11 @@ public class CompanyServiceImpl implements CompanyService {
     @Override
     public String createCompany(CompanyRequest companyRequest) {
         Company company = companyMapper.toEntity(companyRequest);
-        company.setCode("CMP-" + UUID.randomUUID());
+        companyRepository.findByName(company.getName())
+                .ifPresent(existing -> {
+                    throw new com.dat.erp.exceptions.ConflictException(Messages.ERROR_COMPANY_NAME_EXISTS);
+                });
+        company.setCode(CodePrefixes.COMPANY + UUID.randomUUID());
         companyRepository.save(company);
         return company.getCode();
     }
@@ -37,7 +43,7 @@ public class CompanyServiceImpl implements CompanyService {
             String sortBy, String sortDir) {
         Pageable pageable = PageableUtils.create(page, size, sortBy, sortDir);
         Page<Company> companies = companyRepository.findAll(pageable);
-        return PageableUtils.mapPage(companies, companyMapper::toResponse, sortDir);
+        return PageableUtils.mapPage(companies, companyMapper::toResponse, Messages.SUCCESS);
     }
 
 }

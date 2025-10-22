@@ -27,4 +27,6 @@ public interface RoleHasApiRepository extends JpaRepository<RoleHasApi, Long> {
             """)
     List<Object[]> getCurrentUserPermission(@Param("employeeCode") String employeeCode);
 
+    boolean existsByRole_CodeAndApi_Code(String roleCode, String apiCode);
+
 }

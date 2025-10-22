@@ -8,6 +8,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 
+import com.dat.erp.constants.Defaults;
 import com.dat.erp.dto.response.PagedResponse;
 
 public class PageableUtils {
@@ -32,7 +33,7 @@ public class PageableUtils {
                 : Math.min(size, MAX_SIZE);
 
         if (sortBy != null && !sortBy.isBlank()) {
-            Sort.Direction sortDirection = "DESC".equalsIgnoreCase(direction) ? Sort.Direction.DESC
+            Sort.Direction sortDirection = Defaults.SORT_DIR_DESC.equalsIgnoreCase(direction) ? Sort.Direction.DESC
                     : Sort.Direction.ASC;
 
             return PageRequest.of(pageNumber, pageSize, Sort.by(sortDirection, sortBy));

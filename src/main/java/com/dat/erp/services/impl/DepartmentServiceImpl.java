@@ -7,12 +7,15 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
+import com.dat.erp.constants.CodePrefixes;
 import com.dat.erp.constants.CommonStatus;
+import com.dat.erp.constants.Messages;
 import com.dat.erp.dto.request.DepartmentRequest;
 import com.dat.erp.dto.response.DepartmentResponse;
 import com.dat.erp.dto.response.PagedResponse;
 import com.dat.erp.entities.Company;
 import com.dat.erp.entities.Department;
+import com.dat.erp.exceptions.ConflictException;
 import com.dat.erp.exceptions.ResourceNotFoundException;
 import com.dat.erp.mapper.interfaces.DepartmentMapper;
 import com.dat.erp.repositories.customrepositories.CompanyRepository;
@@ -34,8 +37,12 @@ public class DepartmentServiceImpl implements DepartmentService {
         Department department = departmentMapper.toEntity(departmentRequest);
         Company company = companyRepository.findByCode(departmentRequest.getCompanyCode())
                 .orElseThrow(() -> new ResourceNotFoundException(
-                        "Unable to find company with code " + departmentRequest.getCompanyCode()));
-        department.setCode("DPM-" + UUID.randomUUID());
+                        String.format(Messages.ERROR_COMPANY_NOT_FOUND_WITH_CODE, departmentRequest.getCompanyCode())));
+        if (department.getName() != null
+                && departmentRepository.existsByNameAndCompany(department.getName(), company)) {
+            throw new ConflictException(Messages.ERROR_DEPARTMENT_NAME_EXISTS);
+        }
+        department.setCode(CodePrefixes.DEPARTMENT + UUID.randomUUID());
         department.setCompany(company);
         department.setStatus(CommonStatus.ACTIVATE);
         departmentRepository.save(department);
@@ -47,7 +54,7 @@ public class DepartmentServiceImpl implements DepartmentService {
             Integer page, Integer size, String sortBy, String sortDir) {
         Pageable pageable = PageableUtils.create(page, size, sortBy, sortDir);
         Page<Department> data = departmentRepository.findAll(pageable);
-        return PageableUtils.mapPage(data, departmentMapper::toResponse, "Success");
+        return PageableUtils.mapPage(data, departmentMapper::toResponse, Messages.SUCCESS);
     }
 
 }

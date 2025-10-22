@@ -14,6 +14,7 @@ import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.dat.erp.entities.EmployeeInformation;
+import com.dat.erp.entities.Company;
 
 @Repository
 public interface EmployeeInformationRepository
@@ -49,5 +50,5 @@ public interface EmployeeInformationRepository
     void deleteByCodes(@Param("codes") Collection<String> codes);
 
     @EntityGraph(value = "Employee.basic")
-    List<EmployeeInformation> findByCodeIn(List<String> code);
+    List<EmployeeInformation> findByCodeInAndCompany(List<String> code, Company company);
 }

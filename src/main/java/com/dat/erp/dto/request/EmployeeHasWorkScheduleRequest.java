@@ -4,9 +4,13 @@ import java.util.List;
 
 import com.dat.erp.constants.ListCodeTypeEnum;
 
-import lombok.Data;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.Setter;
 
-@Data
+@Builder
+@Getter
+@Setter
 public class EmployeeHasWorkScheduleRequest {
     private String code;
     private List<String> codes;

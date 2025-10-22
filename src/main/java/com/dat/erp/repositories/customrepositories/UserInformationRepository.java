@@ -10,4 +10,6 @@ import com.dat.erp.entities.UserInformation;
 @Repository
 public interface UserInformationRepository extends JpaRepository<UserInformation, Long> {
     Optional<UserInformation> findByCode(String code);
+
+    Optional<UserInformation> findByEmail(String email);
 }

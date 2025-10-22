@@ -14,4 +14,6 @@ public interface WorkScheduleService {
 
     public PagedResponse<WorkScheduleResponse> getWorkSchedule(LocalDate shiftDate, Integer pageSize, Integer pageNum,
             String sortBy, String sortDir);
+
+    public String createWorkScheduleWithEmployees(WorkScheduleRequest workScheduleRequest, List<String> employeeCodes);
 }
