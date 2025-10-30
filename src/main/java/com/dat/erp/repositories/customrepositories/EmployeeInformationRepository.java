@@ -13,6 +13,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.dat.erp.entities.Company;
 import com.dat.erp.entities.EmployeeInformation;
 
 @Repository
@@ -47,4 +48,7 @@ public interface EmployeeInformationRepository
     @Transactional
     @Query("DELETE FROM EmployeeInformation e WHERE e.code IN :codes")
     void deleteByCodes(@Param("codes") Collection<String> codes);
+
+    @EntityGraph(value = "Employee.basic")
+    List<EmployeeInformation> findByCodeInAndCompany(List<String> code, Company company);
 }

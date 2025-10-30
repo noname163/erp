@@ -8,4 +8,6 @@ import com.dat.erp.entities.Company;
 
 public interface CompanyRepository extends JpaRepository<Company, Long> {
     Optional<Company> findByCode(String code);
+
+    Optional<Company> findByName(String name);
 }

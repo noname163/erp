@@ -11,10 +11,14 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
+import com.dat.erp.constants.CodePrefixes;
+import com.dat.erp.constants.Messages;
 import com.dat.erp.dto.request.RoleHasApiRequest;
 import com.dat.erp.dto.response.PagedResponse;
 import com.dat.erp.dto.response.RoleHasApiResponse;
 import com.dat.erp.entities.RoleHasApi;
+import com.dat.erp.exceptions.BadRequestException;
+import com.dat.erp.exceptions.ConflictException;
 import com.dat.erp.mapper.interfaces.RoleHasApiMapper;
 import com.dat.erp.repositories.customrepositories.RoleHasApiRepository;
 import com.dat.erp.services.RoleHasApiService;
@@ -30,11 +34,15 @@ public class RoleHasApiServiceImpl implements RoleHasApiService {
     @Override
     public String assignApisToRole(RoleHasApiRequest roleHasApiRequest) {
         Optional.ofNullable(roleHasApiRequest)
-                .orElseThrow(() -> new RuntimeException("RoleHasApiRequest cannot be null"));
+                .orElseThrow(() -> new BadRequestException(Messages.ERROR_BAD_REQUEST_NULL_ROLE_HAS_API_REQUEST));
+        if (roleHasApiRepository.existsByRole_CodeAndApi_Code(roleHasApiRequest.getRoleCode(),
+                roleHasApiRequest.getApiCode())) {
+            throw new ConflictException(Messages.ERROR_ROLE_API_MAPPING_EXISTS);
+        }
         RoleHasApi roleHasApi = roleHasApiMapper.toEntity(roleHasApiRequest);
-        roleHasApi.setCode("RHA-" + UUID.randomUUID());
+        roleHasApi.setCode(CodePrefixes.ROLE_HAS_API + UUID.randomUUID());
         roleHasApiRepository.save(roleHasApi);
-        return "APIs assigned to role successfully";
+        return Messages.ROLE_APIS_ASSIGNED_SUCCESS;
     }
 
     @Override
@@ -45,7 +53,7 @@ public class RoleHasApiServiceImpl implements RoleHasApiService {
 
         Page<RoleHasApi> roleHasApis = roleHasApiRepository.findByRoleCode(roleCode, pageable);
 
-        return PageableUtils.mapPage(roleHasApis, roleHasApiMapper::toResponse, sortDir);
+        return PageableUtils.mapPage(roleHasApis, roleHasApiMapper::toResponse, Messages.SUCCESS);
     }
 
     @Override

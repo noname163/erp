@@ -18,7 +18,10 @@ import org.springframework.web.context.request.WebRequest;
 import com.dat.erp.dto.response.error.ProblemDetailsResponse;
 import com.dat.erp.dto.response.error.ValidationProblemDetailsReponse;
 import com.dat.erp.exceptions.BadRequestException;
+import com.dat.erp.exceptions.ConflictException;
 import com.dat.erp.exceptions.ResourceNotFoundException;
+import com.dat.erp.exceptions.UnauthorizedException;
+import com.dat.erp.exceptions.UnprocessableEntityException;
 
 import jakarta.validation.ConstraintViolationException;
 
@@ -41,7 +44,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(BadRequestException.class)
     public ResponseEntity<ProblemDetailsResponse> handleBadRequest(BadRequestException ex, WebRequest request) {
-        log.warn("Resource not found: {} at {}", ex.getMessage(), request.getDescription(false));
+        log.warn("Bad request: {} at {}", ex.getMessage(), request.getDescription(false));
         ProblemDetailsResponse problem = new ProblemDetailsResponse(
                 URI.create("https://example.com/errors/bad-request"),
                 "Bad Request",
@@ -52,9 +55,49 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(problem);
     }
 
+    @ExceptionHandler(UnauthorizedException.class)
+    public ResponseEntity<ProblemDetailsResponse> handleUnauthorized(UnauthorizedException ex, WebRequest request) {
+        log.warn("Unauthorized: {} at {}", ex.getMessage(), request.getDescription(false));
+        ProblemDetailsResponse problem = new ProblemDetailsResponse(
+                URI.create("https://example.com/errors/unauthorized"),
+                "Unauthorized",
+                HttpStatus.UNAUTHORIZED.value(),
+                ex.getMessage(),
+                request.getDescription(false).replace("uri=", ""),
+                LocalDateTime.now());
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(problem);
+    }
+
+    @ExceptionHandler(ConflictException.class)
+    public ResponseEntity<ProblemDetailsResponse> handleConflict(ConflictException ex, WebRequest request) {
+        log.warn("Conflict: {} at {}", ex.getMessage(), request.getDescription(false));
+        ProblemDetailsResponse problem = new ProblemDetailsResponse(
+                URI.create("https://example.com/errors/conflict"),
+                "Conflict",
+                HttpStatus.CONFLICT.value(),
+                ex.getMessage(),
+                request.getDescription(false).replace("uri=", ""),
+                LocalDateTime.now());
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(problem);
+    }
+
+    @ExceptionHandler(UnprocessableEntityException.class)
+    public ResponseEntity<ProblemDetailsResponse> handleUnprocessable(UnprocessableEntityException ex,
+            WebRequest request) {
+        log.warn("Unprocessable entity: {} at {}", ex.getMessage(), request.getDescription(false));
+        ProblemDetailsResponse problem = new ProblemDetailsResponse(
+                URI.create("https://example.com/errors/unprocessable-entity"),
+                "Unprocessable Entity",
+                422,
+                ex.getMessage(),
+                request.getDescription(false).replace("uri=", ""),
+                LocalDateTime.now());
+        return ResponseEntity.status(422).body(problem);
+    }
+
     @ExceptionHandler(Exception.class) // fallback
     public ResponseEntity<ProblemDetailsResponse> handleGeneric(Exception ex, WebRequest request) {
-        log.warn("Resource not found: {} at {}", ex.getMessage(), request.getDescription(false));
+        log.warn("Authorization denied: {} at {}", ex.getMessage(), request.getDescription(false));
         ProblemDetailsResponse problem = new ProblemDetailsResponse(
                 URI.create("https://example.com/errors/internal"),
                 "Internal Server Error",
@@ -68,7 +111,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ValidationProblemDetailsReponse> handleValidationErrors(MethodArgumentNotValidException ex,
             WebRequest request) {
-        log.warn("Resource not found: {} at {}", ex.getMessage(), request.getDescription(false));
+        log.warn("Validation failed: {} at {}", ex.getMessage(), request.getDescription(false));
         List<ValidationProblemDetailsReponse.FieldError> errors = ex.getBindingResult()
                 .getFieldErrors()
                 .stream()
@@ -109,7 +152,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(ConstraintViolationException.class)
     public ResponseEntity<ValidationProblemDetailsReponse> handleConstraintViolations(ConstraintViolationException ex,
             WebRequest request) {
-        log.warn("Resource not found: {} at {}", ex.getMessage(), request.getDescription(false));
+        log.warn("Constraint violations: {} at {}", ex.getMessage(), request.getDescription(false));
         List<ValidationProblemDetailsReponse.FieldError> errors = ex.getConstraintViolations()
                 .stream()
                 .map(violation -> new ValidationProblemDetailsReponse.FieldError(

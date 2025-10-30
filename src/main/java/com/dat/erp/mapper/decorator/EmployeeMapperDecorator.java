@@ -1,8 +1,11 @@
 package com.dat.erp.mapper.decorator;
 
+import java.util.UUID;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import com.dat.erp.constants.CommonStatus;
 import com.dat.erp.dto.request.EmployeeInformationRequest;
 import com.dat.erp.dto.response.EmployeeInformationResponse;
 import com.dat.erp.entities.Department;
@@ -55,6 +58,10 @@ public abstract class EmployeeMapperDecorator implements EmployeeMapper {
         employeeInformation.setCompany(currentEmployee.getEmployee().getCompany());
         employeeInformation.setDepartment(department);
         employeeInformation.setUser(user);
+        employeeInformation.setCode("EMPI-" + UUID.randomUUID());
+        employeeInformation
+                .setPassword(request.getEmail() + user.getDateOfBirth().replace("-", ""));
+        employeeInformation.setEmploymentStatus(CommonStatus.ACTIVATE);
 
         return employeeInformation;
     }

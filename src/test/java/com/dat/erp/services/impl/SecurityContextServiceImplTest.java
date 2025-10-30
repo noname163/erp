@@ -72,9 +72,9 @@ class SecurityContextServiceImplTest {
                 .thenReturn(Optional.empty());
 
         // when + then
-        RuntimeException ex = assertThrows(RuntimeException.class,
+        com.dat.erp.exceptions.ResourceNotFoundException ex = assertThrows(com.dat.erp.exceptions.ResourceNotFoundException.class,
                 () -> securityContextService.setCurrentUser("X999"));
-        assertEquals("Employee not found", ex.getMessage());
+        assertEquals("Employee with code X999 not found", ex.getMessage());
     }
 
     @Test
@@ -99,9 +99,6 @@ class SecurityContextServiceImplTest {
         SecurityContextHolder.clearContext();
 
         // when
-        CustomUserDetails currentUser = securityContextService.getCurrentUser();
-
-        // then
-        assertNull(currentUser);
+        assertThrows(com.dat.erp.exceptions.UnauthorizedException.class, () -> securityContextService.getCurrentUser());
     }
 }

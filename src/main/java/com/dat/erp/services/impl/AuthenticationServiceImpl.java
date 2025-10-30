@@ -3,7 +3,9 @@ package com.dat.erp.services.impl;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import com.dat.erp.constants.Messages;
 import com.dat.erp.dto.request.LoginRequest;
+import com.dat.erp.exceptions.UnauthorizedException;
 import com.dat.erp.entities.EmployeeInformation;
 import com.dat.erp.repositories.customrepositories.EmployeeInformationRepository;
 import com.dat.erp.services.AuthenticationService;
@@ -24,15 +26,14 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     @Override
     public String login(LoginRequest request, HttpServletResponse response) {
         EmployeeInformation employee = employeeInformationRepository
-                .findByEmail(request
-                        .getEmployeeEmail())
-                .orElseThrow(() -> new RuntimeException("Invalid credentials"));
+                .findByEmail(request.getEmployeeEmail())
+                .orElseThrow(() -> new UnauthorizedException(Messages.ERROR_INVALID_CREDENTIALS));
         if (!CryptoUtils.verifyHash(request.getPassword(), employee.getPassword())) {
-            throw new RuntimeException("Invalid credentials");
+            throw new UnauthorizedException(Messages.ERROR_INVALID_CREDENTIALS);
         }
         String token = jwtUtils.generateToken(employee.getUser().getFirstName(), employee.getCode());
         CookieUtils.addTokenCookie(response, token);
-        return "Login successful";
+        return Messages.LOGIN_SUCCESS;
     }
 
     @Override
@@ -43,7 +44,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         cookie.setPath("/");
         cookie.setMaxAge(0); // delete immediately
         response.addCookie(cookie);
-        return "Logout successful";
+        return Messages.LOGOUT_SUCCESS;
     }
 
 }
