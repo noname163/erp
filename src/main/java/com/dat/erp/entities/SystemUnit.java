@@ -1,12 +1,12 @@
 package com.dat.erp.entities;
 
-import jakarta.persistence.Column;
+import java.util.List;
+
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -22,24 +22,25 @@ import lombok.ToString;
 @AllArgsConstructor
 @Builder
 @EqualsAndHashCode(onlyExplicitlyIncluded = true, callSuper = true)
-@ToString(exclude = "account")
+@ToString(exclude = { "details", "salaryDetails", "templateDetails" })
 @Entity
-@Table(name = "transactions")
-public class Transaction extends BaseAuditableEntity {
+@Table(name = "system_unit")
+public class SystemUnit extends BaseAuditableEntity {
     @Id
     @EqualsAndHashCode.Include
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne
-    @JoinColumn(name = "account_code", referencedColumnName = "code", nullable = false)
-    private BankAccount account;
-
-    private Double amount;
-    private String currency;
-
-    @Column(name = "transaction_type")
-    private String transactionType;
+    private String name;
 
     private String description;
+
+    @OneToMany(mappedBy = "systemUnitFrom")
+    private List<SystemUnitDetail> details;
+
+    @OneToMany(mappedBy = "unit")
+    private List<EmployeeSalaryDetail> salaryDetails;
+
+    @OneToMany(mappedBy = "unit")
+    private List<SalaryTemplateDetail> templateDetails;
 }

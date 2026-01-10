@@ -94,7 +94,7 @@ public class EmployeeInformation extends BaseAuditableEntity {
     private Set<Document> documents;
 
     @OneToMany(mappedBy = "employee", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
-    private Set<Salary> salaries;
+    private Set<EmployeeSalary> salaries;
 
     @OneToMany(mappedBy = "employee", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private Set<EmployeeHasWorkSchedule> shifts;

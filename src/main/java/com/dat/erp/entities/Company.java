@@ -25,7 +25,7 @@ import lombok.Setter;
 import lombok.ToString;
 
 @Entity
-@Table(name = "companies")
+@Table(name = "company")
 @Getter
 @Setter
 @NoArgsConstructor
@@ -55,6 +55,17 @@ public class Company extends BaseAuditableEntity {
     @Column(length = 100)
     @Convert(converter = EncryptFieldConverter.class)
     private String taxNumber;
+
+    @Column(name = "secret_key")
+    @Convert(converter = EncryptFieldConverter.class)
+    private String secretKey;
+
+    @Column(name = "tax")
+    @Convert(converter = EncryptFieldConverter.class)
+    private String tax;
+
+    @Column(name = "email")
+    private String email;
 
     @Column(columnDefinition = "TEXT")
     private String address;

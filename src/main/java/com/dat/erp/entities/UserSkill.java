@@ -1,7 +1,10 @@
 package com.dat.erp.entities;
 
+import java.time.LocalDateTime;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -22,24 +25,27 @@ import lombok.ToString;
 @AllArgsConstructor
 @Builder
 @EqualsAndHashCode(onlyExplicitlyIncluded = true, callSuper = true)
-@ToString(exclude = "account")
+@ToString(exclude = { "userProfile", "skill" })
 @Entity
-@Table(name = "transactions")
-public class Transaction extends BaseAuditableEntity {
+@Table(name = "user_skill")
+public class UserSkill extends BaseAuditableEntity {
     @Id
     @EqualsAndHashCode.Include
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne
-    @JoinColumn(name = "account_code", referencedColumnName = "code", nullable = false)
-    private BankAccount account;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_profile_code", referencedColumnName = "code", nullable = false)
+    private UserProfile userProfile;
 
-    private Double amount;
-    private String currency;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "skill_code", referencedColumnName = "code", nullable = false)
+    private Skill skill;
 
-    @Column(name = "transaction_type")
-    private String transactionType;
+    private Short proficiency;
 
-    private String description;
+    private Double years;
+
+    @Column(name = "added_at")
+    private LocalDateTime addedAt;
 }

@@ -83,5 +83,5 @@ public class UserInformation extends BaseAuditableEntity {
     private List<Address> addresses;
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
-    private List<Account> accounts;
+    private List<BankAccount> accounts;
 }

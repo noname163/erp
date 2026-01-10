@@ -2,6 +2,7 @@ package com.dat.erp.entities;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -22,24 +23,28 @@ import lombok.ToString;
 @AllArgsConstructor
 @Builder
 @EqualsAndHashCode(onlyExplicitlyIncluded = true, callSuper = true)
-@ToString(exclude = "account")
+@ToString(exclude = { "salary", "employeeSalary", "unit" })
 @Entity
-@Table(name = "transactions")
-public class Transaction extends BaseAuditableEntity {
+@Table(name = "employee_salary_detail")
+public class EmployeeSalaryDetail extends BaseAuditableEntity {
     @Id
     @EqualsAndHashCode.Include
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne
-    @JoinColumn(name = "account_code", referencedColumnName = "code", nullable = false)
-    private BankAccount account;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "salary_code", referencedColumnName = "code", nullable = false)
+    private Salary salary;
 
-    private Double amount;
-    private String currency;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "employee_salary_code", referencedColumnName = "code", nullable = false)
+    private EmployeeSalary employeeSalary;
 
-    @Column(name = "transaction_type")
-    private String transactionType;
+    private String amount;
 
-    private String description;
+    private Integer quantity;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "unit_code", referencedColumnName = "code")
+    private SystemUnit unit;
 }

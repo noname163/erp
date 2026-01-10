@@ -1,5 +1,7 @@
 package com.dat.erp.entities;
 
+import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 import jakarta.persistence.Column;
@@ -10,7 +12,6 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
-import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -28,32 +29,35 @@ import lombok.ToString;
 @EqualsAndHashCode(onlyExplicitlyIncluded = true, callSuper = true)
 @ToString(exclude = "userProfile")
 @Entity
-@Table(name = "account")
-public class Account extends BaseAuditableEntity {
+@Table(name = "employee_pto")
+public class EmployeePto extends BaseAuditableEntity {
     @Id
     @EqualsAndHashCode.Include
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, unique = true)
-    private String email;
-
-    @Column(name = "password_hash", nullable = false)
-    private String passwordHash;
-
-    @Column(name = "is_active")
-    private Boolean isActive;
-
-    @Column(name = "last_login")
-    private LocalDateTime lastLogin;
-
-    @Column(name = "number_token")
-    private Integer numberToken;
-
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "role_code", referencedColumnName = "code")
-    private Role role;
-
-    @OneToOne(mappedBy = "account")
+    @JoinColumn(name = "user_profile_code", referencedColumnName = "code", nullable = false)
     private UserProfile userProfile;
+
+    private String type;
+
+    @Column(name = "start_date")
+    private LocalDate startDate;
+
+    @Column(name = "end_date")
+    private LocalDate endDate;
+
+    private BigDecimal days;
+
+    private String status;
+
+    @Column(name = "processed_by")
+    private Long processedBy;
+
+    @Column(name = "requested_at")
+    private LocalDateTime requestedAt;
+
+    @Column(name = "processed_at")
+    private LocalDateTime processedAt;
 }
