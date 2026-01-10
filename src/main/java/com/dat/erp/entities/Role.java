@@ -29,9 +29,9 @@ import lombok.ToString;
 @AllArgsConstructor
 @Builder
 @EqualsAndHashCode(onlyExplicitlyIncluded = true, callSuper = true)
-@ToString(exclude = { "apis", "employees" })
+@ToString(exclude = { "apis", "employees", "accounts" })
 @Entity
-@Table(name = "roles")
+@Table(name = "role")
 @NamedEntityGraph(name = "role.full", attributeNodes = {
         @NamedAttributeNode("apis"),
         @NamedAttributeNode("employees"),
@@ -54,6 +54,9 @@ public class Role extends BaseAuditableEntity {
 
     @OneToMany(mappedBy = "role", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private List<EmployeeInformation> employees;
+
+    @OneToMany(mappedBy = "role", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    private List<Account> accounts;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "company_code", referencedColumnName = "code", nullable = true)

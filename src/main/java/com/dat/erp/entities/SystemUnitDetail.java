@@ -1,7 +1,10 @@
 package com.dat.erp.entities;
 
+import java.math.BigDecimal;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -22,24 +25,23 @@ import lombok.ToString;
 @AllArgsConstructor
 @Builder
 @EqualsAndHashCode(onlyExplicitlyIncluded = true, callSuper = true)
-@ToString(exclude = "account")
+@ToString(exclude = { "systemUnitFrom", "systemUnitTo" })
 @Entity
-@Table(name = "transactions")
-public class Transaction extends BaseAuditableEntity {
+@Table(name = "system_unit_detail")
+public class SystemUnitDetail extends BaseAuditableEntity {
     @Id
     @EqualsAndHashCode.Include
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne
-    @JoinColumn(name = "account_code", referencedColumnName = "code", nullable = false)
-    private BankAccount account;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "system_unit_code_from", referencedColumnName = "code", nullable = false)
+    private SystemUnit systemUnitFrom;
 
-    private Double amount;
-    private String currency;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "system_unit_code_to", referencedColumnName = "code", nullable = false)
+    private SystemUnit systemUnitTo;
 
-    @Column(name = "transaction_type")
-    private String transactionType;
-
-    private String description;
+    @Column(name = "exchange_quantity")
+    private BigDecimal exchangeQuantity;
 }

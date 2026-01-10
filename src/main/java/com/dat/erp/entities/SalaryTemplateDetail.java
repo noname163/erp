@@ -1,7 +1,5 @@
 package com.dat.erp.entities;
 
-import java.time.LocalDateTime;
-
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -10,7 +8,6 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
-import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -26,34 +23,31 @@ import lombok.ToString;
 @AllArgsConstructor
 @Builder
 @EqualsAndHashCode(onlyExplicitlyIncluded = true, callSuper = true)
-@ToString(exclude = "userProfile")
+@ToString(exclude = { "salaryTemplate", "salary", "unit" })
 @Entity
-@Table(name = "account")
-public class Account extends BaseAuditableEntity {
+@Table(name = "salary_template_detail")
+public class SalaryTemplateDetail extends BaseAuditableEntity {
     @Id
     @EqualsAndHashCode.Include
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, unique = true)
-    private String email;
-
-    @Column(name = "password_hash", nullable = false)
-    private String passwordHash;
-
-    @Column(name = "is_active")
-    private Boolean isActive;
-
-    @Column(name = "last_login")
-    private LocalDateTime lastLogin;
-
-    @Column(name = "number_token")
-    private Integer numberToken;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "template_code", referencedColumnName = "code", nullable = false)
+    private SalaryTemplate salaryTemplate;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "role_code", referencedColumnName = "code")
-    private Role role;
+    @JoinColumn(name = "salary_code", referencedColumnName = "code", nullable = false)
+    private Salary salary;
 
-    @OneToOne(mappedBy = "account")
-    private UserProfile userProfile;
+    private String amount;
+
+    private Integer quantity;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "unit_code", referencedColumnName = "code")
+    private SystemUnit unit;
+
+    @Column(name = "sequence_order")
+    private Integer sequenceOrder;
 }
