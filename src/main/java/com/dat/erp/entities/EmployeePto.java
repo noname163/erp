@@ -1,16 +1,17 @@
 package com.dat.erp.entities;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
-import jakarta.persistence.NamedAttributeNode;
-import jakarta.persistence.NamedEntityGraph;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -26,28 +27,37 @@ import lombok.ToString;
 @AllArgsConstructor
 @Builder
 @EqualsAndHashCode(onlyExplicitlyIncluded = true, callSuper = true)
+@ToString(exclude = "userProfile")
 @Entity
-@Table(name = "documents")
-@ToString(exclude = "employee")
-@NamedEntityGraph(name = "Document.full", attributeNodes = {
-        @NamedAttributeNode("employee")
-})
-public class Document extends BaseAuditableEntity {
+@Table(name = "employee_pto")
+public class EmployeePto extends BaseAuditableEntity {
     @Id
     @EqualsAndHashCode.Include
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne
-    @JoinColumn(name = "employee_code", referencedColumnName = "code", nullable = false)
-    private EmployeeInformation employee;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_profile_code", referencedColumnName = "code", nullable = false)
+    private UserProfile userProfile;
 
-    @Column(name = "document_type", nullable = false)
-    private String documentType;
+    private String type;
 
+    @Column(name = "start_date")
     private LocalDate startDate;
-    private LocalDate endDate;
-    private String status;
-    private String image;
 
+    @Column(name = "end_date")
+    private LocalDate endDate;
+
+    private BigDecimal days;
+
+    private String status;
+
+    @Column(name = "processed_by")
+    private Long processedBy;
+
+    @Column(name = "requested_at")
+    private LocalDateTime requestedAt;
+
+    @Column(name = "processed_at")
+    private LocalDateTime processedAt;
 }

@@ -1,7 +1,5 @@
 package com.dat.erp.entities;
 
-import java.util.List;
-
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -10,7 +8,6 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
-import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -18,6 +15,7 @@ import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import lombok.ToString;
 
 @Getter
 @Setter
@@ -25,15 +23,22 @@ import lombok.Setter;
 @AllArgsConstructor
 @Builder
 @EqualsAndHashCode(onlyExplicitlyIncluded = true, callSuper = true)
+@ToString(exclude = { "salaryTemplate", "salary" })
 @Entity
-@Table(name = "salary")
-public class Salary extends BaseAuditableEntity {
+@Table(name = "salary_template_detail")
+public class SalaryTemplateDetail extends BaseAuditableEntity {
     @Id
     @EqualsAndHashCode.Include
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private String name;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "template_code", referencedColumnName = "code", nullable = false)
+    private SalaryTemplate salaryTemplate;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "salary_code", referencedColumnName = "code", nullable = false)
+    private Salary salary;
 
     @Column(name = "component_code")
     private String componentCode;
@@ -59,10 +64,9 @@ public class Salary extends BaseAuditableEntity {
     @Column(name = "min_amount")
     private Double minAmount;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_profile_code", referencedColumnName = "code", nullable = false)
-    private UserProfile userProfile;
+    @Column(name = "default_amount")
+    private Double defaultAmount;
 
-    @OneToMany(mappedBy = "salary", fetch = FetchType.LAZY)
-    private List<SalaryDetail> details;
+    @Column(name = "sequence_order")
+    private Integer sequenceOrder;
 }

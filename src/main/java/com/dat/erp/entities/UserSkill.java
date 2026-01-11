@@ -1,9 +1,10 @@
 package com.dat.erp.entities;
 
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -16,6 +17,7 @@ import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import lombok.ToString;
 
 @Getter
 @Setter
@@ -23,28 +25,27 @@ import lombok.Setter;
 @AllArgsConstructor
 @Builder
 @EqualsAndHashCode(onlyExplicitlyIncluded = true, callSuper = true)
+@ToString(exclude = { "userProfile", "skill" })
 @Entity
-@Table(name = "employee_dependents")
-public class EmployeeDependent extends BaseAuditableEntity {
+@Table(name = "user_skill")
+public class UserSkill extends BaseAuditableEntity {
     @Id
     @EqualsAndHashCode.Include
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne
-    @JoinColumn(name = "employee_code", referencedColumnName = "code", nullable = false)
-    private EmployeeInformation employee;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_profile_code", referencedColumnName = "code", nullable = false)
+    private UserProfile userProfile;
 
-    @ManyToOne
-    @JoinColumn(name = "dependent_code", referencedColumnName = "code")
-    private UserInformation dependent;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "skill_code", referencedColumnName = "code", nullable = false)
+    private Skill skill;
 
-    private String relationship;
+    private Short proficiency;
 
-    @Column(name = "is_emergency_contact")
-    private Boolean isEmergencyContact;
+    private Double years;
 
-    private LocalDate issuedDate;
-    private LocalDate expiryDate;
-
+    @Column(name = "added_at")
+    private LocalDateTime addedAt;
 }

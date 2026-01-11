@@ -31,11 +31,10 @@ import lombok.ToString;
 @Builder
 @EqualsAndHashCode(onlyExplicitlyIncluded = true, callSuper = true)
 @Entity
-@Table(name = "departments")
-@ToString(exclude = { "employees", "company" })
+@Table(name = "department")
+@ToString(exclude = { "company", "userProfiles" })
 @NamedEntityGraph(name = "Department.full", attributeNodes = {
-        @NamedAttributeNode("company"),
-        @NamedAttributeNode("employees")
+        @NamedAttributeNode("company")
 })
 public class Department extends BaseAuditableEntity {
     @Id
@@ -49,6 +48,6 @@ public class Department extends BaseAuditableEntity {
     @JoinColumn(name = "company_code", referencedColumnName = "code", nullable = false)
     private Company company;
     @OneToMany(mappedBy = "department", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
-    private List<EmployeeInformation> employees;
+    private List<UserProfile> userProfiles;
 
 }

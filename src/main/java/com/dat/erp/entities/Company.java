@@ -25,19 +25,16 @@ import lombok.Setter;
 import lombok.ToString;
 
 @Entity
-@Table(name = "companies")
+@Table(name = "company")
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @EqualsAndHashCode(onlyExplicitlyIncluded = true, callSuper = false)
 @Builder
-@ToString(exclude = { "employees", "departments", "roles", "workSchedules" })
+@ToString(exclude = { "departments" })
 @NamedEntityGraph(name = "Company.full", attributeNodes = {
-        @NamedAttributeNode("departments"),
-        @NamedAttributeNode("employees"),
-        @NamedAttributeNode("roles"),
-        @NamedAttributeNode("workSchedules")
+        @NamedAttributeNode("departments")
 })
 public class Company extends BaseAuditableEntity {
 
@@ -56,6 +53,17 @@ public class Company extends BaseAuditableEntity {
     @Convert(converter = EncryptFieldConverter.class)
     private String taxNumber;
 
+    @Column(name = "secret_key")
+    @Convert(converter = EncryptFieldConverter.class)
+    private String secretKey;
+
+    @Column(name = "tax")
+    @Convert(converter = EncryptFieldConverter.class)
+    private String tax;
+
+    @Column(name = "email")
+    private String email;
+
     @Column(columnDefinition = "TEXT")
     private String address;
 
@@ -63,14 +71,5 @@ public class Company extends BaseAuditableEntity {
     private String phoneNumber;
 
     @OneToMany(mappedBy = "company", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
-    private List<EmployeeInformation> employees;
-
-    @OneToMany(mappedBy = "company", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private List<Department> departments;
-
-    @OneToMany(mappedBy = "company", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
-    private List<Role> roles;
-
-    @OneToMany(mappedBy = "company", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
-    private List<WorkSchedule> workSchedules;
 }

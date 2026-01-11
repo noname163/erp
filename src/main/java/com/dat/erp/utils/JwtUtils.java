@@ -29,40 +29,31 @@ public class JwtUtils {
     /**
      * Generate JWT token for a given username
      */
-    public String generateToken(String employeeName, String employeeCode) {
+    public String generateToken(String email, String accountCode) {
         Date now = new Date();
         Date expiryDate = new Date(now.getTime() + environmentVariable.getJwtExpirationMs());
         Map<String, Object> claims = new HashMap<>();
-        claims.put("employeeCode", employeeCode);
-        claims.put("employeeName", employeeName);
+        claims.put("accountCode", accountCode);
+        claims.put("email", email);
         return Jwts.builder().issuedAt(expiryDate).claims(claims).signWith(key).compact();
     }
 
-    public String extractEmployeeName(String token) {
-        return extractClaim(token, claims -> claims.get("employeeName", String.class));
+    public String extractEmail(String token) {
+        return extractClaim(token, claims -> claims.get("email", String.class));
     }
 
-    /**
-     * Extract employeeCode from JWT
-     */
-    public String extractEmployeeCode(String token) {
-        return extractClaim(token, claims -> claims.get("employeeCode", String.class));
+    public String extractAccountCode(String token) {
+        return extractClaim(token, claims -> claims.get("accountCode", String.class));
     }
 
-    /**
-     * Extract expiration date
-     */
     public Date extractExpiration(String token) {
         return extractClaim(token, claims -> claims.get("iat", Date.class));
     }
 
-    /**
-     * Validate token
-     */
-    public boolean validateToken(String token, String expectedEmployeeCode) {
+    public boolean validateToken(String token, String expectedAccountCode) {
         try {
-            String employeeCode = extractEmployeeCode(token);
-            return (employeeCode.equals(expectedEmployeeCode) && !isTokenExpired(token));
+            String accountCode = extractAccountCode(token);
+            return (accountCode.equals(expectedAccountCode) && !isTokenExpired(token));
         } catch (JwtException | IllegalArgumentException e) {
             return false;
         }

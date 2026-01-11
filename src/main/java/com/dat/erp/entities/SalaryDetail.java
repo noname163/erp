@@ -1,9 +1,8 @@
 package com.dat.erp.entities;
 
-import com.dat.erp.converters.EncryptFieldConverter;
-
-import jakarta.persistence.Convert;
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -24,26 +23,22 @@ import lombok.ToString;
 @AllArgsConstructor
 @Builder
 @EqualsAndHashCode(onlyExplicitlyIncluded = true, callSuper = true)
-@ToString(exclude = "employee")
+@ToString(exclude = { "salary" })
 @Entity
-@Table(name = "employee_identifications")
-public class EmployeeIdentification extends BaseAuditableEntity {
+@Table(name = "salary_detail")
+public class SalaryDetail extends BaseAuditableEntity {
     @Id
     @EqualsAndHashCode.Include
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne
-    @JoinColumn(name = "employee_code", referencedColumnName = "code", nullable = false)
-    private EmployeeInformation employee;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "salary_code", referencedColumnName = "code", nullable = false)
+    private Salary salary;
 
-    private String idType;
-    @Convert(converter = EncryptFieldConverter.class)
-    private String idNumber;
-    @Convert(converter = EncryptFieldConverter.class)
-    private String issuedDate;
-    @Convert(converter = EncryptFieldConverter.class)
-    private String expiryDate;
-    private String issuedBy;
+    @Column(name = "name")
+    private String name;
 
+    @Column(name = "amount")
+    private String amount;
 }

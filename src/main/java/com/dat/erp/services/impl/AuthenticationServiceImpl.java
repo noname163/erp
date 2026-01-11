@@ -6,8 +6,8 @@ import org.springframework.stereotype.Service;
 import com.dat.erp.constants.Messages;
 import com.dat.erp.dto.request.LoginRequest;
 import com.dat.erp.exceptions.UnauthorizedException;
-import com.dat.erp.entities.EmployeeInformation;
-import com.dat.erp.repositories.customrepositories.EmployeeInformationRepository;
+import com.dat.erp.entities.Account;
+import com.dat.erp.repositories.customrepositories.AccountRepository;
 import com.dat.erp.services.AuthenticationService;
 import com.dat.erp.utils.CookieUtils;
 import com.dat.erp.utils.CryptoUtils;
@@ -19,19 +19,19 @@ import jakarta.servlet.http.HttpServletResponse;
 @Service
 public class AuthenticationServiceImpl implements AuthenticationService {
     @Autowired
-    private EmployeeInformationRepository employeeInformationRepository;
+    private AccountRepository accountRepository;
     @Autowired
     private JwtUtils jwtUtils;
 
     @Override
     public String login(LoginRequest request, HttpServletResponse response) {
-        EmployeeInformation employee = employeeInformationRepository
-                .findByEmail(request.getEmployeeEmail())
+        Account account = accountRepository
+                .findByEmail(request.getEmail())
                 .orElseThrow(() -> new UnauthorizedException(Messages.ERROR_INVALID_CREDENTIALS));
-        if (!CryptoUtils.verifyHash(request.getPassword(), employee.getPassword())) {
+        if (!CryptoUtils.verifyHash(request.getPassword(), account.getPasswordHash())) {
             throw new UnauthorizedException(Messages.ERROR_INVALID_CREDENTIALS);
         }
-        String token = jwtUtils.generateToken(employee.getUser().getFirstName(), employee.getCode());
+        String token = jwtUtils.generateToken(account.getEmail(), account.getCode());
         CookieUtils.addTokenCookie(response, token);
         return Messages.LOGIN_SUCCESS;
     }

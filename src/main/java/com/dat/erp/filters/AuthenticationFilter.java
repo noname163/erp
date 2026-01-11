@@ -2,17 +2,14 @@ package com.dat.erp.filters;
 
 import java.io.IOException;
 
-import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.util.AntPathMatcher;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import com.dat.erp.services.SecurityContextService;
-import com.dat.erp.systemconfigs.CustomUserDetails;
 import com.dat.erp.utils.EnvironmentVariable;
 import com.dat.erp.utils.JwtUtils;
-import com.dat.erp.utils.PermissionUtils;
 
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -25,14 +22,14 @@ import lombok.extern.log4j.Log4j2;
 @Log4j2
 public class AuthenticationFilter extends OncePerRequestFilter {
     private final JwtUtils jwtUtils;
-    private final SecurityContextService securityContextService;
     private final EnvironmentVariable environmentVariable;
+    private final SecurityContextService securityContextService;
 
-    public AuthenticationFilter(JwtUtils jwtUtils,
-            SecurityContextService securityContextService, EnvironmentVariable environmentVariable) {
+    public AuthenticationFilter(JwtUtils jwtUtils, EnvironmentVariable environmentVariable,
+            SecurityContextService securityContextService) {
         this.jwtUtils = jwtUtils;
-        this.securityContextService = securityContextService;
         this.environmentVariable = environmentVariable;
+        this.securityContextService = securityContextService;
     }
 
     @Override
@@ -53,40 +50,20 @@ public class AuthenticationFilter extends OncePerRequestFilter {
             filterChain.doFilter(request, response);
             return;
         }
-        // 2. Try to get token from Cookie first
+
         String token = extractTokenFromCookies(request);
 
-        // 4. If no token → just continue (but not authenticated)
-        if (token == null) {
-            filterChain.doFilter(request, response);
-            return;
-        }
-
-        // 5. Extract employeeCode (subject)
-        String employeeCode = jwtUtils.extractEmployeeCode(token);
-        CustomUserDetails customUserDetails = null;
-        // 6. Authenticate if not already set
-        if (employeeCode != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-            if (jwtUtils.validateToken(token, employeeCode)) {
-                customUserDetails = securityContextService.setCurrentUser(employeeCode);
+        if (token != null) {
+            String accountCode = jwtUtils.extractAccountCode(token);
+            if (accountCode != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+                if (jwtUtils.validateToken(token, accountCode)) {
+                    securityContextService.setCurrentUser(accountCode);
+                    log.debug("Authenticated account {}", accountCode);
+                }
             }
         }
 
-        String url = request.getRequestURI();
-        String method = request.getMethod();
-        if (customUserDetails != null
-                && PermissionUtils.hasPermission(customUserDetails.getPermissionMap(), url, method)) {
-            customUserDetails.setViewAll(PermissionUtils.hasViewAllPermission(
-                    customUserDetails.getPermissionMap(), url));
-            customUserDetails.setViewOwnedOnly(PermissionUtils.hasViewOwnedPermission(
-                    customUserDetails.getPermissionMap(), url));
-            filterChain.doFilter(request, response);
-
-        } else {
-            log.error("User {} not have permission {} on URL {} ", customUserDetails.getCode(), method, url);
-            throw new AccessDeniedException("User not have permission");
-        }
-
+        filterChain.doFilter(request, response);
     }
 
     private String extractTokenFromCookies(HttpServletRequest request) {

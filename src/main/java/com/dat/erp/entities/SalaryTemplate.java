@@ -1,20 +1,22 @@
 package com.dat.erp.entities;
 
-import com.dat.erp.constants.ApiType;
-import com.dat.erp.constants.CommonEnum;
+import java.time.LocalDate;
+import java.util.List;
 
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
-import jakarta.persistence.UniqueConstraint;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import lombok.ToString;
 
 @Getter
 @Setter
@@ -22,22 +24,28 @@ import lombok.Setter;
 @AllArgsConstructor
 @Builder
 @EqualsAndHashCode(onlyExplicitlyIncluded = true, callSuper = true)
+@ToString(exclude = { "details" })
 @Entity
-@Table(name = "system_api", uniqueConstraints = {
-        @UniqueConstraint(columnNames = { "endpoint", "systemType" })
-})
-public class SystemApi extends BaseAuditableEntity {
+@Table(name = "salary_template")
+public class SalaryTemplate extends BaseAuditableEntity {
     @Id
     @EqualsAndHashCode.Include
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private String endpoint;
+    private String name;
 
     private String description;
 
-    private ApiType type;
+    @Column(name = "total_amount")
+    private Double totalAmount;
 
-    private CommonEnum systemType;
+    @Column(name = "effective_from")
+    private LocalDate effectiveFrom;
 
+    @Column(name = "effective_to")
+    private LocalDate effectiveTo;
+
+    @OneToMany(mappedBy = "salaryTemplate")
+    private List<SalaryTemplateDetail> details;
 }
