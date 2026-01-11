@@ -9,6 +9,4 @@ import lombok.EqualsAndHashCode;
 @EqualsAndHashCode(callSuper = true)
 public class CompanyDetailResponse extends CompanyResponse {
     List<DepartmentResponse> department;
-    List<EmployeeInformationResponse> employees;
-    List<RoleResponse> roles;
 }

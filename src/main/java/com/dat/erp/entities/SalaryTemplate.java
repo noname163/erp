@@ -24,7 +24,7 @@ import lombok.ToString;
 @AllArgsConstructor
 @Builder
 @EqualsAndHashCode(onlyExplicitlyIncluded = true, callSuper = true)
-@ToString(exclude = { "details", "employeeSalaries" })
+@ToString(exclude = { "details" })
 @Entity
 @Table(name = "salary_template")
 public class SalaryTemplate extends BaseAuditableEntity {
@@ -48,7 +48,4 @@ public class SalaryTemplate extends BaseAuditableEntity {
 
     @OneToMany(mappedBy = "salaryTemplate")
     private List<SalaryTemplateDetail> details;
-
-    @OneToMany(mappedBy = "salaryTemplate")
-    private List<EmployeeSalary> employeeSalaries;
 }

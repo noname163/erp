@@ -7,6 +7,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.data.domain.AuditorAware;
 import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
 
+import com.dat.erp.exceptions.UnauthorizedException;
 import com.dat.erp.services.SecurityContextService;
 
 @Configuration
@@ -14,9 +15,14 @@ import com.dat.erp.services.SecurityContextService;
 public class JpaAuditingConfig {
     @Bean
     public AuditorAware<String> auditorProvider(SecurityContextService securityContextService) {
-        return () -> Optional.ofNullable(
-                Optional.ofNullable(securityContextService.getCurrentUser())
+        return () -> {
+            try {
+                return Optional.ofNullable(securityContextService.getCurrentUser())
                         .map(user -> user.getCode())
-                        .orElse("SYSTEM"));
+                        .or(() -> Optional.of("SYSTEM"));
+            } catch (UnauthorizedException ex) {
+                return Optional.of("SYSTEM");
+            }
+        };
     }
 }

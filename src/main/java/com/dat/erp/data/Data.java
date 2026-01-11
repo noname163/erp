@@ -1,130 +1,93 @@
-// package com.dat.erp.data;
+package com.dat.erp.data;
 
-// import java.time.LocalDate;
-// import java.time.LocalDateTime;
+import java.time.LocalDate;
 
-// import org.springframework.boot.CommandLineRunner;
-// import org.springframework.context.annotation.Bean;
-// import org.springframework.context.annotation.Configuration;
+import org.springframework.boot.CommandLineRunner;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 
-// import com.dat.erp.constants.CommonStatus;
-// import com.dat.erp.dto.request.RoleHasApiRequest;
-// import com.dat.erp.entities.Company;
-// import com.dat.erp.entities.Department;
-// import com.dat.erp.entities.EmployeeInformation;
-// import com.dat.erp.entities.Role;
-// import com.dat.erp.entities.RoleHasApi;
-// import com.dat.erp.entities.SystemApi;
-// import com.dat.erp.entities.UserInformation;
-// import com.dat.erp.repositories.customrepositories.CompanyRepository;
-// import com.dat.erp.repositories.customrepositories.DepartmentRepository;
-// import
-// com.dat.erp.repositories.customrepositories.EmployeeInformationRepository;
-// import com.dat.erp.repositories.customrepositories.RoleHasApiRepository;
-// import com.dat.erp.repositories.customrepositories.RoleRepository;
-// import com.dat.erp.repositories.customrepositories.SystemApiRepository;
-// import com.dat.erp.repositories.customrepositories.UserInformationRepository;
-// import com.dat.erp.utils.PermissionUtils;
+import com.dat.erp.constants.CodePrefixes;
+import com.dat.erp.entities.Account;
+import com.dat.erp.entities.Company;
+import com.dat.erp.entities.Department;
+import com.dat.erp.entities.Role;
+import com.dat.erp.entities.UserProfile;
+import com.dat.erp.repositories.customrepositories.CompanyRepository;
+import com.dat.erp.repositories.customrepositories.DepartmentRepository;
+import com.dat.erp.repositories.customrepositories.AccountRepository;
+import com.dat.erp.repositories.customrepositories.RoleRepository;
+import com.dat.erp.repositories.customrepositories.UserProfileRepository;
+import com.dat.erp.utils.CryptoUtils;
 
-// @Configuration
-// public class Data {
+@Configuration
+public class Data {
 
-// @Bean
-// CommandLineRunner initData(
-// UserInformationRepository userRepo,
-// DepartmentRepository departmentRepo,
-// RoleRepository roleRepo,
-// EmployeeInformationRepository employeeRepo,
-// CompanyRepository companyRepo,
-// SystemApiRepository systemApiRepo,
-// RoleHasApiRepository roleHasApiRepo) {
-// return args -> {
-// // --- Create User ---
-// UserInformation user = new UserInformation();
-// user.setCode("USR001");
-// user.setFirstName("Dat");
-// user.setLastName("Huu");
-// user.setEmail("datpersonal@example.com");
-// user.setDateOfBirth("1995-01-01");
-// user.setGender("Male");
-// user.setPhoneNumber("0123456789");
-// userRepo.save(user);
+    private static final String ADMIN_EMAIL = "admin";
+    private static final String ADMIN_PASSWORD = "admin";
 
-// // --- Create Company ---
-// Company company = new Company();
-// company.setCode("COMP001");
-// company.setName("NashTech Vietnam");
-// company.setCreatedAt(LocalDateTime.now());
-// companyRepo.save(company);
+    private static final String COMPANY_CODE = CodePrefixes.COMPANY + "DEFAULT";
+    private static final String DEPARTMENT_CODE = CodePrefixes.DEPARTMENT + "GENERAL";
+    private static final String ROLE_CODE = CodePrefixes.ROLE + "ADMIN";
+    private static final String ROLE_NAME = "ADMIN";
 
-// // --- Create Department ---
-// Department department = new Department();
-// department.setCode("DEP001");
-// department.setName("IT Department");
-// department.setStatus(CommonStatus.ACTIVATE);
-// department.setCreatedAt(LocalDateTime.now());
-// department.setCompany(company);
-// departmentRepo.save(department);
+    @Bean
+    CommandLineRunner initData(
+            AccountRepository accountRepository,
+            DepartmentRepository departmentRepository,
+            RoleRepository roleRepository,
+            CompanyRepository companyRepository,
+            UserProfileRepository userProfileRepository) {
+        return args -> {
+            Company company = companyRepository.findByCode(COMPANY_CODE)
+                    .orElseGet(() -> {
+                        Company newCompany = new Company();
+                        newCompany.setCode(COMPANY_CODE);
+                        newCompany.setName("Demo Company");
+                        newCompany.setEmail("info@demo.local");
+                        newCompany.setPhoneNumber("000-000-0000");
+                        return companyRepository.save(newCompany);
+                    });
 
-// // --- Create Role ---
-// Role role = new Role();
-// role.setCode("ROLE001");
-// role.setName("ADMIN");
-// role.setLevel(1);
-// role.setCreatedAt(LocalDateTime.now());
-// roleRepo.save(role);
+            Department department = departmentRepository.findByCode(DEPARTMENT_CODE)
+                    .orElseGet(() -> {
+                        Department newDepartment = new Department();
+                        newDepartment.setCode(DEPARTMENT_CODE);
+                        newDepartment.setName("General");
+                        newDepartment.setCompany(company);
+                        return departmentRepository.save(newDepartment);
+                    });
 
-// // --- Create Employee ---
-// EmployeeInformation emp = new EmployeeInformation();
-// emp.setCode("EMP001");
-// emp.setUser(user);
-// emp.setEmail("dat@example.com");
-// emp.setPassword("123456"); // ⚠️ normally encode it
-// emp.setDepartment(department);
-// emp.setCompany(company);
-// emp.setRole(role);
-// emp.setJobTitle("Java Developer");
-// emp.setEmploymentStatus(CommonStatus.ACTIVATE);
-// emp.setHireDate(LocalDate.now());
-// emp.setCreatedAt(LocalDateTime.now());
-// employeeRepo.save(emp);
+            Role adminRole = roleRepository.findByCode(ROLE_CODE)
+                    .orElseGet(() -> {
+                        Role newRole = new Role();
+                        newRole.setCode(ROLE_CODE);
+                        newRole.setName(ROLE_NAME);
+                        newRole.setDescription("System administrator role with full access");
+                        return roleRepository.save(newRole);
+                    });
 
-// // --- Create SystemApi ---
-// SystemApi api1 = new SystemApi();
-// api1.setCode("API001");
-// api1.setEndpoint("/api/roles");
-// api1.setDescription("Get list of employees");
-// systemApiRepo.save(api1);
+            accountRepository.findByEmail(ADMIN_EMAIL).orElseGet(() -> {
+                Account account = new Account();
+                account.setCode("ACC-ADMIN");
+                account.setEmail(ADMIN_EMAIL);
+                account.setPasswordHash(CryptoUtils.hash(ADMIN_PASSWORD));
+                account.setIsActive(true);
+                account.setRole(adminRole);
+                account.setUserProfile(null);
+                return accountRepository.save(account);
+            });
 
-// SystemApi api2 = new SystemApi();
-// api2.setCode("API002");
-// api2.setEndpoint("/emplosdasyees/{id}");
-// api2.setDescription("Create employee");
-// systemApiRepo.save(api2);
-
-// RoleHasApiRequest roleHasApiRequest = new RoleHasApiRequest();
-// roleHasApiRequest.setCreate(true);
-// roleHasApiRequest.setRead(true);
-// roleHasApiRequest.setDelete(true);
-// roleHasApiRequest.setUpdate(true);
-// roleHasApiRequest.setViewOwnedOnly(true);
-// // --- Link Role to SystemApi with RoleHasApi ---
-// RoleHasApi roleHasApi1 = new RoleHasApi();
-// roleHasApi1.setRole(role);
-// roleHasApi1.setApi(api1);
-// roleHasApi1.setPermission(PermissionUtils.toInt(roleHasApiRequest)); //
-// Example permission (like read/write)
-// roleHasApiRepo.save(roleHasApi1);
-
-// RoleHasApi roleHasApi2 = new RoleHasApi();
-// roleHasApi2.setRole(role);
-// roleHasApi2.setApi(api2);
-// roleHasApi2.setPermission(PermissionUtils.toInt(roleHasApiRequest)); //
-// Example permission
-// roleHasApiRepo.save(roleHasApi2);
-
-// System.out.println("✅ Sample data inserted (User, Company, Dept, Role,
-// Employee, APIs, RoleHasApi)!");
-// };
-// }
-// }
+            userProfileRepository.findByAccount_Code("ACC-ADMIN").orElseGet(() -> {
+                UserProfile profile = new UserProfile();
+                profile.setCode("USR-ADMIN");
+                profile.setAccount(accountRepository.findByEmail(ADMIN_EMAIL).orElseThrow());
+                profile.setFirstName("System");
+                profile.setLastName("Administrator");
+                profile.setDepartment(department);
+                profile.setHireDate(LocalDate.now());
+                profile.setIsActive(true);
+                return userProfileRepository.save(profile);
+            });
+        };
+    }
+}

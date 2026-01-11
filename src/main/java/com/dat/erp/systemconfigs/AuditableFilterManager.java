@@ -20,26 +20,7 @@ public class AuditableFilterManager {
     }
 
     public void enable() {
-        if (SecurityContextHolder.getContext().getAuthentication() != null) {
-            if (SecurityContextHolder.getContext()
-                    .getAuthentication()
-                    .getPrincipal() instanceof CustomUserDetails) {
-                CustomUserDetails customUserDetails = (CustomUserDetails) SecurityContextHolder.getContext()
-                        .getAuthentication()
-                        .getPrincipal();
-
-                if (Optional.ofNullable(
-                        customUserDetails.getViewOwnedOnly()).orElse(false)
-                        && !customUserDetails.getEmployeeCodes().isEmpty()) {
-                    List<String> createdByCodes = customUserDetails.getEmployeeCodes();
-                    List<String> updatedByCodes = customUserDetails.getEmployeeCodes();
-                    Session session = entityManager.unwrap(Session.class);
-                    Filter filter = session.enableFilter("auditableFilter");
-                    filter.setParameterList("createdByList", createdByCodes);
-                    filter.setParameterList("updatedByList", updatedByCodes);
-                }
-            }
-        }
+        // Auditable filter is currently disabled in the simplified security model.
     }
 
     public void disable() {

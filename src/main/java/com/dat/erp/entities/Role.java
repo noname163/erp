@@ -1,19 +1,10 @@
 package com.dat.erp.entities;
 
-import java.util.List;
-
-import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.NamedAttributeNode;
-import jakarta.persistence.NamedEntityGraph;
-import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -21,7 +12,6 @@ import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import lombok.ToString;
 
 @Getter
 @Setter
@@ -29,14 +19,8 @@ import lombok.ToString;
 @AllArgsConstructor
 @Builder
 @EqualsAndHashCode(onlyExplicitlyIncluded = true, callSuper = true)
-@ToString(exclude = { "apis", "employees", "accounts" })
 @Entity
 @Table(name = "role")
-@NamedEntityGraph(name = "role.full", attributeNodes = {
-        @NamedAttributeNode("apis"),
-        @NamedAttributeNode("employees"),
-        @NamedAttributeNode("company")
-})
 public class Role extends BaseAuditableEntity {
     @Id
     @EqualsAndHashCode.Include
@@ -47,19 +31,4 @@ public class Role extends BaseAuditableEntity {
     private String name;
 
     private String description;
-    private Integer level;
-
-    @OneToMany(mappedBy = "role", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
-    private List<RoleHasApi> apis;
-
-    @OneToMany(mappedBy = "role", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
-    private List<EmployeeInformation> employees;
-
-    @OneToMany(mappedBy = "role", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
-    private List<Account> accounts;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "company_code", referencedColumnName = "code", nullable = true)
-    private Company company;
-
 }

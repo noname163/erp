@@ -23,7 +23,7 @@ import lombok.ToString;
 @AllArgsConstructor
 @Builder
 @EqualsAndHashCode(onlyExplicitlyIncluded = true, callSuper = true)
-@ToString(exclude = { "salaryTemplate", "salary", "unit" })
+@ToString(exclude = { "salaryTemplate", "salary" })
 @Entity
 @Table(name = "salary_template_detail")
 public class SalaryTemplateDetail extends BaseAuditableEntity {
@@ -40,13 +40,32 @@ public class SalaryTemplateDetail extends BaseAuditableEntity {
     @JoinColumn(name = "salary_code", referencedColumnName = "code", nullable = false)
     private Salary salary;
 
-    private String amount;
+    @Column(name = "component_code")
+    private String componentCode;
 
-    private Integer quantity;
+    @Column(name = "component_name")
+    private String componentName;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "unit_code", referencedColumnName = "code")
-    private SystemUnit unit;
+    @Column(name = "calculation_type")
+    private String calculationType;
+
+    @Column(name = "reference_component_code")
+    private String referenceComponentCode;
+
+    @Column(name = "percent")
+    private Double percent;
+
+    @Column(name = "cap_amount")
+    private Double capAmount;
+
+    @Column(name = "cap_percent_of")
+    private Double capPercentOf;
+
+    @Column(name = "min_amount")
+    private Double minAmount;
+
+    @Column(name = "default_amount")
+    private Double defaultAmount;
 
     @Column(name = "sequence_order")
     private Integer sequenceOrder;

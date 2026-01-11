@@ -32,12 +32,9 @@ import lombok.ToString;
 @AllArgsConstructor
 @EqualsAndHashCode(onlyExplicitlyIncluded = true, callSuper = false)
 @Builder
-@ToString(exclude = { "employees", "departments", "roles", "workSchedules" })
+@ToString(exclude = { "departments" })
 @NamedEntityGraph(name = "Company.full", attributeNodes = {
-        @NamedAttributeNode("departments"),
-        @NamedAttributeNode("employees"),
-        @NamedAttributeNode("roles"),
-        @NamedAttributeNode("workSchedules")
+        @NamedAttributeNode("departments")
 })
 public class Company extends BaseAuditableEntity {
 
@@ -74,14 +71,5 @@ public class Company extends BaseAuditableEntity {
     private String phoneNumber;
 
     @OneToMany(mappedBy = "company", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
-    private List<EmployeeInformation> employees;
-
-    @OneToMany(mappedBy = "company", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private List<Department> departments;
-
-    @OneToMany(mappedBy = "company", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
-    private List<Role> roles;
-
-    @OneToMany(mappedBy = "company", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
-    private List<WorkSchedule> workSchedules;
 }
