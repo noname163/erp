@@ -30,9 +30,9 @@ public class CompanyServiceImpl implements CompanyService {
     @Override
     public String createCompany(CompanyRequest companyRequest) {
         Company company = companyMapper.toEntity(companyRequest);
-        companyRepository.findByName(company.getName())
+        companyRepository.findByEmail(company.getEmail())
                 .ifPresent(existing -> {
-                    throw new ConflictException(Messages.ERROR_COMPANY_NAME_EXISTS);
+                    throw new ConflictException(Messages.ERROR_COMPANY_EMAIL_EXISTS);
                 });
         company.setCode(CodePrefixes.COMPANY + UUID.randomUUID());
         companyRepository.save(company);
