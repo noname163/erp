@@ -27,5 +27,6 @@ public final class Messages {
 
     // Conflict messages
     public static final String ERROR_COMPANY_NAME_EXISTS = "Company name already exists";
+    public static final String ERROR_COMPANY_EMAIL_EXISTS = "Company email already exists";
     public static final String ERROR_DEPARTMENT_NAME_EXISTS = "Department name already exists";
 }
