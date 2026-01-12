@@ -29,8 +29,10 @@ public class Email extends BaseAuditableEntity {
     private Long id;
     @EqualsAndHashCode.Include
     private String code;
+    private String subject;
     private String from;
     private String to;
+    private String fullName;
     private String gender;
     private String htmlFilePath;
     private boolean isSent;
