@@ -1,5 +1,7 @@
 package com.dat.erp.dto.request;
 
+import java.util.Map;
+
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
@@ -27,5 +29,6 @@ public class EmailRequest {
     @NotBlank(message = "Html template is required")
     @Size(max = 255, message = "Html template must be at most 255 characters")
     private String htmlFilePath;
-}
 
+    private Map<String, Object> templateVariables;
+}

@@ -21,8 +21,8 @@ import com.dat.erp.services.SystemMailSender;
 public class EmailServiceImpl implements EmailService {
     private static final Logger log = LoggerFactory.getLogger(EmailServiceImpl.class);
 
-    private static final String NEED_RETRY_YES = "Y";
-    private static final String NEED_RETRY_NO = "N";
+    private static final boolean NEED_RETRY_YES = true;
+    private static final boolean NEED_RETRY_NO = false;
 
     private final EmailRepository emailRepository;
     private final EmailMapper emailMapper;
@@ -91,8 +91,8 @@ public class EmailServiceImpl implements EmailService {
             }
             try {
                 EmailRequest request = new EmailRequest();
-                request.setFrom(email.getFrom());
-                request.setTo(email.getTo());
+                request.setFrom(email.getEmailFrom());
+                request.setTo(email.getEmailTo());
                 request.setFullName(email.getFullName());
                 request.setGender(email.getGender());
                 request.setHtmlFilePath(email.getHtmlFilePath());
@@ -104,7 +104,7 @@ public class EmailServiceImpl implements EmailService {
                 email.setNeedRetry(NEED_RETRY_NO);
                 email.setErrorMessage(null);
             } catch (Exception e) {
-                log.warn("Email retry failed id={} to={} template={} error={}", email.getId(), email.getTo(),
+                log.warn("Email retry failed id={} to={} template={} error={}", email.getId(), email.getEmailTo(),
                         email.getHtmlFilePath(), e.getMessage());
                 applyFailure(email, e);
             }

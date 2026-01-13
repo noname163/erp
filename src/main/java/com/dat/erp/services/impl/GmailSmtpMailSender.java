@@ -5,9 +5,11 @@ import jakarta.mail.internet.MimeMessage;
 
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
+import org.springframework.stereotype.Service;
 
 import com.dat.erp.services.SystemMailSender;
 
+@Service
 public class GmailSmtpMailSender implements SystemMailSender {
     private final JavaMailSender mailSender;
 

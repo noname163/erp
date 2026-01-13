@@ -23,6 +23,9 @@ public class ThymeleafEmailTemplateEngine implements EmailTemplateEngine {
         context.setVariable("fullName", request.getFullName());
         context.setVariable("gender", request.getGender());
         context.setVariable("greeting", buildGreeting(request.getFullName(), request.getGender()));
+        for (var entry : request.getTemplateVariables().entrySet()) {
+            context.setVariable(entry.getKey(), entry.getValue());
+        }
         return templateEngine.process(resolveTemplateName(request.getHtmlFilePath()), context);
     }
 
@@ -63,7 +66,8 @@ public class ThymeleafEmailTemplateEngine implements EmailTemplateEngine {
         if (normalized.isBlank()) {
             return "";
         }
-        if (normalized.equals("male") || normalized.equals("m") || normalized.equals("man") || normalized.equals("mr")) {
+        if (normalized.equals("male") || normalized.equals("m") || normalized.equals("man")
+                || normalized.equals("mr")) {
             return "Mr.";
         }
         if (normalized.equals("female") || normalized.equals("f") || normalized.equals("woman")
@@ -73,4 +77,3 @@ public class ThymeleafEmailTemplateEngine implements EmailTemplateEngine {
         return "";
     }
 }
-
