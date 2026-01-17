@@ -17,6 +17,10 @@ public final class Messages {
 
     public static final String ERROR_ACCOUNT_NOT_FOUND_WITH_CODE = "Account with code %s not found";
     public static final String ERROR_USER_PROFILE_NOT_FOUND_WITH_ACCOUNT = "User profile for account %s not found";
+    public static final String ERROR_ACCOUNT_EMAIL_EXISTS = "Account email already exists";
+    public static final String ERROR_ROLE_NOT_FOUND_WITH_CODE = "Role not found with code %s";
+    public static final String ERROR_DEPARTMENT_NOT_FOUND_WITH_CODE = "Department not found with code %s";
+    public static final String ERROR_CURRENT_USER_COMPANY_MISSING = "Current user company is missing";
     // Authentication
     public static final String ERROR_INVALID_CREDENTIALS = "Invalid credentials";
     public static final String LOGIN_SUCCESS = "Login successful";
