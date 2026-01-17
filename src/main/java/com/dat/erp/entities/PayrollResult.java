@@ -1,7 +1,11 @@
 package com.dat.erp.entities;
 
+import com.dat.erp.constants.PayrollSourceType;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -23,18 +27,22 @@ import lombok.ToString;
 @AllArgsConstructor
 @Builder
 @EqualsAndHashCode(onlyExplicitlyIncluded = true, callSuper = true)
-@ToString(exclude = { "salaryTemplate", "salary" })
+@ToString(exclude = { "payrollRun", "userProfile", "salary", "unit" })
 @Entity
-@Table(name = "salary_template_detail")
-public class SalaryTemplateDetail extends BaseAuditableEntity {
+@Table(name = "payroll_result")
+public class PayrollResult extends BaseAuditableEntity {
     @Id
     @EqualsAndHashCode.Include
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "template_code", referencedColumnName = "code", nullable = false)
-    private SalaryTemplate salaryTemplate;
+    @JoinColumn(name = "payroll_run_code", referencedColumnName = "code", nullable = false)
+    private PayrollRun payrollRun;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_profile_code", referencedColumnName = "code", nullable = false)
+    private UserProfile userProfile;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "salary_code", referencedColumnName = "code", nullable = false)
@@ -50,6 +58,13 @@ public class SalaryTemplateDetail extends BaseAuditableEntity {
     @JoinColumn(name = "unit_code", referencedColumnName = "code")
     private SystemUnit unit;
 
-    @Column(name = "sequence_order")
-    private Integer sequenceOrder;
+    @Enumerated(EnumType.STRING)
+    @Column(name = "source_type")
+    private PayrollSourceType sourceType;
+
+    @Column(name = "is_retro")
+    private Boolean isRetro;
+
+    @Column(name = "retro_reason")
+    private String retroReason;
 }

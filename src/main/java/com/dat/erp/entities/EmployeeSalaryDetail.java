@@ -23,10 +23,10 @@ import lombok.ToString;
 @AllArgsConstructor
 @Builder
 @EqualsAndHashCode(onlyExplicitlyIncluded = true, callSuper = true)
-@ToString(exclude = { "salary" })
+@ToString(exclude = { "salary", "employeeSalary", "unit" })
 @Entity
-@Table(name = "salary_detail")
-public class SalaryDetail extends BaseAuditableEntity {
+@Table(name = "employee_salary_detail")
+public class EmployeeSalaryDetail extends BaseAuditableEntity {
     @Id
     @EqualsAndHashCode.Include
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -36,9 +36,17 @@ public class SalaryDetail extends BaseAuditableEntity {
     @JoinColumn(name = "salary_code", referencedColumnName = "code", nullable = false)
     private Salary salary;
 
-    @Column(name = "name")
-    private String name;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "employee_salary_code", referencedColumnName = "code", nullable = false)
+    private EmployeeSalary employeeSalary;
 
     @Column(name = "amount")
     private String amount;
+
+    @Column(name = "quantity")
+    private Integer quantity;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "unit_code", referencedColumnName = "code")
+    private SystemUnit unit;
 }

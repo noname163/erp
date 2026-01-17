@@ -29,7 +29,7 @@ import lombok.ToString;
 @Builder
 @EqualsAndHashCode(onlyExplicitlyIncluded = true, callSuper = true)
 @ToString(exclude = {
-        "account", "department", "jobTitle", "identities", "skills", "salaries", "ptos"
+        "account", "department", "jobTitle", "identities", "skills", "employeeSalaries", "ptos", "dailyWorks"
 })
 @Entity
 @Table(name = "user_profile")
@@ -76,8 +76,11 @@ public class UserProfile extends BaseAuditableEntity {
     private List<UserSkill> skills;
 
     @OneToMany(mappedBy = "userProfile", fetch = FetchType.LAZY)
-    private List<Salary> salaries;
+    private List<EmployeeSalary> employeeSalaries;
 
     @OneToMany(mappedBy = "userProfile", fetch = FetchType.LAZY)
     private List<EmployeePto> ptos;
+
+    @OneToMany(mappedBy = "userProfile", fetch = FetchType.LAZY)
+    private List<DailyWork> dailyWorks;
 }

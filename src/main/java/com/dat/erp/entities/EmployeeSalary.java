@@ -1,14 +1,16 @@
 package com.dat.erp.entities;
 
-import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
@@ -25,21 +27,22 @@ import lombok.ToString;
 @AllArgsConstructor
 @Builder
 @EqualsAndHashCode(onlyExplicitlyIncluded = true, callSuper = true)
-@ToString(exclude = { "details", "employeeSalaries" })
+@ToString(exclude = { "userProfile", "salaryTemplate", "details" })
 @Entity
-@Table(name = "salary_template")
-public class SalaryTemplate extends BaseAuditableEntity {
+@Table(name = "employee_salary")
+public class EmployeeSalary extends BaseAuditableEntity {
     @Id
     @EqualsAndHashCode.Include
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private String name;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_profile_code", referencedColumnName = "code", nullable = false)
+    private UserProfile userProfile;
 
-    private String description;
-
-    @Column(name = "total_amount")
-    private BigDecimal totalAmount;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "template_code", referencedColumnName = "code")
+    private SalaryTemplate salaryTemplate;
 
     @Column(name = "effective_from")
     private LocalDate effectiveFrom;
@@ -47,9 +50,12 @@ public class SalaryTemplate extends BaseAuditableEntity {
     @Column(name = "effective_to")
     private LocalDate effectiveTo;
 
-    @OneToMany(mappedBy = "salaryTemplate")
-    private List<SalaryTemplateDetail> details;
+    @Column(name = "total_amount")
+    private String totalAmount;
 
-    @OneToMany(mappedBy = "salaryTemplate")
-    private List<EmployeeSalary> employeeSalaries;
+    @Column(name = "currency")
+    private String currency;
+
+    @OneToMany(mappedBy = "employeeSalary", fetch = FetchType.LAZY)
+    private List<EmployeeSalaryDetail> details;
 }
