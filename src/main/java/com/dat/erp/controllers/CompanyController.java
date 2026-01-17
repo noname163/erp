@@ -5,12 +5,13 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.dat.erp.builders.ResponseBuilder;
+import com.dat.erp.constants.Defaults;
 import com.dat.erp.dto.request.CompanyRequest;
 import com.dat.erp.dto.response.CompanyResponse;
-import com.dat.erp.dto.response.CustomApiResponse;
 import com.dat.erp.dto.response.PagedResponse;
+import com.dat.erp.exceptions.ForbiddenException;
 import com.dat.erp.services.CompanyService;
+import com.dat.erp.services.SecurityContextService;
 
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -35,6 +36,8 @@ import org.springframework.web.bind.annotation.RequestParam;
 public class CompanyController {
     @Autowired
     private CompanyService companyService;
+    @Autowired
+    private SecurityContextService securityContextService;
 
     /**
      * Create a new company.
@@ -49,8 +52,9 @@ public class CompanyController {
             @ApiResponse(responseCode = "400", description = "Invalid input")
     })
     @PostMapping("")
-    public ResponseEntity<CustomApiResponse<String>> createCompany(@Valid @RequestBody CompanyRequest companyRequest) {
-        return ResponseBuilder.created(companyService.createCompany(companyRequest));
+    public ResponseEntity<CompanyResponse> createCompany(@Valid @RequestBody CompanyRequest companyRequest) {
+        enforceSystemAdmin();
+        return ResponseEntity.status(201).body(companyService.createCompany(companyRequest));
     }
 
     /**
@@ -86,4 +90,14 @@ public class CompanyController {
         return ResponseEntity.ok(companyService.getCompanies(searchKey, searchValue, page, size, sortBy, sortDir));
     }
 
+    private void enforceSystemAdmin() {
+        var user = securityContextService.getCurrentUser();
+        String roleName = user == null || user.getAccount() == null || user.getAccount().getRole() == null
+                ? null
+                : user.getAccount().getRole().getName();
+        boolean allowed = Defaults.ROLE_SYSTEM_ADMIN.equals(roleName) || Defaults.ROLE_ADMIN.equals(roleName);
+        if (!allowed) {
+            throw new ForbiddenException("Only SYSTEM_ADMIN can create companies");
+        }
+    }
 }

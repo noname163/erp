@@ -16,5 +16,7 @@ public interface EmailMapper {
     @Mapping(target = "retryTime", ignore = true)
     @Mapping(target = "errorMessage", ignore = true)
     @Mapping(target = "needRetry", ignore = true)
+    @Mapping(source = "from", target = "emailFrom")
+    @Mapping(source = "to", target = "emailTo")
     Email toEntity(EmailRequest request);
 }

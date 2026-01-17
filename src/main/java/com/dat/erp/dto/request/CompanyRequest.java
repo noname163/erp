@@ -1,5 +1,6 @@
 package com.dat.erp.dto.request;
 
+import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
@@ -7,6 +8,11 @@ import lombok.Data;
 
 @Data
 public class CompanyRequest {
+    @NotBlank(message = "Email is required")
+    @Email(message = "Invalid email format")
+    @Size(max = 255, message = "Email must be at most 255 characters")
+    private String email;
+
     @NotBlank(message = "Company name is required")
     @Size(max = 100, message = "Company name must be at most 100 characters")
     private String name;
@@ -16,7 +22,7 @@ public class CompanyRequest {
     private String industry;
 
     @NotBlank(message = "Tax is required")
-    @Size(max = 50, message = "Tax must be at most 10 characters")
+    @Size(max = 50, message = "Tax number must be at most 50 characters")
     private String taxNumber;
 
     @NotBlank(message = "Address is required")

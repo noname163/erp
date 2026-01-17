@@ -3,8 +3,8 @@ package com.dat.erp.services.impl;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -29,11 +29,11 @@ import com.dat.erp.dto.response.PagedResponse;
 import com.dat.erp.entities.Account;
 import com.dat.erp.entities.Department;
 import com.dat.erp.exceptions.ConflictException;
+import com.dat.erp.mapper.interfaces.DepartmentMapper;
+import com.dat.erp.repositories.customrepositories.DepartmentRepository;
 import com.dat.erp.services.CodeGenerator;
 import com.dat.erp.services.SecurityContextService;
 import com.dat.erp.systemconfigs.CustomUserDetails;
-import com.dat.erp.mapper.interfaces.DepartmentMapper;
-import com.dat.erp.repositories.customrepositories.DepartmentRepository;
 
 class DepartmentServiceImplTest {
 
@@ -116,5 +116,21 @@ class DepartmentServiceImplTest {
         assertNotNull(result);
         assertEquals(1, result.getData().size());
         assertEquals(response, result.getData().get(0));
+    }
+
+    @Test
+    void testCreateDefaultDepartment_WhenExists_ReturnsExistingCode() {
+        Department existing = new Department();
+        existing.setCode("DPM-EXISTING");
+        when(departmentRepository.findByNameAndCompanyCode(eq("HR"), eq("CMP-1")))
+                .thenReturn(java.util.Optional.of(existing));
+
+        request.setCompanyCode("CMP-1");
+        request.setName("HR");
+
+        String code = departmentService.createDefaultDepartment(request, "ACC-ADMIN");
+
+        assertEquals("DPM-EXISTING", code);
+        verify(departmentRepository, never()).save(any());
     }
 }

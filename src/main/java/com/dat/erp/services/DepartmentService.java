@@ -7,6 +7,8 @@ import com.dat.erp.dto.response.PagedResponse;
 public interface DepartmentService {
     public String createDepartment(DepartmentRequest departmentRequest);
 
+    public String createDefaultDepartment(DepartmentRequest departmentRequest, String actorCode);
+
     public PagedResponse<DepartmentResponse> getDepartmentByCompanyCode(String searchKey, String searchValue,
             Integer page, Integer size, String sortBy, String sortDir);
 }

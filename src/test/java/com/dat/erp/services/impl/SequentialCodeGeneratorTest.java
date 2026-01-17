@@ -68,10 +68,10 @@ class SequentialCodeGeneratorTest {
         when(codeSequenceRepository.findByPrefix("CMP-")).thenReturn(Optional.empty(), Optional.of(seq));
         when(codeSequenceRepository.save(Mockito.argThat(
                 s -> s != null && "CMP-".equals(s.getPrefix()) && s.getLastNumber() == 0L)))
-                .thenThrow(new DataIntegrityViolationException("duplicate"));
+                        .thenThrow(new DataIntegrityViolationException("duplicate"));
         when(codeSequenceRepository.save(Mockito.argThat(
                 s -> s != null && "CMP-".equals(s.getPrefix()) && s.getLastNumber() != 0L)))
-                .thenAnswer(inv -> inv.getArgument(0));
+                        .thenAnswer(inv -> inv.getArgument(0));
 
         String code = generator.nextCode("CMP-");
 
