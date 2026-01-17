@@ -38,7 +38,7 @@ public class Data {
             CompanyRepository companyRepository,
             UserProfileRepository userProfileRepository) {
         return args -> {
-            Company company = companyRepository.findByCode(COMPANY_CODE)
+            companyRepository.findByCode(COMPANY_CODE)
                     .orElseGet(() -> {
                         Company newCompany = new Company();
                         newCompany.setCode(COMPANY_CODE);
@@ -53,7 +53,7 @@ public class Data {
                         Department newDepartment = new Department();
                         newDepartment.setCode(DEPARTMENT_CODE);
                         newDepartment.setName("General");
-                        newDepartment.setCompany(company);
+                        newDepartment.setCompanyCode(COMPANY_CODE);
                         return departmentRepository.save(newDepartment);
                     });
 

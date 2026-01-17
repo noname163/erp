@@ -1,15 +1,15 @@
 package com.dat.erp.entities;
 
 import java.math.BigDecimal;
-import java.time.LocalDate;
-import java.util.List;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-import jakarta.persistence.OneToMany;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -25,31 +25,24 @@ import lombok.ToString;
 @AllArgsConstructor
 @Builder
 @EqualsAndHashCode(onlyExplicitlyIncluded = true, callSuper = true)
-@ToString(exclude = { "details", "employeeSalaries" })
+@ToString(exclude = { "from", "to" })
 @Entity
-@Table(name = "salary_template")
-public class SalaryTemplate extends BaseAuditableEntity {
+@Table(name = "system_unit_detail")
+public class SystemUnitDetail extends BaseAuditableEntity {
     @Id
     @EqualsAndHashCode.Include
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private String name;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "system_unit_code_from", referencedColumnName = "code", nullable = false)
+    private SystemUnit from;
 
-    private String description;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "system_unit_code_to", referencedColumnName = "code", nullable = false)
+    private SystemUnit to;
 
-    @Column(name = "total_amount")
-    private BigDecimal totalAmount;
-
-    @Column(name = "effective_from")
-    private LocalDate effectiveFrom;
-
-    @Column(name = "effective_to")
-    private LocalDate effectiveTo;
-
-    @OneToMany(mappedBy = "salaryTemplate")
-    private List<SalaryTemplateDetail> details;
-
-    @OneToMany(mappedBy = "salaryTemplate")
-    private List<EmployeeSalary> employeeSalaries;
+    @Column(name = "exchange_quantity")
+    private BigDecimal exchangeQuantity;
 }
+

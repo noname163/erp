@@ -23,8 +23,10 @@ public class ThymeleafEmailTemplateEngine implements EmailTemplateEngine {
         context.setVariable("fullName", request.getFullName());
         context.setVariable("gender", request.getGender());
         context.setVariable("greeting", buildGreeting(request.getFullName(), request.getGender()));
-        for (var entry : request.getTemplateVariables().entrySet()) {
-            context.setVariable(entry.getKey(), entry.getValue());
+        if (request.getTemplateVariables() != null) {
+            for (var entry : request.getTemplateVariables().entrySet()) {
+                context.setVariable(entry.getKey(), entry.getValue());
+            }
         }
         return templateEngine.process(resolveTemplateName(request.getHtmlFilePath()), context);
     }

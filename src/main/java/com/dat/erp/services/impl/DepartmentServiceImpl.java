@@ -28,22 +28,16 @@ public class DepartmentServiceImpl extends AbstractAuditableService implements D
     private DepartmentRepository departmentRepository;
     @Autowired
     private DepartmentMapper departmentMapper;
-    @Autowired
-    private CompanyRepository companyRepository;
 
     @Override
     public String createDepartment(DepartmentRequest departmentRequest) {
         Department department = departmentMapper.toEntity(departmentRequest);
-        Company company = companyRepository.findByCode(departmentRequest.getCompanyCode())
-                .orElseThrow(() -> new ResourceNotFoundException(
-                        String.format(Messages.ERROR_COMPANY_NOT_FOUND_WITH_CODE, departmentRequest.getCompanyCode())));
         if (department.getName() != null
-                && departmentRepository.existsByNameAndCompany(department.getName(), company)) {
+                && departmentRepository.existsByNameAndCompanyCode(department.getName(), department.getCompanyCode())) {
             throw new ConflictException(Messages.ERROR_DEPARTMENT_NAME_EXISTS);
         }
         generateCodeIfMissing(department, CodePrefixes.DEPARTMENT);
         applyInsertAudit(department);
-        department.setCompany(company);
         department.setStatus(CommonStatus.ACTIVATE);
         departmentRepository.save(department);
         return department.getCode();
