@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.dat.erp.constants.CodePrefixes;
+import com.dat.erp.constants.Defaults;
 import com.dat.erp.constants.Messages;
 import com.dat.erp.dto.request.CreateEmployeeRequest;
 import com.dat.erp.dto.request.EmailRequest;
@@ -76,7 +77,10 @@ public class EmployeeAccountServiceImpl extends AbstractAuditableService impleme
         if (companyCode == null || companyCode.isBlank()) {
             throw new BadRequestException(Messages.ERROR_CURRENT_USER_COMPANY_MISSING);
         }
-
+        if (Defaults.ROLE_ADMIN.equals(request.getRoleCode())
+                || Defaults.ROLE_SYSTEM_ADMIN.equals(request.getRoleCode())) {
+            throw new BadRequestException(Messages.ERROR_CANNOT_CREATE_ADMIN_OR_MANAGER_EMPLOYEE);
+        }
         accountRepository.findByEmail(request.getEmail())
                 .ifPresent(existing -> {
                     throw new ConflictException(Messages.ERROR_ACCOUNT_EMAIL_EXISTS);

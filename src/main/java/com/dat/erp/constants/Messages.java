@@ -21,6 +21,7 @@ public final class Messages {
     public static final String ERROR_ROLE_NOT_FOUND_WITH_CODE = "Role not found with code %s";
     public static final String ERROR_DEPARTMENT_NOT_FOUND_WITH_CODE = "Department not found with code %s";
     public static final String ERROR_CURRENT_USER_COMPANY_MISSING = "Current user company is missing";
+    public static final String ERROR_CANNOT_CREATE_ADMIN_OR_MANAGER_EMPLOYEE = "Cannot create employee with ADMIN or SYSTEM_ADMIN role";
     // Authentication
     public static final String ERROR_INVALID_CREDENTIALS = "Invalid credentials";
     public static final String LOGIN_SUCCESS = "Login successful";

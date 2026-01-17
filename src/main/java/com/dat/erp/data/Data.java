@@ -7,6 +7,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 import com.dat.erp.constants.CodePrefixes;
+import com.dat.erp.constants.Defaults;
 import com.dat.erp.entities.Account;
 import com.dat.erp.entities.Company;
 import com.dat.erp.entities.Department;
@@ -28,6 +29,7 @@ public class Data {
     private static final String COMPANY_CODE = CodePrefixes.COMPANY + "DEFAULT";
     private static final String DEPARTMENT_CODE = CodePrefixes.DEPARTMENT + "GENERAL";
     private static final String ROLE_CODE = CodePrefixes.ROLE + "ADMIN";
+    private static final String HR_ROLE_CODE = CodePrefixes.ROLE + "HR";
     private static final String ROLE_NAME = "ADMIN";
 
     @Bean
@@ -66,6 +68,15 @@ public class Data {
                         return roleRepository.save(newRole);
                     });
 
+            roleRepository.findByCode(HR_ROLE_CODE)
+                    .orElseGet(() -> {
+                        Role newRole = new Role();
+                        newRole.setCode(HR_ROLE_CODE);
+                        newRole.setName(Defaults.ROLE_HUMAN_RESOURCES);
+                        newRole.setDescription("Human resources role with limited access");
+                        return roleRepository.save(newRole);
+                    });
+
             accountRepository.findByEmail(ADMIN_EMAIL).orElseGet(() -> {
                 Account account = new Account();
                 account.setCode("ACC-ADMIN");
@@ -74,6 +85,7 @@ public class Data {
                 account.setIsActive(true);
                 account.setRole(adminRole);
                 account.setUserProfile(null);
+                account.setCompanyCode(COMPANY_CODE);
                 return accountRepository.save(account);
             });
 
