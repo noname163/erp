@@ -68,7 +68,6 @@ class EmployeeAccountServiceImplTest {
         UserProfileMapper userProfileMapper = Mappers.getMapper(UserProfileMapper.class);
         service = new EmployeeAccountServiceImpl(
                 accountRepository,
-                departmentRepository,
                 roleRepository,
                 userProfileService,
                 emailService,

@@ -15,7 +15,6 @@ import com.dat.erp.dto.request.EmailRequest;
 import com.dat.erp.dto.request.UserProfileCreateRequest;
 import com.dat.erp.dto.response.EmployeeResponse;
 import com.dat.erp.entities.Account;
-import com.dat.erp.entities.Department;
 import com.dat.erp.entities.Role;
 import com.dat.erp.entities.UserProfile;
 import com.dat.erp.exceptions.BadRequestException;
@@ -23,7 +22,6 @@ import com.dat.erp.exceptions.ConflictException;
 import com.dat.erp.mapper.interfaces.EmployeeAccountMapper;
 import com.dat.erp.mapper.interfaces.UserProfileMapper;
 import com.dat.erp.repositories.customrepositories.AccountRepository;
-import com.dat.erp.repositories.customrepositories.DepartmentRepository;
 import com.dat.erp.repositories.customrepositories.RoleRepository;
 import com.dat.erp.services.CodeGenerator;
 import com.dat.erp.services.EmailService;
@@ -40,7 +38,6 @@ public class EmployeeAccountServiceImpl extends AbstractAuditableService impleme
     private static final Logger log = LoggerFactory.getLogger(EmployeeAccountServiceImpl.class);
 
     private final AccountRepository accountRepository;
-    private final DepartmentRepository departmentRepository;
     private final RoleRepository roleRepository;
     private final UserProfileService userProfileService;
     private final EmailService emailService;
@@ -50,7 +47,6 @@ public class EmployeeAccountServiceImpl extends AbstractAuditableService impleme
 
     public EmployeeAccountServiceImpl(
             AccountRepository accountRepository,
-            DepartmentRepository departmentRepository,
             RoleRepository roleRepository,
             UserProfileService userProfileService,
             EmailService emailService,
@@ -60,7 +56,6 @@ public class EmployeeAccountServiceImpl extends AbstractAuditableService impleme
             EmployeeAccountMapper employeeAccountMapper,
             UserProfileMapper userProfileMapper) {
         this.accountRepository = accountRepository;
-        this.departmentRepository = departmentRepository;
         this.roleRepository = roleRepository;
         this.userProfileService = userProfileService;
         this.emailService = emailService;
