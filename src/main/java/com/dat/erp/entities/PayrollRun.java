@@ -41,7 +41,7 @@ public class PayrollRun extends BaseAuditableEntity {
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "company_code", referencedColumnName = "code", nullable = false)
+    @JoinColumn(name = "company_code", referencedColumnName = "code", insertable = false, updatable = false, nullable = false)
     private Company company;
 
     @Column(name = "period")

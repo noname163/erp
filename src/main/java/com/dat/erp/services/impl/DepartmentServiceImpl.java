@@ -1,7 +1,5 @@
 package com.dat.erp.services.impl;
 
-import java.util.UUID;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -21,29 +19,25 @@ import com.dat.erp.mapper.interfaces.DepartmentMapper;
 import com.dat.erp.repositories.customrepositories.CompanyRepository;
 import com.dat.erp.repositories.customrepositories.DepartmentRepository;
 import com.dat.erp.services.DepartmentService;
+import com.dat.erp.services.base.AbstractAuditableService;
 import com.dat.erp.utils.PageableUtils;
 
 @Service
-public class DepartmentServiceImpl implements DepartmentService {
+public class DepartmentServiceImpl extends AbstractAuditableService implements DepartmentService {
     @Autowired
     private DepartmentRepository departmentRepository;
     @Autowired
     private DepartmentMapper departmentMapper;
-    @Autowired
-    private CompanyRepository companyRepository;
 
     @Override
     public String createDepartment(DepartmentRequest departmentRequest) {
         Department department = departmentMapper.toEntity(departmentRequest);
-        Company company = companyRepository.findByCode(departmentRequest.getCompanyCode())
-                .orElseThrow(() -> new ResourceNotFoundException(
-                        String.format(Messages.ERROR_COMPANY_NOT_FOUND_WITH_CODE, departmentRequest.getCompanyCode())));
         if (department.getName() != null
-                && departmentRepository.existsByNameAndCompany(department.getName(), company)) {
+                && departmentRepository.existsByNameAndCompanyCode(department.getName(), department.getCompanyCode())) {
             throw new ConflictException(Messages.ERROR_DEPARTMENT_NAME_EXISTS);
         }
-        department.setCode(CodePrefixes.DEPARTMENT + UUID.randomUUID());
-        department.setCompany(company);
+        generateCodeIfMissing(department, CodePrefixes.DEPARTMENT);
+        applyInsertAudit(department);
         department.setStatus(CommonStatus.ACTIVATE);
         departmentRepository.save(department);
         return department.getCode();

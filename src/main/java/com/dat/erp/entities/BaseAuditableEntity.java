@@ -57,5 +57,8 @@ public abstract class BaseAuditableEntity {
     @Column(name = "updated_by")
     private String updatedBy;
 
+    @Column(name = "company_code", nullable = true)
+    private String companyCode;
+
     private Boolean isDeleted = false;
 }

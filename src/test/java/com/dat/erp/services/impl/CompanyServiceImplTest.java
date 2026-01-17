@@ -3,12 +3,15 @@ package com.dat.erp.services.impl;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.util.Collections;
+import java.util.Optional;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -23,6 +26,7 @@ import com.dat.erp.dto.request.CompanyRequest;
 import com.dat.erp.dto.response.CompanyResponse;
 import com.dat.erp.dto.response.PagedResponse;
 import com.dat.erp.entities.Company;
+import com.dat.erp.exceptions.ConflictException;
 import com.dat.erp.mapper.interfaces.CompanyMapper;
 import com.dat.erp.repositories.customrepositories.CompanyRepository;
 
@@ -57,12 +61,23 @@ class CompanyServiceImplTest {
     @Test
     void testCreateCompany_Success() {
         when(companyMapper.toEntity(request)).thenReturn(company);
+        when(companyRepository.findByEmail(null)).thenReturn(Optional.empty());
 
         String code = companyService.createCompany(request);
 
         assertNotNull(code);
         assertTrue(code.startsWith("CMP-"));
         verify(companyRepository).save(company);
+    }
+
+    @Test
+    void testCreateCompany_EmailConflict() {
+        when(companyMapper.toEntity(request)).thenReturn(company);
+        when(companyRepository.findByEmail(null)).thenReturn(Optional.of(new Company()));
+
+        assertThrows(ConflictException.class, () -> companyService.createCompany(request));
+
+        verify(companyRepository, never()).save(any());
     }
 
     // -----------------------------
