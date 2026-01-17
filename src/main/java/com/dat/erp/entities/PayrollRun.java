@@ -1,13 +1,21 @@
 package com.dat.erp.entities;
 
+import java.time.LocalDateTime;
+import java.util.List;
+
+import com.dat.erp.constants.PayrollRunStatus;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -23,33 +31,33 @@ import lombok.ToString;
 @AllArgsConstructor
 @Builder
 @EqualsAndHashCode(onlyExplicitlyIncluded = true, callSuper = true)
-@ToString(exclude = { "salaryTemplate", "salary" })
+@ToString(exclude = { "company", "results" })
 @Entity
-@Table(name = "salary_template_detail")
-public class SalaryTemplateDetail extends BaseAuditableEntity {
+@Table(name = "payroll_run")
+public class PayrollRun extends BaseAuditableEntity {
     @Id
     @EqualsAndHashCode.Include
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "template_code", referencedColumnName = "code", nullable = false)
-    private SalaryTemplate salaryTemplate;
+    @JoinColumn(name = "company_code", referencedColumnName = "code", nullable = false)
+    private Company company;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "salary_code", referencedColumnName = "code", nullable = false)
-    private Salary salary;
+    @Column(name = "period")
+    private String period;
 
-    @Column(name = "amount")
-    private String amount;
+    @Enumerated(EnumType.STRING)
+    @Column(name = "status")
+    private PayrollRunStatus status;
 
-    @Column(name = "quantity")
-    private Integer quantity;
+    @Column(name = "run_at")
+    private LocalDateTime runAt;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "unit_code", referencedColumnName = "code")
-    private SystemUnit unit;
+    @Column(name = "closed_at")
+    private LocalDateTime closedAt;
 
-    @Column(name = "sequence_order")
-    private Integer sequenceOrder;
+    @OneToMany(mappedBy = "payrollRun", fetch = FetchType.LAZY)
+    private List<PayrollResult> results;
 }
+

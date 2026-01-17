@@ -1,7 +1,13 @@
 package com.dat.erp.entities;
 
+import java.time.LocalDateTime;
+
+import com.dat.erp.constants.DailyWorkUnit;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -23,33 +29,36 @@ import lombok.ToString;
 @AllArgsConstructor
 @Builder
 @EqualsAndHashCode(onlyExplicitlyIncluded = true, callSuper = true)
-@ToString(exclude = { "salaryTemplate", "salary" })
+@ToString(exclude = { "userProfile" })
 @Entity
-@Table(name = "salary_template_detail")
-public class SalaryTemplateDetail extends BaseAuditableEntity {
+@Table(name = "daily_work")
+public class DailyWork extends BaseAuditableEntity {
     @Id
     @EqualsAndHashCode.Include
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "template_code", referencedColumnName = "code", nullable = false)
-    private SalaryTemplate salaryTemplate;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "salary_code", referencedColumnName = "code", nullable = false)
-    private Salary salary;
-
-    @Column(name = "amount")
-    private String amount;
+    @JoinColumn(name = "user_profile_code", referencedColumnName = "code", nullable = false)
+    private UserProfile userProfile;
 
     @Column(name = "quantity")
     private Integer quantity;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "unit_code", referencedColumnName = "code")
-    private SystemUnit unit;
+    @Enumerated(EnumType.STRING)
+    @Column(name = "unit")
+    private DailyWorkUnit unit;
 
-    @Column(name = "sequence_order")
-    private Integer sequenceOrder;
+    @Column(name = "start_time")
+    private LocalDateTime startTime;
+
+    @Column(name = "end_time")
+    private LocalDateTime endTime;
+
+    @Column(name = "ot_time")
+    private Integer otTime;
+
+    @Column(name = "used_pto")
+    private Boolean usedPto;
 }
+
