@@ -20,5 +20,16 @@ public class AsyncConfig {
         executor.initialize();
         return executor;
     }
+
+    @Bean(name = "defaultSetupTaskExecutor")
+    public Executor defaultSetupTaskExecutor() {
+        ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
+        executor.setCorePoolSize(2);
+        executor.setMaxPoolSize(10);
+        executor.setQueueCapacity(200);
+        executor.setThreadNamePrefix("setup-");
+        executor.initialize();
+        return executor;
+    }
 }
 

@@ -19,6 +19,7 @@ import com.dat.erp.dto.response.error.ProblemDetailsResponse;
 import com.dat.erp.dto.response.error.ValidationProblemDetailsReponse;
 import com.dat.erp.exceptions.BadRequestException;
 import com.dat.erp.exceptions.ConflictException;
+import com.dat.erp.exceptions.ForbiddenException;
 import com.dat.erp.exceptions.ResourceNotFoundException;
 import com.dat.erp.exceptions.UnauthorizedException;
 import com.dat.erp.exceptions.UnprocessableEntityException;
@@ -66,6 +67,19 @@ public class GlobalExceptionHandler {
                 request.getDescription(false).replace("uri=", ""),
                 LocalDateTime.now());
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(problem);
+    }
+
+    @ExceptionHandler(ForbiddenException.class)
+    public ResponseEntity<ProblemDetailsResponse> handleForbidden(ForbiddenException ex, WebRequest request) {
+        log.warn("Forbidden: {} at {}", ex.getMessage(), request.getDescription(false));
+        ProblemDetailsResponse problem = new ProblemDetailsResponse(
+                URI.create("https://example.com/errors/forbidden"),
+                "Forbidden",
+                HttpStatus.FORBIDDEN.value(),
+                ex.getMessage(),
+                request.getDescription(false).replace("uri=", ""),
+                LocalDateTime.now());
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(problem);
     }
 
     @ExceptionHandler(ConflictException.class)

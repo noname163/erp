@@ -11,5 +11,7 @@ import com.dat.erp.entities.Department;
 public interface DepartmentRepository extends JpaRepository<Department, Long> {
     Optional<Department> findByCode(String code);
 
+    Optional<Department> findByNameAndCompanyCode(String name, String companyCode);
+
     boolean existsByNameAndCompanyCode(String name, String companyCode);
 }

@@ -67,9 +67,11 @@ public class EmailServiceImpl implements EmailService {
             saved.setSent(true);
             saved.setNeedRetry(NEED_RETRY_NO);
             saved.setErrorMessage(null);
+            log.info("AUDIT action=SEND_ACCOUNT_EMAIL result=SUCCESS to={} template={}", request.getTo(),
+                    request.getHtmlFilePath());
         } catch (Exception e) {
-            log.warn("Email send failed to={} template={} error={}", request.getTo(), request.getHtmlFilePath(),
-                    e.getMessage());
+            log.warn("AUDIT action=SEND_ACCOUNT_EMAIL result=FAILED to={} template={} error={}", request.getTo(),
+                    request.getHtmlFilePath(), e.getMessage());
             applyFailure(saved, e);
         }
 
@@ -103,9 +105,11 @@ public class EmailServiceImpl implements EmailService {
                 email.setSent(true);
                 email.setNeedRetry(NEED_RETRY_NO);
                 email.setErrorMessage(null);
+                log.info("AUDIT action=SEND_ACCOUNT_EMAIL result=SUCCESS to={} template={} retry={}", request.getTo(),
+                        request.getHtmlFilePath(), email.getRetryTime());
             } catch (Exception e) {
-                log.warn("Email retry failed id={} to={} template={} error={}", email.getId(), email.getEmailTo(),
-                        email.getHtmlFilePath(), e.getMessage());
+                log.warn("AUDIT action=SEND_ACCOUNT_EMAIL result=FAILED id={} to={} template={} retry={} error={}",
+                        email.getId(), email.getEmailTo(), email.getHtmlFilePath(), email.getRetryTime(), e.getMessage());
                 applyFailure(email, e);
             }
             emailRepository.save(email);

@@ -1,11 +1,6 @@
 package com.dat.erp.systemconfigs;
 
-import java.util.List;
-import java.util.Optional;
-
-import org.hibernate.Filter;
 import org.hibernate.Session;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 
 import jakarta.persistence.EntityManager;

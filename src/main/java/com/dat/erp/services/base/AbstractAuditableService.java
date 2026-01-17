@@ -43,7 +43,9 @@ public abstract class AbstractAuditableService {
 
         entity.setUpdatedBy(userCode);
         entity.setUpdatedAt(nowUtc);
-        entity.setCompanyCode(resolveCurrentUserCompanyCode());
+        if (entity.getCompanyCode() == null || entity.getCompanyCode().isBlank()) {
+            entity.setCompanyCode(resolveCurrentUserCompanyCode());
+        }
     }
 
     protected void applyUpdateAudit(BaseAuditableEntity entity) {

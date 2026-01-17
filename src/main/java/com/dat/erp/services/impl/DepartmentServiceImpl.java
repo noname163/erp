@@ -1,5 +1,7 @@
 package com.dat.erp.services.impl;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -11,12 +13,9 @@ import com.dat.erp.constants.Messages;
 import com.dat.erp.dto.request.DepartmentRequest;
 import com.dat.erp.dto.response.DepartmentResponse;
 import com.dat.erp.dto.response.PagedResponse;
-import com.dat.erp.entities.Company;
 import com.dat.erp.entities.Department;
 import com.dat.erp.exceptions.ConflictException;
-import com.dat.erp.exceptions.ResourceNotFoundException;
 import com.dat.erp.mapper.interfaces.DepartmentMapper;
-import com.dat.erp.repositories.customrepositories.CompanyRepository;
 import com.dat.erp.repositories.customrepositories.DepartmentRepository;
 import com.dat.erp.services.DepartmentService;
 import com.dat.erp.services.base.AbstractAuditableService;
@@ -24,6 +23,8 @@ import com.dat.erp.utils.PageableUtils;
 
 @Service
 public class DepartmentServiceImpl extends AbstractAuditableService implements DepartmentService {
+    private static final Logger log = LoggerFactory.getLogger(DepartmentServiceImpl.class);
+
     @Autowired
     private DepartmentRepository departmentRepository;
     @Autowired
@@ -41,6 +42,28 @@ public class DepartmentServiceImpl extends AbstractAuditableService implements D
         department.setStatus(CommonStatus.ACTIVATE);
         departmentRepository.save(department);
         return department.getCode();
+    }
+
+    @Override
+    public String createDefaultDepartment(DepartmentRequest departmentRequest, String actorCode) {
+        if (departmentRequest == null) {
+            throw new IllegalArgumentException("DepartmentRequest cannot be null");
+        }
+        String name = departmentRequest.getName();
+        String companyCode = departmentRequest.getCompanyCode();
+        Department existing = departmentRepository.findByNameAndCompanyCode(name, companyCode).orElse(null);
+        if (existing != null) {
+            log.info(
+                    "AUDIT action=CREATE_DEFAULT_DEPARTMENT actor={} companyCode={} result=ALREADY_EXISTS name={} departmentCode={}",
+                    actorCode, companyCode, name, existing.getCode());
+            return existing.getCode();
+        }
+
+        String code = createDepartment(departmentRequest);
+        log.info(
+                "AUDIT action=CREATE_DEFAULT_DEPARTMENT actor={} companyCode={} result=SUCCESS name={} departmentCode={}",
+                actorCode, companyCode, name, code);
+        return code;
     }
 
     @Override
