@@ -15,4 +15,6 @@ public final class CodePrefixes {
     public static final String USER_IDENTITY = "UID-";
     public static final String ROLE = "ROLE-";
     public static final String ROLE_HAS_API = "RHA-";
+    public static final String SALARY_TEMPLATE = "STP-";
+    public static final String SALARY_TEMPLATE_DETAIL = "STD-";
 }

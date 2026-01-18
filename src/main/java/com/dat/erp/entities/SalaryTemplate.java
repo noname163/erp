@@ -47,6 +47,9 @@ public class SalaryTemplate extends BaseAuditableEntity {
     @Column(name = "effective_to")
     private LocalDate effectiveTo;
 
+    @Column(name = "currency")
+    private String currency;
+
     @OneToMany(mappedBy = "salaryTemplate")
     private List<SalaryTemplateDetail> details;
 

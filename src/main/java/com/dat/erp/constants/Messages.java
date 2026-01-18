@@ -35,4 +35,16 @@ public final class Messages {
     public static final String ERROR_COMPANY_EMAIL_EXISTS = "Company email already exists";
     public static final String ERROR_COMPANY_TAX_NUMBER_EXISTS = "Company tax number already exists";
     public static final String ERROR_DEPARTMENT_NAME_EXISTS = "Department name already exists";
+
+    // Salary templates
+    public static final String ERROR_SALARY_TEMPLATE_NAME_EXISTS = "Salary template already exists";
+    public static final String ERROR_SALARY_TEMPLATE_EFFECTIVE_DATES_INVALID = "effectiveFrom/effectiveTo is invalid";
+    public static final String ERROR_SALARY_TEMPLATE_TOTAL_AMOUNT_INVALID = "totalAmount is invalid";
+    public static final String ERROR_SALARY_TEMPLATE_DETAILS_INVALID = "details is invalid";
+    public static final String ERROR_SALARY_TEMPLATE_DETAIL_SALARY_CODE_INVALID = "salaryCode is invalid";
+    public static final String ERROR_SALARY_TEMPLATE_DETAIL_UNIT_CODE_INVALID = "unitCode is invalid";
+    public static final String ERROR_SALARY_TEMPLATE_DETAIL_AMOUNT_INVALID = "amount is invalid";
+    public static final String ERROR_SALARY_TEMPLATE_DETAIL_QUANTITY_INVALID = "quantity is invalid";
+    public static final String ERROR_SALARY_TEMPLATE_DETAIL_SEQUENCE_ORDER_INVALID = "sequenceOrder is invalid";
+    public static final String ERROR_SALARY_TEMPLATE_TOTAL_AMOUNT_MISMATCH = "totalAmount does not match details";
 }
