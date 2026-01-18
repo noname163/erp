@@ -2,10 +2,14 @@ package com.dat.erp.controllers;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.dat.erp.constants.Defaults;
 import com.dat.erp.dto.request.CompanyRequest;
 import com.dat.erp.dto.response.CompanyResponse;
 import com.dat.erp.dto.response.PagedResponse;
@@ -13,19 +17,14 @@ import com.dat.erp.exceptions.ForbiddenException;
 import com.dat.erp.services.CompanyService;
 import com.dat.erp.services.SecurityContextService;
 
+import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.validation.Valid;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
-
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestParam;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 
 /**
  * Controller for managing companies.
@@ -52,8 +51,8 @@ public class CompanyController {
             @ApiResponse(responseCode = "400", description = "Invalid input")
     })
     @PostMapping("")
+    @PreAuthorize("hasRoles({'ADMIN', 'SYSTEM_ADMIN'})")
     public ResponseEntity<CompanyResponse> createCompany(@Valid @RequestBody CompanyRequest companyRequest) {
-        enforceSystemAdmin();
         return ResponseEntity.status(201).body(companyService.createCompany(companyRequest));
     }
 
@@ -88,16 +87,5 @@ public class CompanyController {
             @Parameter(description = "Sort direction (ASC or DESC)", example = "DESC") @RequestParam(defaultValue = "DESC") String sortDir) {
 
         return ResponseEntity.ok(companyService.getCompanies(searchKey, searchValue, page, size, sortBy, sortDir));
-    }
-
-    private void enforceSystemAdmin() {
-        var user = securityContextService.getCurrentUser();
-        String roleName = user == null || user.getAccount() == null || user.getAccount().getRole() == null
-                ? null
-                : user.getAccount().getRole().getName();
-        boolean allowed = Defaults.ROLE_SYSTEM_ADMIN.equals(roleName) || Defaults.ROLE_ADMIN.equals(roleName);
-        if (!allowed) {
-            throw new ForbiddenException("Only SYSTEM_ADMIN can create companies");
-        }
     }
 }
