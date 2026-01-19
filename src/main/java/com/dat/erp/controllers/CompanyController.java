@@ -13,9 +13,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.dat.erp.dto.request.CompanyRequest;
 import com.dat.erp.dto.response.CompanyResponse;
 import com.dat.erp.dto.response.PagedResponse;
-import com.dat.erp.exceptions.ForbiddenException;
 import com.dat.erp.services.CompanyService;
-import com.dat.erp.services.SecurityContextService;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -35,8 +33,6 @@ import jakarta.validation.Valid;
 public class CompanyController {
     @Autowired
     private CompanyService companyService;
-    @Autowired
-    private SecurityContextService securityContextService;
 
     /**
      * Create a new company.

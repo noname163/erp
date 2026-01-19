@@ -1,5 +1,7 @@
 package com.dat.erp.dto.request;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
@@ -22,11 +24,9 @@ public class AccountRequest {
     @Size(max = 100, message = "Role name must be at most 100 characters")
     private String roleName;
 
-    @NotBlank(message = "Company code is required")
-    @Size(max = 50, message = "Company code must be at most 50 characters")
+    @JsonIgnore
     private String companyCode;
 
     @Size(max = 255, message = "Full name must be at most 255 characters")
     private String fullName;
 }
-

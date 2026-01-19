@@ -32,10 +32,7 @@ import lombok.ToString;
 @AllArgsConstructor
 @EqualsAndHashCode(onlyExplicitlyIncluded = true, callSuper = false)
 @Builder
-@ToString(exclude = { "departments" })
-@NamedEntityGraph(name = "Company.full", attributeNodes = {
-        @NamedAttributeNode("departments")
-})
+@ToString
 public class Company extends BaseAuditableEntity {
 
     @Id
@@ -69,7 +66,4 @@ public class Company extends BaseAuditableEntity {
 
     @Column(name = "phone_number", length = 50)
     private String phoneNumber;
-
-    @OneToMany(mappedBy = "company", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
-    private List<Department> departments;
 }
