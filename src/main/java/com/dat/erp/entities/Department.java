@@ -33,9 +33,6 @@ import lombok.ToString;
 @Entity
 @Table(name = "department")
 @ToString(exclude = { "userProfiles" })
-@NamedEntityGraph(name = "Department.full", attributeNodes = {
-        @NamedAttributeNode("company")
-})
 public class Department extends BaseAuditableEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -44,10 +41,6 @@ public class Department extends BaseAuditableEntity {
 
     private String name;
     private CommonStatus status;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "company_code", referencedColumnName = "code", insertable = false, updatable = false)
-    private Company company;
 
     @OneToMany(mappedBy = "department", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private List<UserProfile> userProfiles;

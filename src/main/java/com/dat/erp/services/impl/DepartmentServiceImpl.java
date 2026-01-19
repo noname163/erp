@@ -32,14 +32,7 @@ public class DepartmentServiceImpl extends AbstractAuditableService implements D
 
     @Override
     public String createDepartment(DepartmentRequest departmentRequest) {
-        Department department = departmentMapper.toEntity(departmentRequest);
-        if (department.getName() != null
-                && departmentRepository.existsByNameAndCompanyCode(department.getName(), department.getCompanyCode())) {
-            throw new ConflictException(Messages.ERROR_DEPARTMENT_NAME_EXISTS);
-        }
-        generateCodeIfMissing(department, CodePrefixes.DEPARTMENT);
-        applyInsertAudit(department);
-        department.setStatus(CommonStatus.ACTIVATE);
+        Department department = setAuditDepartmentInfo(departmentRequest);
         departmentRepository.save(department);
         return department.getCode();
     }
@@ -58,8 +51,10 @@ public class DepartmentServiceImpl extends AbstractAuditableService implements D
                     actorCode, companyCode, name, existing.getCode());
             return existing.getCode();
         }
-
-        String code = createDepartment(departmentRequest);
+        Department department = setAuditDepartmentInfo(departmentRequest);
+        department.setCompanyCode(departmentRequest.getCompanyCode());
+        departmentRepository.save(department);
+        String code = department.getCode();
         log.info(
                 "AUDIT action=CREATE_DEFAULT_DEPARTMENT actor={} companyCode={} result=SUCCESS name={} departmentCode={}",
                 actorCode, companyCode, name, code);
@@ -74,4 +69,15 @@ public class DepartmentServiceImpl extends AbstractAuditableService implements D
         return PageableUtils.mapPage(data, departmentMapper::toResponse, Messages.SUCCESS);
     }
 
+    private Department setAuditDepartmentInfo(DepartmentRequest departmentRequest) {
+        Department department = departmentMapper.toEntity(departmentRequest);
+        if (department.getName() != null
+                && departmentRepository.existsByNameAndCompanyCode(department.getName(), department.getCompanyCode())) {
+            throw new ConflictException(Messages.ERROR_DEPARTMENT_NAME_EXISTS);
+        }
+        generateCodeIfMissing(department, CodePrefixes.DEPARTMENT);
+        applyInsertAudit(department);
+        department.setStatus(CommonStatus.ACTIVATE);
+        return department;
+    }
 }

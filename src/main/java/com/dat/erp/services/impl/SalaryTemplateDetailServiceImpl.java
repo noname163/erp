@@ -16,7 +16,9 @@ import com.dat.erp.exceptions.BadRequestException;
 import com.dat.erp.repositories.customrepositories.SalaryRepository;
 import com.dat.erp.repositories.customrepositories.SalaryTemplateDetailRepository;
 import com.dat.erp.repositories.customrepositories.SystemUnitRepository;
+import com.dat.erp.services.CodeGenerator;
 import com.dat.erp.services.SalaryTemplateDetailService;
+import com.dat.erp.services.SecurityContextService;
 import com.dat.erp.services.base.AbstractAuditableService;
 
 @Service
@@ -28,10 +30,14 @@ public class SalaryTemplateDetailServiceImpl extends AbstractAuditableService im
 
     public SalaryTemplateDetailServiceImpl(SalaryTemplateDetailRepository salaryTemplateDetailRepository,
             SalaryRepository salaryRepository,
-            SystemUnitRepository systemUnitRepository) {
+            SystemUnitRepository systemUnitRepository,
+            CodeGenerator codeGenerator,
+            SecurityContextService securityContextService) {
         this.salaryTemplateDetailRepository = salaryTemplateDetailRepository;
         this.salaryRepository = salaryRepository;
         this.systemUnitRepository = systemUnitRepository;
+        this.codeGenerator = codeGenerator;
+        this.securityContextService = securityContextService;
     }
 
     @Override

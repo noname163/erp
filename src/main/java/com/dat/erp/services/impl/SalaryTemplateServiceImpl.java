@@ -19,8 +19,10 @@ import com.dat.erp.exceptions.BadRequestException;
 import com.dat.erp.exceptions.ConflictException;
 import com.dat.erp.mapper.interfaces.SalaryTemplateMapper;
 import com.dat.erp.repositories.customrepositories.SalaryTemplateRepository;
+import com.dat.erp.services.CodeGenerator;
 import com.dat.erp.services.SalaryTemplateDetailService;
 import com.dat.erp.services.SalaryTemplateService;
+import com.dat.erp.services.SecurityContextService;
 import com.dat.erp.services.base.AbstractAuditableService;
 
 @Service
@@ -32,10 +34,14 @@ public class SalaryTemplateServiceImpl extends AbstractAuditableService implemen
 
     public SalaryTemplateServiceImpl(SalaryTemplateRepository salaryTemplateRepository,
             SalaryTemplateMapper salaryTemplateMapper,
-            SalaryTemplateDetailService salaryTemplateDetailService) {
+            SalaryTemplateDetailService salaryTemplateDetailService,
+            CodeGenerator codeGenerator,
+            SecurityContextService securityContextService) {
         this.salaryTemplateRepository = salaryTemplateRepository;
         this.salaryTemplateMapper = salaryTemplateMapper;
         this.salaryTemplateDetailService = salaryTemplateDetailService;
+        this.codeGenerator = codeGenerator;
+        this.securityContextService = securityContextService;
     }
 
     @Override
@@ -45,7 +51,6 @@ public class SalaryTemplateServiceImpl extends AbstractAuditableService implemen
             throw new BadRequestException("request is invalid");
         }
 
-        String companyCode = securityContextService.getCurrentUser().getAccount().getCompanyCode();
         LocalDate effectiveFrom = request.getEffectiveFrom();
         LocalDate effectiveTo = request.getEffectiveTo();
         if (effectiveFrom == null || effectiveTo == null || effectiveFrom.isAfter(effectiveTo)) {
@@ -55,10 +60,6 @@ public class SalaryTemplateServiceImpl extends AbstractAuditableService implemen
         String name = request.getName() == null ? null : request.getName().trim();
         if (name == null || name.isBlank()) {
             throw new BadRequestException("name is invalid");
-        }
-        if (salaryTemplateRepository.existsOverlappingByNameAndCompanyCode(name, companyCode, effectiveFrom,
-                effectiveTo)) {
-            throw new ConflictException(Messages.ERROR_SALARY_TEMPLATE_NAME_EXISTS);
         }
 
         List<SalaryTemplateDetailRequest> details = request.getDetails();
@@ -72,6 +73,15 @@ public class SalaryTemplateServiceImpl extends AbstractAuditableService implemen
 
         if (requestTotalAmount.compareTo(calculatedTotalAmount) != 0) {
             throw new BadRequestException(Messages.ERROR_SALARY_TEMPLATE_TOTAL_AMOUNT_MISMATCH);
+        }
+
+        String companyCode = securityContextService.getCurrentUser().getAccount().getCompanyCode();
+        if (companyCode == null || companyCode.isBlank()) {
+            throw new BadRequestException(Messages.ERROR_CURRENT_USER_COMPANY_MISSING);
+        }
+        if (salaryTemplateRepository.existsOverlappingByNameAndCompanyCode(name, companyCode, effectiveFrom,
+                effectiveTo)) {
+            throw new ConflictException(Messages.ERROR_SALARY_TEMPLATE_NAME_EXISTS);
         }
 
         SalaryTemplate template = salaryTemplateMapper.toEntity(request);
