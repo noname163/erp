@@ -10,5 +10,6 @@ import com.dat.erp.entities.Salary;
 @Repository
 public interface SalaryRepository extends JpaRepository<Salary, Long> {
     Optional<Salary> findByCode(String code);
-}
 
+    boolean existsByNameIgnoreCaseAndCompanyCodeAndIsDeletedFalse(String name, String companyCode);
+}

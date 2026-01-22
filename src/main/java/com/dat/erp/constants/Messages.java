@@ -47,4 +47,12 @@ public final class Messages {
     public static final String ERROR_SALARY_TEMPLATE_DETAIL_QUANTITY_INVALID = "quantity is invalid";
     public static final String ERROR_SALARY_TEMPLATE_DETAIL_SEQUENCE_ORDER_INVALID = "sequenceOrder is invalid";
     public static final String ERROR_SALARY_TEMPLATE_TOTAL_AMOUNT_MISMATCH = "totalAmount does not match details";
+
+    // Salaries
+    public static final String ERROR_SALARY_REQUESTS_INVALID = "requests is invalid";
+    public static final String ERROR_SALARY_NAME_INVALID = "name is invalid";
+    public static final String ERROR_SALARY_CALCULATE_METHOD_INVALID = "calculateMethod is invalid";
+    public static final String ERROR_SALARY_IS_DEDUCT_INVALID = "isDeduct is invalid";
+    public static final String ERROR_SALARY_NAME_EXISTS = "Salary already exists";
+
 }
