@@ -54,4 +54,5 @@ public final class Messages {
     public static final String ERROR_SALARY_CALCULATE_METHOD_INVALID = "calculateMethod is invalid";
     public static final String ERROR_SALARY_IS_DEDUCT_INVALID = "isDeduct is invalid";
     public static final String ERROR_SALARY_NAME_EXISTS = "Salary already exists";
+
 }
