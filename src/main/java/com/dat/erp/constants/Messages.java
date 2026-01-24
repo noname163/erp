@@ -55,4 +55,14 @@ public final class Messages {
     public static final String ERROR_SALARY_IS_DEDUCT_INVALID = "isDeduct is invalid";
     public static final String ERROR_SALARY_NAME_EXISTS = "Salary already exists";
 
+    // Employee salary
+    public static final String ERROR_EMPLOYEE_SALARY_EFFECTIVE_DATES_INVALID = "effectiveFrom/effectiveTo is invalid";
+    public static final String ERROR_EMPLOYEE_SALARY_TOTAL_AMOUNT_INVALID = "totalAmount is invalid";
+    public static final String ERROR_EMPLOYEE_SALARY_CURRENCY_INVALID = "currency is invalid";
+    public static final String ERROR_EMPLOYEE_SALARY_USER_PROFILE_CODE_INVALID = "userProfileCode is invalid";
+    public static final String ERROR_EMPLOYEE_SALARY_EMPLOYEE_NOT_FOUND = "Employee not found";
+    public static final String ERROR_EMPLOYEE_SALARY_EMPLOYEE_INACTIVE = "Employee is inactive";
+    public static final String ERROR_EMPLOYEE_SALARY_PERIOD_OVERLAPS = "Employee salary period overlaps";
+    public static final String ERROR_EMPLOYEE_SALARY_EMPLOYEE_COMPANY_MISMATCH = "Employee does not belong to current company";
+    public static final String ERROR_EMPLOYEE_SALARY_COMPANY_SECRET_KEY_MISSING = "Company secret key is missing";
 }

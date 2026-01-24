@@ -12,7 +12,7 @@ public interface EmailMapper {
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "code", ignore = true)
     @Mapping(target = "subject", ignore = true)
-    @Mapping(target = "isSent", ignore = true)
+    @Mapping(target = "sent", ignore = true)
     @Mapping(target = "retryTime", ignore = true)
     @Mapping(target = "errorMessage", ignore = true)
     @Mapping(target = "needRetry", ignore = true)

@@ -84,7 +84,7 @@ public class EmailServiceImpl implements EmailService {
         if (maxRetry <= 0) {
             return;
         }
-        for (Email email : emailRepository.findTop50ByNeedRetryAndIsSentFalseOrderByIdAsc(NEED_RETRY_YES)) {
+        for (Email email : emailRepository.findTop50ByNeedRetryAndSentFalseOrderByIdAsc(NEED_RETRY_YES)) {
             int currentRetry = email.getRetryTime() == null ? 0 : email.getRetryTime();
             if (currentRetry >= maxRetry) {
                 email.setNeedRetry(NEED_RETRY_NO);

@@ -1,9 +1,9 @@
 package com.dat.erp.entities;
 
-import java.time.LocalDateTime;
+import java.time.LocalDate;
 import java.util.List;
 
-import com.dat.erp.constants.PayrollRunStatus;
+import com.dat.erp.constants.PayrollProrationBasis;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -28,28 +28,35 @@ import lombok.ToString;
 @AllArgsConstructor
 @Builder
 @EqualsAndHashCode(onlyExplicitlyIncluded = true, callSuper = true)
-@ToString(exclude = { "company", "results" })
+@ToString(exclude = { "company", "rateRules" })
 @Entity
-@Table(name = "payroll_run")
-public class PayrollRun extends BaseAuditableEntity {
+@Table(name = "payroll_policy")
+public class PayrollPolicy extends BaseAuditableEntity {
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "company_code", referencedColumnName = "code", insertable = false, updatable = false, nullable = false)
     private Company company;
 
-    @Column(name = "period")
-    private String period;
-
     @Enumerated(EnumType.STRING)
-    @Column(name = "status")
-    private PayrollRunStatus status;
+    @Column(name = "proration_basis")
+    private PayrollProrationBasis prorationBasis;
 
-    @Column(name = "run_at")
-    private LocalDateTime runAt;
+    @Column(name = "standard_days_per_week")
+    private Integer standardDaysPerWeek;
 
-    @Column(name = "closed_at")
-    private LocalDateTime closedAt;
+    @Column(name = "pay_holiday_if_off")
+    private Boolean payHolidayIfOff;
 
-    @OneToMany(mappedBy = "payrollRun", fetch = FetchType.LAZY)
-    private List<PayrollResult> results;
+    @Column(name = "rounding_rule")
+    private String roundingRule;
+
+    @Column(name = "effective_from")
+    private LocalDate effectiveFrom;
+
+    @Column(name = "effective_to")
+    private LocalDate effectiveTo;
+
+    @OneToMany(mappedBy = "policy", fetch = FetchType.LAZY)
+    private List<PayRateRule> rateRules;
 }
 

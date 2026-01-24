@@ -7,5 +7,5 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import com.dat.erp.entities.Email;
 
 public interface EmailRepository extends JpaRepository<Email, Long> {
-    List<Email> findTop50ByNeedRetryAndIsSentFalseOrderByIdAsc(boolean needRetry);
+    List<Email> findTop50ByNeedRetryAndSentFalseOrderByIdAsc(boolean needRetry);
 }
