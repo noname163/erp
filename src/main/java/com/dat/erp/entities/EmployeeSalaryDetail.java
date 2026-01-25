@@ -20,7 +20,7 @@ import lombok.ToString;
 @AllArgsConstructor
 @Builder
 @EqualsAndHashCode(onlyExplicitlyIncluded = true, callSuper = true)
-@ToString(exclude = { "salary", "employeeSalary", "unit" })
+@ToString(exclude = { "salary", "employeeSalary" })
 @Entity
 @Table(name = "employee_salary_detail")
 public class EmployeeSalaryDetail extends BaseAuditableEntity {
@@ -35,10 +35,4 @@ public class EmployeeSalaryDetail extends BaseAuditableEntity {
     @Column(name = "amount")
     private String amount;
 
-    @Column(name = "quantity")
-    private Integer quantity;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "unit_code", referencedColumnName = "code")
-    private SystemUnit unit;
 }

@@ -23,7 +23,7 @@ import com.dat.erp.utils.CryptoUtils;
 @Configuration
 public class Data {
 
-    private static final String ADMIN_EMAIL = "admin";
+    private static final String ADMIN_EMAIL = "admin@gmail.com";
     private static final String ADMIN_PASSWORD = "admin";
 
     private static final String COMPANY_CODE = CodePrefixes.COMPANY + "DEFAULT";

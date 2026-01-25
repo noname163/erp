@@ -13,5 +13,12 @@ class EnvironmentVariableTest {
 
         assertThat(env.getWhitelistAsList()).containsExactly("/a", "/b", "/c");
     }
-}
 
+    @Test
+    void getCorsAllowedOriginsAsList_splitsByCommaAndTrims() {
+        EnvironmentVariable env = new EnvironmentVariable();
+        env.setCorsAllowedOrigins(" http://localhost:5173,https://example.com  ,");
+
+        assertThat(env.getCorsAllowedOriginsAsList()).containsExactly("http://localhost:5173", "https://example.com");
+    }
+}

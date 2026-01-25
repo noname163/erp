@@ -77,4 +77,19 @@ public final class Messages {
     public static final String ERROR_EMPLOYEE_SALARY_DETAIL_EMPLOYEE_SALARY_COMPANY_MISMATCH = "Employee salary does not belong to current company";
     public static final String ERROR_EMPLOYEE_SALARY_DETAIL_ALREADY_EXISTS = "Employee salary detail already exists";
     public static final String EMPLOYEE_SALARY_DETAIL_CREATE_SUCCESS = "Create salary detail for %s success";
+
+    // Daily work
+    public static final String ERROR_DAILY_WORK_REQUESTS_INVALID = "requests is invalid";
+    public static final String ERROR_DAILY_WORK_USER_PROFILE_CODE_INVALID = "userProfileCode is invalid";
+    public static final String ERROR_DAILY_WORK_WORKING_DATE_INVALID = "workingDate is invalid";
+    public static final String ERROR_DAILY_WORK_START_END_TIME_INVALID = "startTime/endTime is invalid";
+    public static final String ERROR_DAILY_WORK_OT_TIME_INVALID = "otTime is invalid";
+    public static final String ERROR_DAILY_WORK_QUANTITY_INVALID = "quantity is invalid";
+    public static final String ERROR_DAILY_WORK_UNIT_INVALID = "unit is invalid";
+    public static final String ERROR_DAILY_WORK_WORK_TYPE_INVALID = "workType is invalid";
+    public static final String ERROR_DAILY_WORK_EMPLOYEE_NOT_FOUND = "Employee not found";
+    public static final String ERROR_DAILY_WORK_EMPLOYEE_INACTIVE = "Employee is inactive";
+    public static final String ERROR_DAILY_WORK_EMPLOYEE_COMPANY_MISMATCH = "Employee does not belong to current company";
+    public static final String ERROR_DAILY_WORK_ALREADY_EXISTS = "Daily work already exists";
+    public static final String DAILY_WORK_CREATE_SUCCESS = "Create daily work for %s success";
 }
