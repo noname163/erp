@@ -72,16 +72,11 @@ class EmployeeSalaryDetailServiceImplTest {
         base.setEmployeeSalaryCode("ESL-1");
         base.setSalaryCode("BASE");
         base.setAmount("15000000");
-        base.setQuantity(1);
-        base.setUnitCode("MONTH");
 
         EmployeeSalaryDetailRequest allowance = new EmployeeSalaryDetailRequest();
         allowance.setEmployeeSalaryCode("ESL-1");
         allowance.setSalaryCode("ALLOWANCE");
         allowance.setAmount("3000000");
-        allowance.setQuantity(1);
-        allowance.setUnitCode("MONTH");
-
         requests = Arrays.asList(base, allowance);
     }
 
@@ -100,8 +95,9 @@ class EmployeeSalaryDetailServiceImplTest {
         employeeSalary.setUserProfile(userProfile);
         when(employeeSalaryRepository.findByCodeAndIsDeletedFalse("ESL-1")).thenReturn(Optional.of(employeeSalary));
 
-        when(employeeSalaryDetailRepository.existsByEmployeeSalary_CodeAndSalary_CodeAndIsDeletedFalse(eq("ESL-1"), any()))
-                .thenReturn(false);
+        when(employeeSalaryDetailRepository.existsByEmployeeSalary_CodeAndSalary_CodeAndIsDeletedFalse(eq("ESL-1"),
+                any()))
+                        .thenReturn(false);
 
         when(salaryRepository.findByCode("BASE")).thenReturn(Optional.of(new Salary()));
         when(salaryRepository.findByCode("ALLOWANCE")).thenReturn(Optional.of(new Salary()));
@@ -127,8 +123,6 @@ class EmployeeSalaryDetailServiceImplTest {
         duplicate.setEmployeeSalaryCode("ESL-1");
         duplicate.setSalaryCode("BASE");
         duplicate.setAmount("15000000");
-        duplicate.setQuantity(1);
-        duplicate.setUnitCode("MONTH");
         requests = Arrays.asList(requests.get(0), duplicate);
 
         Account currentUserAccount = new Account();
@@ -142,8 +136,9 @@ class EmployeeSalaryDetailServiceImplTest {
         employeeSalary.setUserProfile(new UserProfile());
         when(employeeSalaryRepository.findByCodeAndIsDeletedFalse("ESL-1")).thenReturn(Optional.of(employeeSalary));
 
-        when(employeeSalaryDetailRepository.existsByEmployeeSalary_CodeAndSalary_CodeAndIsDeletedFalse(eq("ESL-1"), any()))
-                .thenReturn(false);
+        when(employeeSalaryDetailRepository.existsByEmployeeSalary_CodeAndSalary_CodeAndIsDeletedFalse(eq("ESL-1"),
+                any()))
+                        .thenReturn(false);
         when(salaryRepository.findByCode("BASE")).thenReturn(Optional.of(new Salary()));
         when(systemUnitRepository.findByCode("MONTH")).thenReturn(Optional.of(new SystemUnit()));
         when(codeGenerator.nextCode("ESD-")).thenReturn("ESD-000001");

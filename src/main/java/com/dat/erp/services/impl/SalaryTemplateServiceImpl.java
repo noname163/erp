@@ -126,7 +126,8 @@ public class SalaryTemplateServiceImpl extends AbstractAuditableService implemen
 
             BigDecimal amount = parsePositiveBigDecimal(detail.getAmount(),
                     Messages.ERROR_SALARY_TEMPLATE_DETAIL_AMOUNT_INVALID);
-            int quantity = parsePositiveInt(detail.getQuantity(), Messages.ERROR_SALARY_TEMPLATE_DETAIL_QUANTITY_INVALID);
+            int quantity = parsePositiveInt(detail.getQuantity(),
+                    Messages.ERROR_SALARY_TEMPLATE_DETAIL_QUANTITY_INVALID);
             int sequenceOrder = parsePositiveInt(detail.getSequenceOrder(),
                     Messages.ERROR_SALARY_TEMPLATE_DETAIL_SEQUENCE_ORDER_INVALID);
 
