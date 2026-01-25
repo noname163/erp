@@ -11,6 +11,8 @@ import com.dat.erp.entities.EmployeeSalary;
 
 @Repository
 public interface EmployeeSalaryRepository extends JpaRepository<EmployeeSalary, Long> {
+    java.util.Optional<EmployeeSalary> findByCodeAndIsDeletedFalse(String code);
+
     @Query("""
             select count(es) > 0
             from EmployeeSalary es
@@ -26,4 +28,3 @@ public interface EmployeeSalaryRepository extends JpaRepository<EmployeeSalary, 
             @Param("effectiveFrom") LocalDate effectiveFrom,
             @Param("effectiveTo") LocalDate effectiveTo);
 }
-
