@@ -1,9 +1,7 @@
 package com.dat.erp.entities;
 
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -23,19 +21,14 @@ import lombok.ToString;
 @Table(name = "email")
 @ToString()
 public class Email extends BaseAuditableEntity {
-    @Id
-    @EqualsAndHashCode.Include
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
-    @EqualsAndHashCode.Include
-    private String code;
     private String subject;
     private String emailFrom;
     private String emailTo;
     private String fullName;
     private String gender;
     private String htmlFilePath;
-    private boolean isSent;
+    @Column(name = "is_sent")
+    private boolean sent;
     private Integer retryTime;
     private String errorMessage;
     private boolean needRetry;

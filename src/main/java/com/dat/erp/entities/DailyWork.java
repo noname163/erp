@@ -1,17 +1,17 @@
 package com.dat.erp.entities;
 
+import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 import com.dat.erp.constants.DailyWorkUnit;
+import com.dat.erp.constants.DailyWorkWorkType;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
@@ -33,11 +33,6 @@ import lombok.ToString;
 @Entity
 @Table(name = "daily_work")
 public class DailyWork extends BaseAuditableEntity {
-    @Id
-    @EqualsAndHashCode.Include
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
-
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_profile_code", referencedColumnName = "code", nullable = false)
     private UserProfile userProfile;
@@ -60,5 +55,14 @@ public class DailyWork extends BaseAuditableEntity {
 
     @Column(name = "used_pto")
     private Boolean usedPto;
-}
 
+    @Column(name = "working_date")
+    private LocalDate workingDate;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "work_type")
+    private DailyWorkWorkType workType;
+
+    @Column(name = "hours_worked")
+    private BigDecimal hoursWorked;
+}

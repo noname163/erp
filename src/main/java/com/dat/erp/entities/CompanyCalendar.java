@@ -1,11 +1,13 @@
 package com.dat.erp.entities;
 
-import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
@@ -22,16 +24,17 @@ import lombok.ToString;
 @AllArgsConstructor
 @Builder
 @EqualsAndHashCode(onlyExplicitlyIncluded = true, callSuper = true)
-@ToString(exclude = { "details", "employeeSalaries" })
+@ToString(exclude = { "company", "dates" })
 @Entity
-@Table(name = "salary_template")
-public class SalaryTemplate extends BaseAuditableEntity {
+@Table(name = "company_calendar")
+public class CompanyCalendar extends BaseAuditableEntity {
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "company_code", referencedColumnName = "code", insertable = false, updatable = false, nullable = false)
+    private Company company;
+
+    @Column(name = "name")
     private String name;
-
-    private String description;
-
-    @Column(name = "total_amount")
-    private BigDecimal totalAmount;
 
     @Column(name = "effective_from")
     private LocalDate effectiveFrom;
@@ -39,12 +42,7 @@ public class SalaryTemplate extends BaseAuditableEntity {
     @Column(name = "effective_to")
     private LocalDate effectiveTo;
 
-    @Column(name = "currency")
-    private String currency;
-
-    @OneToMany(mappedBy = "salaryTemplate")
-    private List<SalaryTemplateDetail> details;
-
-    @OneToMany(mappedBy = "salaryTemplate")
-    private List<EmployeeSalary> employeeSalaries;
+    @OneToMany(mappedBy = "calendar", fetch = FetchType.LAZY)
+    private List<CalendarDate> dates;
 }
+

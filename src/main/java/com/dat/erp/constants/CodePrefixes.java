@@ -18,4 +18,5 @@ public final class CodePrefixes {
     public static final String SALARY_TEMPLATE = "STP-";
     public static final String SALARY_TEMPLATE_DETAIL = "STD-";
     public static final String SALARY = "SAL-";
+    public static final String EMPLOYEE_SALARY = "ESL-";
 }

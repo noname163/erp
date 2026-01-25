@@ -121,7 +121,7 @@ class EmailServiceImplTest {
 
         service.retryPendingEmails();
 
-        verify(emailRepository, never()).findTop50ByNeedRetryAndIsSentFalseOrderByIdAsc(true);
+        verify(emailRepository, never()).findTop50ByNeedRetryAndSentFalseOrderByIdAsc(true);
         verify(emailRepository, never()).save(any());
         verify(systemMailSender, never()).sendHtml(any(), any(), any(), any());
     }
@@ -134,7 +134,7 @@ class EmailServiceImplTest {
         email.setSent(false);
         email.setRetryTime(3);
 
-        when(emailRepository.findTop50ByNeedRetryAndIsSentFalseOrderByIdAsc(true)).thenReturn(List.of(email));
+        when(emailRepository.findTop50ByNeedRetryAndSentFalseOrderByIdAsc(true)).thenReturn(List.of(email));
 
         emailService.retryPendingEmails();
 
@@ -157,7 +157,7 @@ class EmailServiceImplTest {
         email.setSubject("Create account");
         email.setHtmlFilePath("templates/mail/create-account.html");
 
-        when(emailRepository.findTop50ByNeedRetryAndIsSentFalseOrderByIdAsc(true)).thenReturn(List.of(email));
+        when(emailRepository.findTop50ByNeedRetryAndSentFalseOrderByIdAsc(true)).thenReturn(List.of(email));
 
         emailService.retryPendingEmails();
 
@@ -185,7 +185,7 @@ class EmailServiceImplTest {
         email.setSubject("Create account");
         email.setHtmlFilePath("templates/mail/create-account.html");
 
-        when(emailRepository.findTop50ByNeedRetryAndIsSentFalseOrderByIdAsc(true)).thenReturn(List.of(email));
+        when(emailRepository.findTop50ByNeedRetryAndSentFalseOrderByIdAsc(true)).thenReturn(List.of(email));
         doThrow(new RuntimeException("smtp down")).when(systemMailSender).sendHtml(any(), any(), any(), any());
 
         service.retryPendingEmails();

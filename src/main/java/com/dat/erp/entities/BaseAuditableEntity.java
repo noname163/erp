@@ -60,5 +60,6 @@ public abstract class BaseAuditableEntity {
     @Column(name = "company_code", nullable = true)
     private String companyCode;
 
+    @Column(name = "is_deleted", nullable = false)
     private Boolean isDeleted = false;
 }
