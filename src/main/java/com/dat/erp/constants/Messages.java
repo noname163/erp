@@ -65,4 +65,16 @@ public final class Messages {
     public static final String ERROR_EMPLOYEE_SALARY_PERIOD_OVERLAPS = "Employee salary period overlaps";
     public static final String ERROR_EMPLOYEE_SALARY_EMPLOYEE_COMPANY_MISMATCH = "Employee does not belong to current company";
     public static final String ERROR_EMPLOYEE_SALARY_COMPANY_SECRET_KEY_MISSING = "Company secret key is missing";
+
+    // Employee salary detail
+    public static final String ERROR_EMPLOYEE_SALARY_DETAILS_INVALID = "requests is invalid";
+    public static final String ERROR_EMPLOYEE_SALARY_DETAIL_EMPLOYEE_SALARY_CODE_INVALID = "employeeSalaryCode is invalid";
+    public static final String ERROR_EMPLOYEE_SALARY_DETAIL_SALARY_CODE_INVALID = "salaryCode is invalid";
+    public static final String ERROR_EMPLOYEE_SALARY_DETAIL_UNIT_CODE_INVALID = "unitCode is invalid";
+    public static final String ERROR_EMPLOYEE_SALARY_DETAIL_AMOUNT_INVALID = "amount is invalid";
+    public static final String ERROR_EMPLOYEE_SALARY_DETAIL_QUANTITY_INVALID = "quantity is invalid";
+    public static final String ERROR_EMPLOYEE_SALARY_NOT_FOUND_WITH_CODE = "Employee salary not found with code %s";
+    public static final String ERROR_EMPLOYEE_SALARY_DETAIL_EMPLOYEE_SALARY_COMPANY_MISMATCH = "Employee salary does not belong to current company";
+    public static final String ERROR_EMPLOYEE_SALARY_DETAIL_ALREADY_EXISTS = "Employee salary detail already exists";
+    public static final String EMPLOYEE_SALARY_DETAIL_CREATE_SUCCESS = "Create salary detail for %s success";
 }
