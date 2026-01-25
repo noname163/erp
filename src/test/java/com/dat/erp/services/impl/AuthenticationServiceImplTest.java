@@ -20,6 +20,7 @@ import org.mockito.MockitoAnnotations;
 
 import com.dat.erp.constants.Messages;
 import com.dat.erp.dto.request.LoginRequest;
+import com.dat.erp.dto.response.LoginResponse;
 import com.dat.erp.entities.Account;
 import com.dat.erp.exceptions.UnauthorizedException;
 import com.dat.erp.repositories.customrepositories.AccountRepository;
@@ -68,7 +69,7 @@ class AuthenticationServiceImplTest {
                 MockedStatic<CookieUtils> cookies = Mockito.mockStatic(CookieUtils.class)) {
             crypto.when(() -> CryptoUtils.verifyHash("password", "$2a$10$hash")).thenReturn(true);
 
-            String result = authenticationService.login(request, response);
+            LoginResponse result = authenticationService.login(request, response);
 
             assertEquals(Messages.LOGIN_SUCCESS, result);
             cookies.verify(() -> CookieUtils.addTokenCookie(eq(response), eq("token")));
@@ -119,4 +120,3 @@ class AuthenticationServiceImplTest {
                 && cookie.getMaxAge() == 0;
     }
 }
-

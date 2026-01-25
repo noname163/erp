@@ -5,8 +5,10 @@ import org.springframework.stereotype.Service;
 
 import com.dat.erp.constants.Messages;
 import com.dat.erp.dto.request.LoginRequest;
+import com.dat.erp.dto.response.LoginResponse;
 import com.dat.erp.exceptions.UnauthorizedException;
 import com.dat.erp.entities.Account;
+import com.dat.erp.entities.UserProfile;
 import com.dat.erp.repositories.customrepositories.AccountRepository;
 import com.dat.erp.services.AuthenticationService;
 import com.dat.erp.utils.CookieUtils;
@@ -24,7 +26,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     private JwtUtils jwtUtils;
 
     @Override
-    public String login(LoginRequest request, HttpServletResponse response) {
+    public LoginResponse login(LoginRequest request, HttpServletResponse response) {
         Account account = accountRepository
                 .findByEmail(request.getEmail())
                 .orElseThrow(() -> new UnauthorizedException(Messages.ERROR_INVALID_CREDENTIALS));
@@ -33,7 +35,15 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         }
         String token = jwtUtils.generateToken(account.getEmail(), account.getCode());
         CookieUtils.addTokenCookie(response, token);
-        return Messages.LOGIN_SUCCESS;
+        LoginResponse loginResponse = LoginResponse.builder()
+                .email(account.getEmail())
+                .role(account.getRole().getType())
+                .build();
+        if (account.getUserProfile() != null) {
+            UserProfile userProfile = account.getUserProfile();
+            loginResponse.setFullName(userProfile.getLastName() + userProfile.getFirstName());
+        }
+        return loginResponse;
     }
 
     @Override

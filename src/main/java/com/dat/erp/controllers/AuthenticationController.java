@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.dat.erp.builders.ResponseBuilder;
 import com.dat.erp.dto.request.LoginRequest;
 import com.dat.erp.dto.response.CustomApiResponse;
+import com.dat.erp.dto.response.LoginResponse;
 import com.dat.erp.services.AuthenticationService;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -50,7 +51,7 @@ public class AuthenticationController {
     @PostMapping("/login")
     public ResponseEntity<CustomApiResponse<Object>> login(@Valid @RequestBody LoginRequest request,
             HttpServletResponse response) {
-        String result = authenticationService.login(request, response);
+        LoginResponse result = authenticationService.login(request, response);
         return ResponseBuilder.ok(result);
     }
 }

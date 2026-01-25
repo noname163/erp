@@ -9,7 +9,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.dat.erp.constants.CodePrefixes;
-import com.dat.erp.constants.Defaults;
+import com.dat.erp.constants.RoleType;
 import com.dat.erp.dto.request.AccountRequest;
 import com.dat.erp.dto.request.EmailRequest;
 import com.dat.erp.entities.Account;
@@ -76,7 +76,8 @@ public class AccountServiceImpl extends AbstractAuditableService implements Acco
         applyInsertAudit(account);
         accountRepository.save(account);
 
-        log.info("AUDIT action=CREATE_DEFAULT_ACCOUNT actor={} companyCode={} result=SUCCESS username={} accountCode={}",
+        log.info(
+                "AUDIT action=CREATE_DEFAULT_ACCOUNT actor={} companyCode={} result=SUCCESS username={} accountCode={}",
                 actorCode, companyCode, username, account.getCode());
 
         sendCreateAccountEmail(username, rawPassword, request.getFullName(), actorCode, companyCode);
@@ -84,7 +85,7 @@ public class AccountServiceImpl extends AbstractAuditableService implements Acco
     }
 
     private Role resolveOrCreateRole(String roleName) {
-        String normalized = (roleName == null || roleName.isBlank()) ? Defaults.ROLE_COMPANY_MANAGER : roleName.trim();
+        String normalized = (roleName == null || roleName.isBlank()) ? RoleType.ROLE_COMPANY_MANAGER : roleName.trim();
         return roleRepository.findByName(normalized).orElseGet(() -> {
             Role role = new Role();
             role.setCode(CodePrefixes.ROLE + normalized);
@@ -124,4 +125,3 @@ public class AccountServiceImpl extends AbstractAuditableService implements Acco
         }
     }
 }
-
