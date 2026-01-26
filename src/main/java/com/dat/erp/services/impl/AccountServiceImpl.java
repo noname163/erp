@@ -58,7 +58,7 @@ public class AccountServiceImpl extends AbstractAuditableService implements Acco
             return existing.getCode();
         }
 
-        Role role = resolveOrCreateRole(request.getRoleName());
+        Role role = resolveOrCreateRole(request.getRoleType());
 
         String rawPassword = request.getPassword();
         if (rawPassword == null || rawPassword.isBlank()) {
@@ -84,12 +84,13 @@ public class AccountServiceImpl extends AbstractAuditableService implements Acco
         return account.getCode();
     }
 
-    private Role resolveOrCreateRole(String roleName) {
-        String normalized = (roleName == null || roleName.isBlank()) ? RoleType.ROLE_COMPANY_MANAGER : roleName.trim();
-        return roleRepository.findByName(normalized).orElseGet(() -> {
+    private Role resolveOrCreateRole(String roleType) {
+        String normalized = (roleType == null || roleType.isBlank()) ? RoleType.ROLE_COMPANY_MANAGER : roleType.trim();
+        return roleRepository.findByType(normalized).orElseGet(() -> {
             Role role = new Role();
             role.setCode(CodePrefixes.ROLE + normalized);
             role.setName(normalized);
+            role.setType(normalized);
             role.setDescription("Auto-created role");
             applyInsertAudit(role);
             return roleRepository.save(role);

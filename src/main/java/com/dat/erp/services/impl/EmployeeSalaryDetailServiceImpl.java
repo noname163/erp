@@ -48,7 +48,7 @@ public class EmployeeSalaryDetailServiceImpl extends AbstractAuditableService im
 
     @Override
     @Transactional
-    public String createEmployeeSalaryDetails(List<EmployeeSalaryDetailRequest> requests) {
+    public String createEmployeeSalaryDetails(List<EmployeeSalaryDetailRequest> requests, String employeeSalaryCode) {
         if (requests == null || requests.isEmpty()) {
             throw new BadRequestException(Messages.ERROR_EMPLOYEE_SALARY_DETAILS_INVALID);
         }
@@ -56,12 +56,6 @@ public class EmployeeSalaryDetailServiceImpl extends AbstractAuditableService im
         String companyCode = securityContextService.getCurrentUser().getAccount().getCompanyCode();
         if (companyCode == null || companyCode.isBlank()) {
             throw new BadRequestException(Messages.ERROR_CURRENT_USER_COMPANY_MISSING);
-        }
-
-        String employeeSalaryCode = CustomStringUtils.normalizeCode(
-                requests.get(0) == null ? null : requests.get(0).getEmployeeSalaryCode());
-        if (employeeSalaryCode == null) {
-            throw new BadRequestException(Messages.ERROR_EMPLOYEE_SALARY_DETAIL_EMPLOYEE_SALARY_CODE_INVALID);
         }
 
         EmployeeSalary employeeSalary = employeeSalaryRepository.findByCodeAndIsDeletedFalse(employeeSalaryCode)
