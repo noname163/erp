@@ -73,7 +73,7 @@ public class EmployeeSalaryDetailServiceImpl extends AbstractAuditableService im
                 throw new BadRequestException(Messages.ERROR_EMPLOYEE_SALARY_DETAILS_INVALID);
             }
 
-            String requestEmployeeSalaryCode = CustomStringUtils.normalizeCode(request.getEmployeeSalaryCode());
+            String requestEmployeeSalaryCode = CustomStringUtils.normalizeCode(employeeSalaryCode);
             if (requestEmployeeSalaryCode == null || !employeeSalaryCode.equals(requestEmployeeSalaryCode)) {
                 throw new BadRequestException(Messages.ERROR_EMPLOYEE_SALARY_DETAIL_EMPLOYEE_SALARY_CODE_INVALID);
             }

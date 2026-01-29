@@ -2,6 +2,7 @@ package com.dat.erp.services.impl;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
@@ -12,6 +13,7 @@ import java.util.Optional;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
@@ -20,10 +22,15 @@ import org.mockito.MockitoAnnotations;
 
 import com.dat.erp.constants.Messages;
 import com.dat.erp.dto.request.LoginRequest;
+import com.dat.erp.dto.request.ResetPasswordRequest;
 import com.dat.erp.dto.response.LoginResponse;
 import com.dat.erp.entities.Account;
+import com.dat.erp.entities.Role;
+import com.dat.erp.exceptions.BadRequestException;
 import com.dat.erp.exceptions.UnauthorizedException;
 import com.dat.erp.repositories.customrepositories.AccountRepository;
+import com.dat.erp.services.SecurityContextService;
+import com.dat.erp.systemconfigs.CustomUserDetails;
 import com.dat.erp.utils.CookieUtils;
 import com.dat.erp.utils.CryptoUtils;
 import com.dat.erp.utils.JwtUtils;
@@ -38,6 +45,9 @@ class AuthenticationServiceImplTest {
 
     @Mock
     private JwtUtils jwtUtils;
+
+    @Mock
+    private SecurityContextService securityContextService;
 
     @InjectMocks
     private AuthenticationServiceImpl authenticationService;
@@ -57,6 +67,7 @@ class AuthenticationServiceImplTest {
         account.setEmail("user@example.com");
         account.setCode("ACC-1");
         account.setPasswordHash("$2a$10$hash");
+        account.setRole(Role.builder().type("ADMIN").name("ADMIN").build());
     }
 
     @Test
@@ -71,7 +82,8 @@ class AuthenticationServiceImplTest {
 
             LoginResponse result = authenticationService.login(request, response);
 
-            assertEquals(Messages.LOGIN_SUCCESS, result);
+            assertEquals("user@example.com", result.getEmail());
+            assertTrue(result.isFirstLogin());
             cookies.verify(() -> CookieUtils.addTokenCookie(eq(response), eq("token")));
         }
     }
@@ -118,5 +130,62 @@ class AuthenticationServiceImplTest {
                 && cookie.getSecure()
                 && "/".equals(cookie.getPath())
                 && cookie.getMaxAge() == 0;
+    }
+
+    @Test
+    void resetPassword_success_updatesHash() {
+        ResetPasswordRequest resetRequest = new ResetPasswordRequest();
+        resetRequest.setOldPassword("oldPass");
+        resetRequest.setNewPassword("newPass");
+        resetRequest.setConfirmPassword("newPass");
+
+        CustomUserDetails currentUser = Mockito.mock(CustomUserDetails.class);
+        when(currentUser.getCode()).thenReturn("ACC-1");
+        when(securityContextService.getCurrentUser()).thenReturn(currentUser);
+        when(accountRepository.findByCode("ACC-1")).thenReturn(Optional.of(account));
+
+        try (MockedStatic<CryptoUtils> crypto = Mockito.mockStatic(CryptoUtils.class)) {
+            crypto.when(() -> CryptoUtils.verifyHash("oldPass", "$2a$10$hash")).thenReturn(true);
+            crypto.when(() -> CryptoUtils.hash("newPass")).thenReturn("$2a$10$newHash");
+
+            String result = authenticationService.resetPassword(resetRequest);
+
+            assertEquals(Messages.PASSWORD_RESET_SUCCESS, result);
+
+            ArgumentCaptor<Account> accountCaptor = ArgumentCaptor.forClass(Account.class);
+            verify(accountRepository).save(accountCaptor.capture());
+            assertEquals("$2a$10$newHash", accountCaptor.getValue().getPasswordHash());
+        }
+    }
+
+    @Test
+    void resetPassword_confirmMismatch_throwsBadRequest() {
+        ResetPasswordRequest resetRequest = new ResetPasswordRequest();
+        resetRequest.setOldPassword("oldPass");
+        resetRequest.setNewPassword("newPass");
+        resetRequest.setConfirmPassword("different");
+
+        assertThrows(BadRequestException.class, () -> authenticationService.resetPassword(resetRequest));
+        verify(securityContextService, never()).getCurrentUser();
+    }
+
+    @Test
+    void resetPassword_oldPasswordIncorrect_throwsBadRequest() {
+        ResetPasswordRequest resetRequest = new ResetPasswordRequest();
+        resetRequest.setOldPassword("oldPass");
+        resetRequest.setNewPassword("newPass");
+        resetRequest.setConfirmPassword("newPass");
+
+        CustomUserDetails currentUser = Mockito.mock(CustomUserDetails.class);
+        when(currentUser.getCode()).thenReturn("ACC-1");
+        when(securityContextService.getCurrentUser()).thenReturn(currentUser);
+        when(accountRepository.findByCode("ACC-1")).thenReturn(Optional.of(account));
+
+        try (MockedStatic<CryptoUtils> crypto = Mockito.mockStatic(CryptoUtils.class)) {
+            crypto.when(() -> CryptoUtils.verifyHash("oldPass", "$2a$10$hash")).thenReturn(false);
+
+            assertThrows(BadRequestException.class, () -> authenticationService.resetPassword(resetRequest));
+            verify(accountRepository, never()).save(any());
+        }
     }
 }

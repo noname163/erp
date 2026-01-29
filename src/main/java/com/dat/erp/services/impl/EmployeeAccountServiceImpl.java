@@ -113,9 +113,6 @@ public class EmployeeAccountServiceImpl extends AbstractAuditableService impleme
     }
 
     private Role resolveRole(String roleCodeOrName) {
-        if (roleCodeOrName == null || roleCodeOrName.isBlank()) {
-            throw new BadRequestException(String.format(Messages.ERROR_ROLE_NOT_FOUND_WITH_CODE, ""));
-        }
         return roleRepository.findByType(roleCodeOrName)
                 .or(() -> roleRepository.findByName(roleCodeOrName))
                 .orElseThrow(() -> new BadRequestException(

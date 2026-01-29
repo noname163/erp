@@ -59,23 +59,17 @@ public class EmployeeSalaryServiceImpl extends AbstractAuditableService implemen
             throw new BadRequestException("request is invalid");
         }
 
-        String userProfileCode = request.getUserProfileCode() == null ? null : request.getUserProfileCode().trim();
-        if (userProfileCode == null || userProfileCode.isBlank()) {
-            throw new BadRequestException(Messages.ERROR_EMPLOYEE_SALARY_USER_PROFILE_CODE_INVALID);
-        }
+        String userProfileCode = request.getUserProfileCode().trim();
 
         LocalDate effectiveFrom = request.getEffectiveFrom();
         LocalDate effectiveTo = request.getEffectiveTo();
-        if (effectiveFrom == null || effectiveTo == null || effectiveFrom.isAfter(effectiveTo)) {
+        if (effectiveFrom.isAfter(effectiveTo)) {
             throw new BadRequestException(Messages.ERROR_EMPLOYEE_SALARY_EFFECTIVE_DATES_INVALID);
         }
 
         BigDecimal totalAmount = parsePositiveBigDecimal(request.getTotalAmount(),
                 Messages.ERROR_EMPLOYEE_SALARY_TOTAL_AMOUNT_INVALID);
-        String currency = request.getCurrency() == null ? null : request.getCurrency().trim().toUpperCase();
-        if (currency == null || currency.isBlank()) {
-            throw new BadRequestException(Messages.ERROR_EMPLOYEE_SALARY_CURRENCY_INVALID);
-        }
+        String currency = request.getCurrency().trim().toUpperCase();
 
         String companyCode = securityContextService.getCurrentUser().getAccount().getCompanyCode();
         if (companyCode == null || companyCode.isBlank()) {

@@ -36,7 +36,6 @@ public class Company extends BaseAuditableEntity {
     private String taxNumber;
 
     @Column(name = "secret_key")
-    @Convert(converter = EncryptFieldConverter.class)
     private String secretKey;
 
     @Column(name = "tax")
