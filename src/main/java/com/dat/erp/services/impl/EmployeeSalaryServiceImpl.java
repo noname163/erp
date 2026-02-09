@@ -21,6 +21,7 @@ import com.dat.erp.repositories.customrepositories.CompanyRepository;
 import com.dat.erp.repositories.customrepositories.EmployeeSalaryRepository;
 import com.dat.erp.repositories.customrepositories.UserProfileRepository;
 import com.dat.erp.services.CodeGenerator;
+import com.dat.erp.services.EmployeeSalaryDetailService;
 import com.dat.erp.services.EmployeeSalaryService;
 import com.dat.erp.services.SecurityContextService;
 import com.dat.erp.services.base.AbstractAuditableService;
@@ -33,18 +34,21 @@ public class EmployeeSalaryServiceImpl extends AbstractAuditableService implemen
     private final CompanyRepository companyRepository;
     private final UserProfileRepository userProfileRepository;
     private final EmployeeSalaryMapper employeeSalaryMapper;
+    private final EmployeeSalaryDetailService employeeSalaryDetailService;
 
     public EmployeeSalaryServiceImpl(EmployeeSalaryRepository employeeSalaryRepository,
             CompanyRepository companyRepository,
             UserProfileRepository userProfileRepository,
             EmployeeSalaryMapper employeeSalaryMapper,
             CodeGenerator codeGenerator,
-            SecurityContextService securityContextService) {
+            SecurityContextService securityContextService,
+            EmployeeSalaryDetailService employeeSalaryDetailService) {
         this.employeeSalaryRepository = employeeSalaryRepository;
         this.companyRepository = companyRepository;
         this.userProfileRepository = userProfileRepository;
         this.employeeSalaryMapper = employeeSalaryMapper;
         this.codeGenerator = codeGenerator;
+        this.employeeSalaryDetailService = employeeSalaryDetailService;
         this.securityContextService = securityContextService;
     }
 
@@ -55,23 +59,17 @@ public class EmployeeSalaryServiceImpl extends AbstractAuditableService implemen
             throw new BadRequestException("request is invalid");
         }
 
-        String userProfileCode = request.getUserProfileCode() == null ? null : request.getUserProfileCode().trim();
-        if (userProfileCode == null || userProfileCode.isBlank()) {
-            throw new BadRequestException(Messages.ERROR_EMPLOYEE_SALARY_USER_PROFILE_CODE_INVALID);
-        }
+        String userProfileCode = request.getUserProfileCode().trim();
 
         LocalDate effectiveFrom = request.getEffectiveFrom();
         LocalDate effectiveTo = request.getEffectiveTo();
-        if (effectiveFrom == null || effectiveTo == null || effectiveFrom.isAfter(effectiveTo)) {
+        if (effectiveFrom.isAfter(effectiveTo)) {
             throw new BadRequestException(Messages.ERROR_EMPLOYEE_SALARY_EFFECTIVE_DATES_INVALID);
         }
 
         BigDecimal totalAmount = parsePositiveBigDecimal(request.getTotalAmount(),
                 Messages.ERROR_EMPLOYEE_SALARY_TOTAL_AMOUNT_INVALID);
-        String currency = request.getCurrency() == null ? null : request.getCurrency().trim().toUpperCase();
-        if (currency == null || currency.isBlank()) {
-            throw new BadRequestException(Messages.ERROR_EMPLOYEE_SALARY_CURRENCY_INVALID);
-        }
+        String currency = request.getCurrency().trim().toUpperCase();
 
         String companyCode = securityContextService.getCurrentUser().getAccount().getCompanyCode();
         if (companyCode == null || companyCode.isBlank()) {
@@ -79,7 +77,8 @@ public class EmployeeSalaryServiceImpl extends AbstractAuditableService implemen
         }
 
         Company company = companyRepository.findByCode(companyCode)
-                .orElseThrow(() -> new ResourceNotFoundException(String.format(Messages.ERROR_COMPANY_NOT_FOUND_WITH_CODE, companyCode)));
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        String.format(Messages.ERROR_COMPANY_NOT_FOUND_WITH_CODE, companyCode)));
         String companySecretKey = company.getSecretKey();
         if (companySecretKey == null || companySecretKey.isBlank()) {
             throw new BadRequestException(Messages.ERROR_EMPLOYEE_SALARY_COMPANY_SECRET_KEY_MISSING);
@@ -88,7 +87,8 @@ public class EmployeeSalaryServiceImpl extends AbstractAuditableService implemen
         UserProfile userProfile = userProfileRepository.findByCode(userProfileCode)
                 .orElseThrow(() -> new ResourceNotFoundException(Messages.ERROR_EMPLOYEE_SALARY_EMPLOYEE_NOT_FOUND));
 
-        String employeeCompanyCode = userProfile.getAccount() == null ? null : userProfile.getAccount().getCompanyCode();
+        String employeeCompanyCode = userProfile.getAccount() == null ? null
+                : userProfile.getAccount().getCompanyCode();
         if (employeeCompanyCode == null || employeeCompanyCode.isBlank() || !companyCode.equals(employeeCompanyCode)) {
             throw new BadRequestException(Messages.ERROR_EMPLOYEE_SALARY_EMPLOYEE_COMPANY_MISMATCH);
         }
@@ -104,7 +104,8 @@ public class EmployeeSalaryServiceImpl extends AbstractAuditableService implemen
 
         EmployeeSalary employeeSalary = employeeSalaryMapper.toEntity(request);
         employeeSalary.setUserProfile(userProfile);
-        employeeSalary.setTotalAmount(CompanySecretKeyCryptoUtils.encrypt(totalAmount.toPlainString(), companySecretKey));
+        employeeSalary
+                .setTotalAmount(CompanySecretKeyCryptoUtils.encrypt(totalAmount.toPlainString(), companySecretKey));
         employeeSalary.setCurrency(currency);
 
         generateCodeIfMissing(employeeSalary, CodePrefixes.EMPLOYEE_SALARY);
@@ -114,6 +115,7 @@ public class EmployeeSalaryServiceImpl extends AbstractAuditableService implemen
         EmployeeSalaryResponse response = employeeSalaryMapper.toResponse(saved);
         response.setTotalAmount(totalAmount.toPlainString());
         response.setCurrency(currency);
+        employeeSalaryDetailService.createEmployeeSalaryDetails(request.getSalaryDetails(), response.getCode());
         return response;
     }
 

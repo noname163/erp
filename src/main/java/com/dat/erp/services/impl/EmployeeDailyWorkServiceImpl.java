@@ -70,9 +70,6 @@ public class EmployeeDailyWorkServiceImpl extends AbstractAuditableService imple
             }
 
             LocalDate workingDate = request.getWorkingDate();
-            if (workingDate == null) {
-                throw new BadRequestException(Messages.ERROR_DAILY_WORK_WORKING_DATE_INVALID);
-            }
 
             String key = userProfileCode + "|" + workingDate;
             if (!dedupeKeys.add(key)) {
@@ -97,19 +94,6 @@ public class EmployeeDailyWorkServiceImpl extends AbstractAuditableService imple
                 throw new ConflictException(Messages.ERROR_DAILY_WORK_ALREADY_EXISTS);
             }
 
-            if (request.getQuantity() == null || request.getQuantity() <= 0) {
-                throw new BadRequestException(Messages.ERROR_DAILY_WORK_QUANTITY_INVALID);
-            }
-            if (request.getUnit() == null) {
-                throw new BadRequestException(Messages.ERROR_DAILY_WORK_UNIT_INVALID);
-            }
-            if (request.getWorkType() == null) {
-                throw new BadRequestException(Messages.ERROR_DAILY_WORK_WORK_TYPE_INVALID);
-            }
-
-            if (request.getStartTime() == null || request.getEndTime() == null) {
-                throw new BadRequestException(Messages.ERROR_DAILY_WORK_START_END_TIME_INVALID);
-            }
             LocalDateTime startDateTime = LocalDateTime.of(workingDate, request.getStartTime());
             LocalDateTime endDateTime = LocalDateTime.of(workingDate, request.getEndTime());
             if (!endDateTime.isAfter(startDateTime)) {
@@ -117,9 +101,6 @@ public class EmployeeDailyWorkServiceImpl extends AbstractAuditableService imple
             }
 
             Integer otTime = request.getOtTime();
-            if (otTime != null && otTime < 0) {
-                throw new BadRequestException(Messages.ERROR_DAILY_WORK_OT_TIME_INVALID);
-            }
 
             BigDecimal hoursWorked = calculateHoursWorked(startDateTime, endDateTime, otTime);
 

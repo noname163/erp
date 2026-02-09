@@ -53,10 +53,7 @@ public class SalaryServiceImpl extends AbstractAuditableService implements Salar
                 throw new BadRequestException(Messages.ERROR_SALARY_REQUESTS_INVALID);
             }
 
-            String name = request.getName() == null ? null : request.getName().trim();
-            if (name == null || name.isBlank()) {
-                throw new BadRequestException(Messages.ERROR_SALARY_NAME_INVALID);
-            }
+            String name = request.getName().trim();
 
             String key = name.toLowerCase();
             if (!requestNames.add(key)) {
@@ -67,10 +64,6 @@ public class SalaryServiceImpl extends AbstractAuditableService implements Salar
             SalaryCalculateMethod calculateMethod = parseCalculateMethod(request.getCalculateMethod());
             if (calculateMethod == null) {
                 throw new BadRequestException(Messages.ERROR_SALARY_CALCULATE_METHOD_INVALID);
-            }
-
-            if (request.getIsDeduct() == null) {
-                throw new BadRequestException(Messages.ERROR_SALARY_IS_DEDUCT_INVALID);
             }
         }
 
@@ -111,4 +104,3 @@ public class SalaryServiceImpl extends AbstractAuditableService implements Salar
         }
     }
 }
-

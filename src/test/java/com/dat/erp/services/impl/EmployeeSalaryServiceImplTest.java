@@ -34,6 +34,7 @@ import com.dat.erp.repositories.customrepositories.CompanyRepository;
 import com.dat.erp.repositories.customrepositories.EmployeeSalaryRepository;
 import com.dat.erp.repositories.customrepositories.UserProfileRepository;
 import com.dat.erp.services.CodeGenerator;
+import com.dat.erp.services.EmployeeSalaryDetailService;
 import com.dat.erp.services.SecurityContextService;
 import com.dat.erp.systemconfigs.CustomUserDetails;
 import com.dat.erp.utils.CompanySecretKeyCryptoUtils;
@@ -57,6 +58,9 @@ class EmployeeSalaryServiceImplTest {
 
     @Mock
     private SecurityContextService securityContextService;
+
+    @Mock
+    private EmployeeSalaryDetailService employeeSalaryDetailService;
 
     @InjectMocks
     private EmployeeSalaryServiceImpl employeeSalaryService;

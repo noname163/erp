@@ -53,19 +53,13 @@ public class SalaryTemplateServiceImpl extends AbstractAuditableService implemen
 
         LocalDate effectiveFrom = request.getEffectiveFrom();
         LocalDate effectiveTo = request.getEffectiveTo();
-        if (effectiveFrom == null || effectiveTo == null || effectiveFrom.isAfter(effectiveTo)) {
+        if (effectiveFrom.isAfter(effectiveTo)) {
             throw new BadRequestException(Messages.ERROR_SALARY_TEMPLATE_EFFECTIVE_DATES_INVALID);
         }
 
-        String name = request.getName() == null ? null : request.getName().trim();
-        if (name == null || name.isBlank()) {
-            throw new BadRequestException("name is invalid");
-        }
+        String name = request.getName().trim();
 
         List<SalaryTemplateDetailRequest> details = request.getDetails();
-        if (details == null || details.isEmpty()) {
-            throw new BadRequestException(Messages.ERROR_SALARY_TEMPLATE_DETAILS_INVALID);
-        }
 
         BigDecimal requestTotalAmount = parsePositiveBigDecimal(request.getTotalAmount(),
                 Messages.ERROR_SALARY_TEMPLATE_TOTAL_AMOUNT_INVALID);
@@ -85,9 +79,6 @@ public class SalaryTemplateServiceImpl extends AbstractAuditableService implemen
         }
 
         SalaryTemplate template = salaryTemplateMapper.toEntity(request);
-        if (template.getTotalAmount() == null || template.getTotalAmount().compareTo(BigDecimal.ZERO) <= 0) {
-            throw new BadRequestException(Messages.ERROR_SALARY_TEMPLATE_TOTAL_AMOUNT_INVALID);
-        }
 
         template.setName(name);
         template.setCurrency(request.getCurrency() == null ? null : request.getCurrency().trim().toUpperCase());
@@ -102,7 +93,6 @@ public class SalaryTemplateServiceImpl extends AbstractAuditableService implemen
     }
 
     private BigDecimal validateAndCalculateDetails(List<SalaryTemplateDetailRequest> details) {
-        Set<String> salaryCodes = new HashSet<>();
         Set<Integer> sequenceOrders = new HashSet<>();
 
         BigDecimal total = BigDecimal.ZERO;
@@ -111,23 +101,8 @@ public class SalaryTemplateServiceImpl extends AbstractAuditableService implemen
                 throw new BadRequestException(Messages.ERROR_SALARY_TEMPLATE_DETAILS_INVALID);
             }
 
-            String salaryCode = detail.getSalaryCode() == null ? null : detail.getSalaryCode().trim();
-            if (salaryCode == null || salaryCode.isBlank()) {
-                throw new BadRequestException(Messages.ERROR_SALARY_TEMPLATE_DETAIL_SALARY_CODE_INVALID);
-            }
-            if (!salaryCodes.add(salaryCode)) {
-                throw new BadRequestException(Messages.ERROR_SALARY_TEMPLATE_DETAILS_INVALID);
-            }
-
-            String unitCode = detail.getUnitCode() == null ? null : detail.getUnitCode().trim();
-            if (unitCode == null || unitCode.isBlank()) {
-                throw new BadRequestException(Messages.ERROR_SALARY_TEMPLATE_DETAIL_UNIT_CODE_INVALID);
-            }
-
             BigDecimal amount = parsePositiveBigDecimal(detail.getAmount(),
                     Messages.ERROR_SALARY_TEMPLATE_DETAIL_AMOUNT_INVALID);
-            int quantity = parsePositiveInt(detail.getQuantity(),
-                    Messages.ERROR_SALARY_TEMPLATE_DETAIL_QUANTITY_INVALID);
             int sequenceOrder = parsePositiveInt(detail.getSequenceOrder(),
                     Messages.ERROR_SALARY_TEMPLATE_DETAIL_SEQUENCE_ORDER_INVALID);
 
@@ -135,7 +110,7 @@ public class SalaryTemplateServiceImpl extends AbstractAuditableService implemen
                 throw new BadRequestException(Messages.ERROR_SALARY_TEMPLATE_DETAILS_INVALID);
             }
 
-            total = total.add(amount.multiply(BigDecimal.valueOf(quantity)));
+            total = total.add(amount);
         }
 
         if (total.compareTo(BigDecimal.ZERO) <= 0) {

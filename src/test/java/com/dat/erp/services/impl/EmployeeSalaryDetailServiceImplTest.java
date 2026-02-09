@@ -106,7 +106,7 @@ class EmployeeSalaryDetailServiceImplTest {
         when(codeGenerator.nextCode("ESD-")).thenReturn("ESD-000001", "ESD-000002");
         when(employeeSalaryDetailRepository.saveAll(anyList())).thenAnswer(invocation -> invocation.getArgument(0));
 
-        String result = employeeSalaryDetailService.createEmployeeSalaryDetails(requests);
+        String result = employeeSalaryDetailService.createEmployeeSalaryDetails(requests, employeeSalary.getCode());
 
         assertEquals(String.format(Messages.EMPLOYEE_SALARY_DETAIL_CREATE_SUCCESS, "EMP001"), result);
 
@@ -144,7 +144,7 @@ class EmployeeSalaryDetailServiceImplTest {
         when(codeGenerator.nextCode("ESD-")).thenReturn("ESD-000001");
 
         ConflictException ex = assertThrows(ConflictException.class,
-                () -> employeeSalaryDetailService.createEmployeeSalaryDetails(requests));
+                () -> employeeSalaryDetailService.createEmployeeSalaryDetails(requests, employeeSalary.getCode()));
         assertEquals(Messages.ERROR_EMPLOYEE_SALARY_DETAIL_ALREADY_EXISTS, ex.getMessage());
         verify(employeeSalaryDetailRepository, never()).saveAll(anyList());
     }
@@ -159,7 +159,7 @@ class EmployeeSalaryDetailServiceImplTest {
         when(employeeSalaryRepository.findByCodeAndIsDeletedFalse("ESL-1")).thenReturn(Optional.empty());
 
         ResourceNotFoundException ex = assertThrows(ResourceNotFoundException.class,
-                () -> employeeSalaryDetailService.createEmployeeSalaryDetails(requests));
+                () -> employeeSalaryDetailService.createEmployeeSalaryDetails(requests, "ESL-1"));
         assertEquals(String.format(Messages.ERROR_EMPLOYEE_SALARY_NOT_FOUND_WITH_CODE, "ESL-1"), ex.getMessage());
         verify(employeeSalaryDetailRepository, never()).saveAll(anyList());
     }
@@ -178,7 +178,7 @@ class EmployeeSalaryDetailServiceImplTest {
         when(employeeSalaryRepository.findByCodeAndIsDeletedFalse("ESL-1")).thenReturn(Optional.of(employeeSalary));
 
         BadRequestException ex = assertThrows(BadRequestException.class,
-                () -> employeeSalaryDetailService.createEmployeeSalaryDetails(requests));
+                () -> employeeSalaryDetailService.createEmployeeSalaryDetails(requests, employeeSalary.getCode()));
         assertEquals(Messages.ERROR_EMPLOYEE_SALARY_DETAIL_EMPLOYEE_SALARY_COMPANY_MISMATCH, ex.getMessage());
         verify(employeeSalaryDetailRepository, never()).saveAll(anyList());
     }

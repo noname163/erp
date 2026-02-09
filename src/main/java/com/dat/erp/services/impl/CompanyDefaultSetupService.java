@@ -6,8 +6,10 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 import com.dat.erp.constants.Defaults;
+import com.dat.erp.constants.RoleType;
 import com.dat.erp.dto.request.AccountRequest;
 import com.dat.erp.dto.request.DepartmentRequest;
+import com.dat.erp.entities.Role;
 import com.dat.erp.services.AccountService;
 import com.dat.erp.services.DepartmentService;
 import com.dat.erp.services.PasswordGenerator;
@@ -36,7 +38,7 @@ public class CompanyDefaultSetupService {
             AccountRequest request = new AccountRequest(
                     companyEmail,
                     password,
-                    Defaults.ROLE_COMPANY_MANAGER,
+                    RoleType.ROLE_COMPANY_MANAGER,
                     companyCode,
                     companyName);
             accountService.createDefaultAccount(request, actorCode);
@@ -50,7 +52,7 @@ public class CompanyDefaultSetupService {
     public void setDepartmentDefault(String companyCode, String actorCode) {
         try {
             DepartmentRequest request = new DepartmentRequest();
-            request.setName(Defaults.DEFAULT_DEPARTMENT_MANAGER_NAME);
+            request.setName(RoleType.DEFAULT_DEPARTMENT_MANAGER_NAME);
             request.setDescription(null);
             request.setCompanyCode(companyCode);
             departmentService.createDefaultDepartment(request, actorCode);

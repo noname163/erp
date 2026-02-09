@@ -26,6 +26,9 @@ public final class Messages {
     public static final String ERROR_INVALID_CREDENTIALS = "Invalid credentials";
     public static final String LOGIN_SUCCESS = "Login successful";
     public static final String LOGOUT_SUCCESS = "Logout successful";
+    public static final String PASSWORD_RESET_SUCCESS = "Password reset successful";
+    public static final String ERROR_OLD_PASSWORD_INCORRECT = "Old password is incorrect";
+    public static final String ERROR_PASSWORD_CONFIRM_MISMATCH = "confirmPassword does not match newPassword";
 
     // Departments/Companies
     public static final String ERROR_COMPANY_NOT_FOUND_WITH_CODE = "Unable to find company with code %s";

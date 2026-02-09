@@ -9,7 +9,9 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.dat.erp.builders.ResponseBuilder;
 import com.dat.erp.dto.request.LoginRequest;
+import com.dat.erp.dto.request.ResetPasswordRequest;
 import com.dat.erp.dto.response.CustomApiResponse;
+import com.dat.erp.dto.response.LoginResponse;
 import com.dat.erp.services.AuthenticationService;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -50,7 +52,19 @@ public class AuthenticationController {
     @PostMapping("/login")
     public ResponseEntity<CustomApiResponse<Object>> login(@Valid @RequestBody LoginRequest request,
             HttpServletResponse response) {
-        String result = authenticationService.login(request, response);
+        LoginResponse result = authenticationService.login(request, response);
         return ResponseBuilder.ok(result);
+    }
+
+    @Operation(summary = "Reset password", description = "Reset password for the currently authenticated user.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Password reset successful"),
+            @ApiResponse(responseCode = "400", description = "Invalid input"),
+            @ApiResponse(responseCode = "401", description = "Unauthorized"),
+            @ApiResponse(responseCode = "500", description = "Internal server error")
+    })
+    @PostMapping("/reset-password")
+    public ResponseEntity<CustomApiResponse<Object>> resetPassword(@Valid @RequestBody ResetPasswordRequest request) {
+        return ResponseBuilder.ok(authenticationService.resetPassword(request));
     }
 }

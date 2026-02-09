@@ -8,6 +8,7 @@ import org.springframework.context.annotation.Configuration;
 
 import com.dat.erp.constants.CodePrefixes;
 import com.dat.erp.constants.Defaults;
+import com.dat.erp.constants.RoleType;
 import com.dat.erp.entities.Account;
 import com.dat.erp.entities.Company;
 import com.dat.erp.entities.Department;
@@ -30,6 +31,7 @@ public class Data {
     private static final String DEPARTMENT_CODE = CodePrefixes.DEPARTMENT + "GENERAL";
     private static final String ROLE_CODE = CodePrefixes.ROLE + "ADMIN";
     private static final String HR_ROLE_CODE = CodePrefixes.ROLE + "HR";
+    private static final String HR_ROLE_EMPLOYEE = CodePrefixes.ROLE + "EMPL";
     private static final String ROLE_NAME = "ADMIN";
 
     @Bean
@@ -64,15 +66,26 @@ public class Data {
                         Role newRole = new Role();
                         newRole.setCode(ROLE_CODE);
                         newRole.setName(ROLE_NAME);
+                        newRole.setType(RoleType.ROLE_ADMIN);
                         newRole.setDescription("System administrator role with full access");
                         return roleRepository.save(newRole);
                     });
 
+            roleRepository.findByCode(HR_ROLE_EMPLOYEE)
+                    .orElseGet(() -> {
+                        Role newRole = new Role();
+                        newRole.setCode(HR_ROLE_EMPLOYEE);
+                        newRole.setName("EMPLOYEE");
+                        newRole.setType(RoleType.ROLE_EMPLOYEE);
+                        newRole.setDescription("Employee role with limited access");
+                        return roleRepository.save(newRole);
+                    });
             roleRepository.findByCode(HR_ROLE_CODE)
                     .orElseGet(() -> {
                         Role newRole = new Role();
                         newRole.setCode(HR_ROLE_CODE);
-                        newRole.setName(Defaults.ROLE_HUMAN_RESOURCES);
+                        newRole.setName("Human Resources");
+                        newRole.setType(RoleType.ROLE_HUMAN_RESOURCES);
                         newRole.setDescription("Human resources role with limited access");
                         return roleRepository.save(newRole);
                     });
