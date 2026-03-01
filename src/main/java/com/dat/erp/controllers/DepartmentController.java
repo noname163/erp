@@ -1,5 +1,7 @@
 package com.dat.erp.controllers;
 
+import java.util.List;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -8,8 +10,9 @@ import org.springframework.web.bind.annotation.RestController;
 import com.dat.erp.builders.ResponseBuilder;
 import com.dat.erp.dto.request.DepartmentRequest;
 import com.dat.erp.dto.response.CustomApiResponse;
-import com.dat.erp.dto.response.DepartmentResponse;
 import com.dat.erp.dto.response.PagedResponse;
+import com.dat.erp.dto.response.SelectionOptionResponse;
+import com.dat.erp.dto.response.department.DepartmentResponse;
 import com.dat.erp.services.DepartmentService;
 
 import io.swagger.v3.oas.annotations.Parameter;
@@ -76,7 +79,7 @@ public class DepartmentController {
             @ApiResponse(responseCode = "200", description = "List of departments retrieved successfully", content = @Content(mediaType = "application/json", schema = @Schema(implementation = DepartmentResponse.class)))
     })
     @GetMapping("")
-    public ResponseEntity<PagedResponse<DepartmentResponse>> getMethodName(
+    public ResponseEntity<PagedResponse<DepartmentResponse>> getDepartmentList(
             @Parameter(description = "Search key") @RequestParam(required = false) String searchKey,
             @Parameter(description = "Search value") @RequestParam(required = false) String searchValue,
             @Parameter(description = "Page number") @RequestParam(required = false) Integer page,
@@ -87,4 +90,13 @@ public class DepartmentController {
                 .ok(departmentService.getDepartmentByCompanyCode(searchKey, searchValue, page, size, sortBy, sortDir));
     }
 
+    @Operation(summary = "Get department options", description = "Returns active department options by company code, optionally filtered by name.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Department options retrieved successfully")
+    })
+    @GetMapping("/options")
+    public ResponseEntity<List<SelectionOptionResponse>> getDepartmentOptionsByCompanyCode(
+            @Parameter(description = "Department name (optional)") @RequestParam(required = false) String name) {
+        return ResponseEntity.ok(departmentService.getDepartmentOptionsByCompanyCode(name));
+    }
 }

@@ -51,7 +51,7 @@ public class AuthenticationFilter extends OncePerRequestFilter {
             return;
         }
 
-        String token = extractTokenFromCookies(request);
+        String token = extractToken(request);
 
         if (token != null) {
             String accountCode = jwtUtils.extractAccountCode(token);
@@ -66,7 +66,14 @@ public class AuthenticationFilter extends OncePerRequestFilter {
         filterChain.doFilter(request, response);
     }
 
-    private String extractTokenFromCookies(HttpServletRequest request) {
+    private String extractToken(HttpServletRequest request) {
+        String authHeader = request.getHeader("Authorization");
+        if (authHeader != null && authHeader.startsWith("Bearer ")) {
+            String bearerToken = authHeader.substring("Bearer ".length()).trim();
+            if (!bearerToken.isBlank()) {
+                return bearerToken;
+            }
+        }
         if (request.getCookies() != null) {
             for (Cookie cookie : request.getCookies()) {
                 if ("AUTH_TOKEN".equals(cookie.getName())) {
