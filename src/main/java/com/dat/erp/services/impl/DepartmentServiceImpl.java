@@ -1,5 +1,8 @@
 package com.dat.erp.services.impl;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -11,8 +14,9 @@ import com.dat.erp.constants.CodePrefixes;
 import com.dat.erp.constants.CommonStatus;
 import com.dat.erp.constants.Messages;
 import com.dat.erp.dto.request.DepartmentRequest;
-import com.dat.erp.dto.response.DepartmentResponse;
 import com.dat.erp.dto.response.PagedResponse;
+import com.dat.erp.dto.response.SelectionOptionResponse;
+import com.dat.erp.dto.response.department.DepartmentResponse;
 import com.dat.erp.entities.Department;
 import com.dat.erp.exceptions.ConflictException;
 import com.dat.erp.mapper.interfaces.DepartmentMapper;
@@ -67,6 +71,21 @@ public class DepartmentServiceImpl extends AbstractAuditableService implements D
         Pageable pageable = PageableUtils.create(page, size, sortBy, sortDir);
         Page<Department> data = departmentRepository.findAll(pageable);
         return PageableUtils.mapPage(data, departmentMapper::toResponse, Messages.SUCCESS);
+    }
+
+    @Override
+    public List<SelectionOptionResponse> getDepartmentOptionsByCompanyCode(String name) {
+        String companyCode = resolveCurrentUserCompanyCode();
+        List<Department> departments = departmentRepository
+                .findByNameAndCompanyCodeAndStatusAndIsDeletedFalseOrderByNameAsc(name, companyCode, CommonStatus.ACTIVATE);
+        List<SelectionOptionResponse> options = new ArrayList<>(departments.size());
+        for (Department department : departments) {
+            SelectionOptionResponse option = new SelectionOptionResponse();
+            option.setCode(department.getCode());
+            option.setName(department.getName());
+            options.add(option);
+        }
+        return options;
     }
 
     private Department setAuditDepartmentInfo(DepartmentRequest departmentRequest) {

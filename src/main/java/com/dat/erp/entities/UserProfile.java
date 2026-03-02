@@ -58,6 +58,9 @@ public class UserProfile extends BaseAuditableEntity {
     @Column(name = "phone_number")
     private String phoneNumber;
 
+    @Column(name = "birth_date")
+    private LocalDate birthDate;
+
     @Column(name = "hire_date")
     private LocalDate hireDate;
 

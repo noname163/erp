@@ -1,4 +1,4 @@
-package com.dat.erp.dto.response;
+package com.dat.erp.dto.response.department;
 
 import lombok.Data;
 

@@ -25,4 +25,6 @@ public class Role extends BaseAuditableEntity {
     private String type;
 
     private String description;
+
+    private Boolean isPublic;
 }
