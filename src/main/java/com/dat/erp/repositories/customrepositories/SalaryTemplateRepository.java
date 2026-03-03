@@ -1,5 +1,9 @@
 package com.dat.erp.repositories.customrepositories;
 
+import java.time.LocalDate;
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -9,6 +13,24 @@ import com.dat.erp.entities.SalaryTemplate;
 
 @Repository
 public interface SalaryTemplateRepository extends JpaRepository<SalaryTemplate, Long> {
+    @Query("""
+            select st
+            from SalaryTemplate st
+            where st.companyCode = :companyCode
+              and st.isDeleted = false
+              and (:name is null or trim(:name) = '' or lower(st.name) like lower(concat('%', :name, '%')))
+              and (:currency is null or trim(:currency) = '' or upper(st.currency) = upper(:currency))
+              and (:effectiveFrom is null or st.effectiveTo >= :effectiveFrom)
+              and (:effectiveTo is null or st.effectiveFrom <= :effectiveTo)
+            """)
+    Page<SalaryTemplate> searchByConditions(
+            @Param("companyCode") String companyCode,
+            @Param("name") String name,
+            @Param("currency") String currency,
+            @Param("effectiveFrom") LocalDate effectiveFrom,
+            @Param("effectiveTo") LocalDate effectiveTo,
+            Pageable pageable);
+
     @Query("""
             select count(st) > 0
             from SalaryTemplate st
@@ -20,7 +42,6 @@ public interface SalaryTemplateRepository extends JpaRepository<SalaryTemplate, 
     boolean existsOverlappingByNameAndCompanyCode(
             @Param("name") String name,
             @Param("companyCode") String companyCode,
-            @Param("effectiveFrom") java.time.LocalDate effectiveFrom,
-            @Param("effectiveTo") java.time.LocalDate effectiveTo);
+            @Param("effectiveFrom") LocalDate effectiveFrom,
+            @Param("effectiveTo") LocalDate effectiveTo);
 }
-
