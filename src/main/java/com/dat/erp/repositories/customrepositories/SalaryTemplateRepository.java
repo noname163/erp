@@ -18,10 +18,10 @@ public interface SalaryTemplateRepository extends JpaRepository<SalaryTemplate, 
             from SalaryTemplate st
             where st.companyCode = :companyCode
               and st.isDeleted = false
-              and (:name is null or trim(:name) = '' or lower(st.name) like lower(concat('%', :name, '%')))
-              and (:currency is null or trim(:currency) = '' or upper(st.currency) = upper(:currency))
-              and (:effectiveFrom is null or st.effectiveTo >= :effectiveFrom)
-              and (:effectiveTo is null or st.effectiveFrom <= :effectiveTo)
+              and (coalesce(trim(:name), '') = '' or lower(st.name) like lower(concat('%', coalesce(:name, ''), '%')))
+              and (coalesce(trim(:currency), '') = '' or upper(st.currency) = upper(coalesce(:currency, '')))
+              and st.effectiveTo >= coalesce(:effectiveFrom, st.effectiveTo)
+              and st.effectiveFrom <= coalesce(:effectiveTo, st.effectiveFrom)
             """)
     Page<SalaryTemplate> searchByConditions(
             @Param("companyCode") String companyCode,

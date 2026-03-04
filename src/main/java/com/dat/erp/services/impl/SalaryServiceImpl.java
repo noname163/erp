@@ -5,6 +5,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -12,7 +14,9 @@ import com.dat.erp.constants.CodePrefixes;
 import com.dat.erp.constants.Messages;
 import com.dat.erp.constants.SalaryCalculateMethod;
 import com.dat.erp.dto.request.SalaryRequest;
+import com.dat.erp.dto.response.PagedResponse;
 import com.dat.erp.dto.response.SalaryResponse;
+import com.dat.erp.dto.response.SelectionOptionResponse;
 import com.dat.erp.entities.Salary;
 import com.dat.erp.exceptions.BadRequestException;
 import com.dat.erp.exceptions.ConflictException;
@@ -22,6 +26,7 @@ import com.dat.erp.services.CodeGenerator;
 import com.dat.erp.services.SalaryService;
 import com.dat.erp.services.SecurityContextService;
 import com.dat.erp.services.base.AbstractAuditableService;
+import com.dat.erp.utils.PageableUtils;
 
 @Service
 public class SalaryServiceImpl extends AbstractAuditableService implements SalaryService {
@@ -91,6 +96,29 @@ public class SalaryServiceImpl extends AbstractAuditableService implements Salar
 
         List<Salary> persisted = salaryRepository.saveAll(entities);
         return salaryMapper.toResponses(persisted);
+    }
+
+    @Override
+    public PagedResponse<SelectionOptionResponse> getSalaryOptionsByCompanyCode(String name, Integer page, Integer size,
+            String sortBy, String sortDir) {
+        String companyCode = resolveCurrentUserCompanyCode();
+        String normalizedName = normalizeSearchText(name);
+        Pageable pageable = PageableUtils.create(page, size, sortBy, sortDir);
+        Page<Salary> salaries = salaryRepository.findOptionsByFilters(companyCode, normalizedName, pageable);
+
+        return PageableUtils.mapPage(salaries, salary -> {
+            SelectionOptionResponse option = new SelectionOptionResponse();
+            option.setCode(salary.getCode());
+            option.setName(salary.getName());
+            return option;
+        }, Messages.SUCCESS);
+    }
+
+    private String normalizeSearchText(String value) {
+        if (value == null || value.isBlank()) {
+            return null;
+        }
+        return value.trim();
     }
 
     private SalaryCalculateMethod parseCalculateMethod(String rawValue) {

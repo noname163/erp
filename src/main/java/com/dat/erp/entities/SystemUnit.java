@@ -2,8 +2,12 @@ package com.dat.erp.entities;
 
 import java.util.List;
 
+import com.dat.erp.constants.SystemUnitType;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
@@ -30,6 +34,10 @@ public class SystemUnit extends BaseAuditableEntity {
 
     @Column(name = "description")
     private String description;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "type")
+    private SystemUnitType type;
 
     @OneToMany(mappedBy = "from", fetch = FetchType.LAZY)
     private List<SystemUnitDetail> fromDetails;
