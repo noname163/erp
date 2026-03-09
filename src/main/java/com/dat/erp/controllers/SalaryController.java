@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.dat.erp.dto.request.SalaryRequest;
 import com.dat.erp.dto.response.PagedResponse;
+import com.dat.erp.dto.response.SalaryListResponse;
 import com.dat.erp.dto.response.SalaryResponse;
 import com.dat.erp.dto.response.SelectionOptionResponse;
 import com.dat.erp.services.SalaryService;
@@ -47,6 +48,22 @@ public class SalaryController {
     public ResponseEntity<List<SalaryResponse>> createSalaries(
             @Valid @RequestBody List<@Valid SalaryRequest> requests) {
         return ResponseEntity.status(201).body(salaryService.createSalaries(requests));
+    }
+
+    @Operation(summary = "Get salary list", description = "Returns a paginated salary list for the current company.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Salary list retrieved successfully"),
+            @ApiResponse(responseCode = "403", description = "Forbidden")
+    })
+    @GetMapping("")
+    @PreAuthorize("hasRoles({'HUMAN_RESOURCES'})")
+    public ResponseEntity<PagedResponse<SalaryListResponse>> getSalaries(
+            @Parameter(description = "Salary name (contains)") @RequestParam(required = false) String name,
+            @Parameter(description = "Page number") @RequestParam(required = false) Integer page,
+            @Parameter(description = "Page size") @RequestParam(required = false) Integer size,
+            @Parameter(description = "Field to sort by") @RequestParam(required = false) String sortBy,
+            @Parameter(description = "Sort direction (ASC or DESC)", example = "DESC") @RequestParam(defaultValue = "DESC") String sortDir) {
+        return ResponseEntity.ok(salaryService.getSalaries(name, page, size, sortBy, sortDir));
     }
 
     @Operation(summary = "Get salary options", description = "Returns paginated salary options for the current company.")

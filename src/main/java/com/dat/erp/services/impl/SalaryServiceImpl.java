@@ -15,6 +15,7 @@ import com.dat.erp.constants.Messages;
 import com.dat.erp.constants.SalaryCalculateMethod;
 import com.dat.erp.dto.request.SalaryRequest;
 import com.dat.erp.dto.response.PagedResponse;
+import com.dat.erp.dto.response.SalaryListResponse;
 import com.dat.erp.dto.response.SalaryResponse;
 import com.dat.erp.dto.response.SelectionOptionResponse;
 import com.dat.erp.entities.Salary;
@@ -96,6 +97,23 @@ public class SalaryServiceImpl extends AbstractAuditableService implements Salar
 
         List<Salary> persisted = salaryRepository.saveAll(entities);
         return salaryMapper.toResponses(persisted);
+    }
+
+    @Override
+    public PagedResponse<SalaryListResponse> getSalaries(String name, Integer page, Integer size, String sortBy,
+            String sortDir) {
+        String companyCode = resolveCurrentUserCompanyCode();
+        String normalizedName = normalizeSearchText(name);
+        Pageable pageable = PageableUtils.create(page, size, sortBy, sortDir);
+        Page<Salary> salaries = salaryRepository.findOptionsByFilters(companyCode, normalizedName, pageable);
+
+        return PageableUtils.mapPage(salaries, salary -> new SalaryListResponse(
+                salary.getName(),
+                salary.getCalculateMethod() == null ? null : salary.getCalculateMethod().name(),
+                salary.getCalculateMethod() == null ? null : salary.getCalculateMethod().name(),
+                Boolean.TRUE.equals(salary.getIsDeduct()) ? "Yes" : "No",
+                salary.getCreatedBy(),
+                salary.getUpdatedAt()), Messages.SUCCESS);
     }
 
     @Override
