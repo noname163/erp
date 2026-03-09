@@ -6,6 +6,7 @@ import java.time.LocalDate;
 import org.mapstruct.Mapper;
 
 import com.dat.erp.dto.request.SalaryTemplateRequest;
+import com.dat.erp.dto.response.SalaryTemplateListResponse;
 import com.dat.erp.dto.response.SalaryTemplateResponse;
 import com.dat.erp.entities.SalaryTemplate;
 import com.dat.erp.systemconfigs.CentralMapperConfig;
@@ -15,6 +16,8 @@ public interface SalaryTemplateMapper {
     SalaryTemplate toEntity(SalaryTemplateRequest request);
 
     SalaryTemplateResponse toResponse(SalaryTemplate entity);
+
+    SalaryTemplateListResponse toListResponse(SalaryTemplate entity);
 
     default BigDecimal map(String value) {
         if (value == null || value.isBlank()) {

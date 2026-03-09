@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -13,6 +14,8 @@ import java.util.List;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
@@ -20,7 +23,9 @@ import org.mockito.MockitoAnnotations;
 import com.dat.erp.constants.Messages;
 import com.dat.erp.constants.SalaryCalculateMethod;
 import com.dat.erp.dto.request.SalaryRequest;
+import com.dat.erp.dto.response.PagedResponse;
 import com.dat.erp.dto.response.SalaryResponse;
+import com.dat.erp.dto.response.SelectionOptionResponse;
 import com.dat.erp.entities.Account;
 import com.dat.erp.entities.Salary;
 import com.dat.erp.exceptions.BadRequestException;
@@ -144,5 +149,28 @@ class SalaryServiceImplTest {
         assertEquals(Messages.ERROR_SALARY_CALCULATE_METHOD_INVALID, ex.getMessage());
         verify(salaryRepository, never()).saveAll(any());
     }
-}
 
+    @Test
+    void getSalaryOptionsByCompanyCode_success() {
+        Account account = new Account();
+        account.setCompanyCode("CMP-1");
+        when(securityContextService.getCurrentUser()).thenReturn(new CustomUserDetails(account, null));
+
+        Salary salary = new Salary();
+        salary.setCode("SAL-000001");
+        salary.setName("BASE");
+
+        when(salaryRepository.findOptionsByFilters(eq("CMP-1"), isNull(), any()))
+                .thenReturn(new PageImpl<>(List.of(salary), PageRequest.of(0, 20), 1));
+
+        PagedResponse<SelectionOptionResponse> result = salaryService.getSalaryOptionsByCompanyCode(null, 0, 20, null,
+                "ASC");
+
+        assertNotNull(result);
+        assertEquals(1, result.getData().size());
+        assertEquals("SAL-000001", result.getData().get(0).getCode());
+        assertEquals("BASE", result.getData().get(0).getName());
+        assertEquals(Messages.SUCCESS, result.getMessage());
+        verify(salaryRepository).findOptionsByFilters(eq("CMP-1"), isNull(), any());
+    }
+}

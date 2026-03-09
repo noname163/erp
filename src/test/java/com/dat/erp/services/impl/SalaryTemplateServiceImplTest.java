@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -15,6 +16,8 @@ import java.util.List;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
@@ -22,6 +25,8 @@ import org.mockito.MockitoAnnotations;
 import com.dat.erp.constants.Messages;
 import com.dat.erp.dto.request.SalaryTemplateDetailRequest;
 import com.dat.erp.dto.request.SalaryTemplateRequest;
+import com.dat.erp.dto.response.PagedResponse;
+import com.dat.erp.dto.response.SalaryTemplateListResponse;
 import com.dat.erp.dto.response.SalaryTemplateResponse;
 import com.dat.erp.entities.Account;
 import com.dat.erp.entities.SalaryTemplate;
@@ -159,6 +164,42 @@ class SalaryTemplateServiceImplTest {
                 () -> salaryTemplateService.createSalaryTemplate(request));
         assertEquals(Messages.ERROR_SALARY_TEMPLATE_TOTAL_AMOUNT_MISMATCH, ex.getMessage());
         verify(salaryTemplateRepository, never()).save(any());
+    }
+
+    @Test
+    void getSalaryTemplates_success() {
+        Account account = new Account();
+        account.setCompanyCode("CMP-1");
+        when(securityContextService.getCurrentUser()).thenReturn(new CustomUserDetails(account, null));
+
+        SalaryTemplate template = new SalaryTemplate();
+        template.setName("Standard HR Package");
+
+        when(salaryTemplateRepository.searchByConditions(eq("CMP-1"), isNull(), isNull(), isNull(), isNull(), any()))
+                .thenReturn(new PageImpl<>(List.of(template), PageRequest.of(0, 20), 1));
+
+        SalaryTemplateListResponse item = new SalaryTemplateListResponse();
+        item.setName("Standard HR Package");
+        when(salaryTemplateMapper.toListResponse(template)).thenReturn(item);
+
+        PagedResponse<SalaryTemplateListResponse> result = salaryTemplateService.getSalaryTemplates(null, null, null, null,
+                0, 20, null, "DESC");
+
+        assertNotNull(result);
+        assertEquals(1, result.getData().size());
+        assertEquals("Standard HR Package", result.getData().get(0).getName());
+        assertEquals(Messages.SUCCESS, result.getMessage());
+        verify(salaryTemplateRepository).searchByConditions(eq("CMP-1"), isNull(), isNull(), isNull(), isNull(), any());
+        verify(salaryTemplateMapper).toListResponse(template);
+    }
+
+    @Test
+    void getSalaryTemplates_badRequestWhenDateRangeInvalid() {
+        BadRequestException ex = assertThrows(BadRequestException.class,
+                () -> salaryTemplateService.getSalaryTemplates(null, null, LocalDate.of(2025, 12, 31),
+                        LocalDate.of(2025, 1, 1), 0, 20, null, "DESC"));
+        assertEquals(Messages.ERROR_SALARY_TEMPLATE_EFFECTIVE_DATES_INVALID, ex.getMessage());
+        verify(salaryTemplateRepository, never()).searchByConditions(any(), any(), any(), any(), any(), any());
     }
 }
 
