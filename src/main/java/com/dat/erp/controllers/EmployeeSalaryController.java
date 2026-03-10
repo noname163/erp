@@ -13,7 +13,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.dat.erp.builders.ResponseBuilder;
 import com.dat.erp.dto.request.EmployeeSalaryRequest;
+import com.dat.erp.dto.response.CustomApiResponse;
 import com.dat.erp.dto.response.EmployeeSalaryListResponse;
 import com.dat.erp.dto.response.EmployeeSalaryResponse;
 import com.dat.erp.dto.response.PagedResponse;
@@ -47,9 +49,9 @@ public class EmployeeSalaryController {
     })
     @PostMapping("")
     @PreAuthorize("hasRoles({'HUMAN_RESOURCES'})")
-    public ResponseEntity<EmployeeSalaryResponse> createEmployeeSalary(@Valid @RequestBody EmployeeSalaryRequest request) {
+    public ResponseEntity<CustomApiResponse<EmployeeSalaryResponse>> createEmployeeSalary(@Valid @RequestBody EmployeeSalaryRequest request) {
         EmployeeSalaryResponse response = employeeSalaryService.createEmployeeSalary(request);
-        return ResponseEntity.status(201).body(response);
+        return ResponseBuilder.created(response);
     }
 
     @Operation(summary = "Get employee salary list", description = "Returns a paginated employee salary list for the current company.")
