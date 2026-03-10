@@ -2,12 +2,16 @@ package com.dat.erp.services.impl;
 
 import java.time.LocalDate;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.dat.erp.constants.CodePrefixes;
 import com.dat.erp.constants.Messages;
 import com.dat.erp.dto.request.UserProfileCreateRequest;
+import com.dat.erp.dto.response.PagedResponse;
+import com.dat.erp.dto.response.SelectionOptionResponse;
 import com.dat.erp.entities.Account;
 import com.dat.erp.entities.Department;
 import com.dat.erp.entities.UserProfile;
@@ -18,6 +22,7 @@ import com.dat.erp.repositories.customrepositories.DepartmentRepository;
 import com.dat.erp.repositories.customrepositories.UserProfileRepository;
 import com.dat.erp.services.UserProfileService;
 import com.dat.erp.services.base.AbstractAuditableService;
+import com.dat.erp.utils.PageableUtils;
 
 @Service
 public class UserProfileServiceImpl extends AbstractAuditableService implements UserProfileService {
@@ -66,5 +71,28 @@ public class UserProfileServiceImpl extends AbstractAuditableService implements 
         generateCodeIfMissing(profile, CodePrefixes.USER);
         applyInsertAudit(profile);
         return userProfileRepository.save(profile);
+    }
+
+    @Override
+    public PagedResponse<SelectionOptionResponse> getUserProfileOptionsByFirstName(String firstName, Integer page,
+            Integer size, String sortBy, String sortDir) {
+        String companyCode = resolveCurrentUserCompanyCode();
+        String normalizedFirstName = firstName == null || firstName.isBlank() ? null : firstName.trim();
+        Pageable pageable = PageableUtils.create(page, size, sortBy, sortDir);
+        Page<UserProfile> profiles = userProfileRepository.findOptionsByFilters(companyCode, normalizedFirstName, pageable);
+
+        return PageableUtils.mapPage(profiles, profile -> {
+            SelectionOptionResponse option = new SelectionOptionResponse();
+            option.setCode(profile.getCode());
+            option.setName(buildFullName(profile.getFirstName(), profile.getLastName()));
+            return option;
+        }, Messages.SUCCESS);
+    }
+
+    private String buildFullName(String firstName, String lastName) {
+        String fn = firstName == null ? "" : firstName.trim();
+        String ln = lastName == null ? "" : lastName.trim();
+        String full = (fn + " " + ln).trim();
+        return full.isBlank() ? null : full;
     }
 }

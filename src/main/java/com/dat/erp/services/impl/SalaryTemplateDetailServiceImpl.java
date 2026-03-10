@@ -8,12 +8,15 @@ import org.springframework.stereotype.Service;
 import com.dat.erp.constants.CodePrefixes;
 import com.dat.erp.constants.Messages;
 import com.dat.erp.dto.request.SalaryTemplateDetailRequest;
+import com.dat.erp.dto.response.SalaryTemplateDetailListResponse;
 import com.dat.erp.entities.Salary;
 import com.dat.erp.entities.SalaryTemplate;
 import com.dat.erp.entities.SalaryTemplateDetail;
 import com.dat.erp.entities.SystemUnit;
 import com.dat.erp.exceptions.BadRequestException;
+import com.dat.erp.exceptions.ResourceNotFoundException;
 import com.dat.erp.repositories.customrepositories.SalaryRepository;
+import com.dat.erp.repositories.customrepositories.SalaryTemplateRepository;
 import com.dat.erp.repositories.customrepositories.SalaryTemplateDetailRepository;
 import com.dat.erp.repositories.customrepositories.SystemUnitRepository;
 import com.dat.erp.services.CodeGenerator;
@@ -27,15 +30,18 @@ public class SalaryTemplateDetailServiceImpl extends AbstractAuditableService im
     private final SalaryTemplateDetailRepository salaryTemplateDetailRepository;
     private final SalaryRepository salaryRepository;
     private final SystemUnitRepository systemUnitRepository;
+    private final SalaryTemplateRepository salaryTemplateRepository;
 
     public SalaryTemplateDetailServiceImpl(SalaryTemplateDetailRepository salaryTemplateDetailRepository,
             SalaryRepository salaryRepository,
             SystemUnitRepository systemUnitRepository,
+            SalaryTemplateRepository salaryTemplateRepository,
             CodeGenerator codeGenerator,
             SecurityContextService securityContextService) {
         this.salaryTemplateDetailRepository = salaryTemplateDetailRepository;
         this.salaryRepository = salaryRepository;
         this.systemUnitRepository = systemUnitRepository;
+        this.salaryTemplateRepository = salaryTemplateRepository;
         this.codeGenerator = codeGenerator;
         this.securityContextService = securityContextService;
     }
@@ -88,5 +94,28 @@ public class SalaryTemplateDetailServiceImpl extends AbstractAuditableService im
         }
 
         return salaryTemplateDetailRepository.saveAll(details);
+    }
+
+    @Override
+    public List<SalaryTemplateDetailListResponse> getSalaryTemplateDetails(String salaryTemplateCode) {
+        if (salaryTemplateCode == null || salaryTemplateCode.isBlank()) {
+            throw new BadRequestException("salaryTemplateCode is invalid");
+        }
+
+        String companyCode = resolveCurrentUserCompanyCode();
+        String normalizedCode = salaryTemplateCode.trim();
+
+        salaryTemplateRepository.findByCodeAndCompanyCodeAndIsDeletedFalse(normalizedCode, companyCode)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        String.format(Messages.ERROR_SALARY_TEMPLATE_NOT_FOUND_WITH_CODE, normalizedCode)));
+
+        return salaryTemplateDetailRepository.findBySalaryTemplateCodeAndCompanyCode(normalizedCode, companyCode).stream()
+                .map(detail -> new SalaryTemplateDetailListResponse(
+                        detail.getSalary() == null ? null : detail.getSalary().getCode(),
+                        detail.getAmount(),
+                        detail.getQuantity(),
+                        detail.getUnit() == null ? null : detail.getUnit().getName(),
+                        detail.getSalary() == null ? null : detail.getSalary().getName()))
+                .toList();
     }
 }
