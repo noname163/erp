@@ -1,18 +1,24 @@
 package com.dat.erp.controllers;
 
+import java.time.LocalDate;
 import java.util.List;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.dat.erp.dto.request.EmployeeDailyWorkRequest;
+import com.dat.erp.dto.response.EmployeeDailyWorkListResponse;
+import com.dat.erp.dto.response.PagedResponse;
 import com.dat.erp.services.EmployeeDailyWorkService;
 
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -44,5 +50,24 @@ public class EmployeeDailyWorkController {
         String message = employeeDailyWorkService.createEmployeeDailyWorks(requests);
         return ResponseEntity.status(201).body(message);
     }
-}
 
+    @Operation(summary = "Get working logs", description = "Returns a paginated list of working logs with optional filters by employee code, date range, and PTO usage.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Working logs retrieved successfully"),
+            @ApiResponse(responseCode = "403", description = "Forbidden")
+    })
+    @GetMapping("")
+    @PreAuthorize("hasRoles({'HUMAN_RESOURCES'})")
+    public ResponseEntity<PagedResponse<EmployeeDailyWorkListResponse>> getEmployeeDailyWorks(
+            @Parameter(description = "Employee code") @RequestParam(required = false) String employeeCode,
+            @Parameter(description = "Start date", example = "2026-03-01") @RequestParam(required = false) LocalDate startDate,
+            @Parameter(description = "End date", example = "2026-03-31") @RequestParam(required = false) LocalDate endDate,
+            @Parameter(description = "Filter PTO logs only") @RequestParam(required = false) Boolean isPto,
+            @Parameter(description = "Page number") @RequestParam(required = false) Integer page,
+            @Parameter(description = "Page size") @RequestParam(required = false) Integer size,
+            @Parameter(description = "Field to sort by") @RequestParam(required = false) String sortBy,
+            @Parameter(description = "Sort direction (ASC or DESC)", example = "DESC") @RequestParam(defaultValue = "DESC") String sortDir) {
+        return ResponseEntity.ok(
+                employeeDailyWorkService.getEmployeeDailyWorks(employeeCode, startDate, endDate, isPto, page, size, sortBy, sortDir));
+    }
+}
