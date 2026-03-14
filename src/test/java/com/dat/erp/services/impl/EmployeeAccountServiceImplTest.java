@@ -32,6 +32,8 @@ import com.dat.erp.mapper.interfaces.UserProfileMapper;
 import com.dat.erp.repositories.customrepositories.AccountRepository;
 import com.dat.erp.repositories.customrepositories.DepartmentRepository;
 import com.dat.erp.repositories.customrepositories.RoleRepository;
+import com.dat.erp.repositories.customrepositories.UserProfileRepository;
+import com.dat.erp.repositories.customrepositories.UserSkillRepository;
 import com.dat.erp.services.CodeGenerator;
 import com.dat.erp.services.EmailService;
 import com.dat.erp.services.PasswordGenerator;
@@ -56,6 +58,10 @@ class EmployeeAccountServiceImplTest {
     private SecurityContextService securityContextService;
     @Mock
     private CodeGenerator codeGenerator;
+    @Mock
+    private UserProfileRepository userProfileRepository;
+    @Mock
+    private UserSkillRepository userSkillRepository;
 
     private EmployeeAccountServiceImpl service;
 
@@ -75,7 +81,9 @@ class EmployeeAccountServiceImplTest {
                 codeGenerator,
                 securityContextService,
                 mapper,
-                userProfileMapper);
+                userProfileMapper,
+                userProfileRepository,
+                userSkillRepository);
         request = new CreateEmployeeRequest();
         request.setEmail("employee@company.com");
         request.setFirstName("Nguyen");

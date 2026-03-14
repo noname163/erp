@@ -41,6 +41,7 @@ public final class Messages {
 
     // Salary templates
     public static final String ERROR_SALARY_TEMPLATE_NAME_EXISTS = "Salary template already exists";
+    public static final String ERROR_SALARY_TEMPLATE_NOT_FOUND_WITH_CODE = "Salary template not found with code %s";
     public static final String ERROR_SALARY_TEMPLATE_EFFECTIVE_DATES_INVALID = "effectiveFrom/effectiveTo is invalid";
     public static final String ERROR_SALARY_TEMPLATE_TOTAL_AMOUNT_INVALID = "totalAmount is invalid";
     public static final String ERROR_SALARY_TEMPLATE_DETAILS_INVALID = "details is invalid";
@@ -61,6 +62,7 @@ public final class Messages {
     // Employee salary
     public static final String ERROR_EMPLOYEE_SALARY_EFFECTIVE_DATES_INVALID = "effectiveFrom/effectiveTo is invalid";
     public static final String ERROR_EMPLOYEE_SALARY_TOTAL_AMOUNT_INVALID = "totalAmount is invalid";
+    public static final String ERROR_EMPLOYEE_SALARY_AMOUNT_RANGE_INVALID = "amount range is invalid";
     public static final String ERROR_EMPLOYEE_SALARY_CURRENCY_INVALID = "currency is invalid";
     public static final String ERROR_EMPLOYEE_SALARY_USER_PROFILE_CODE_INVALID = "userProfileCode is invalid";
     public static final String ERROR_EMPLOYEE_SALARY_EMPLOYEE_NOT_FOUND = "Employee not found";

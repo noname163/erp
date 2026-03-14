@@ -16,8 +16,10 @@ import com.dat.erp.constants.Messages;
 import com.dat.erp.dto.request.SalaryTemplateDetailRequest;
 import com.dat.erp.dto.request.SalaryTemplateRequest;
 import com.dat.erp.dto.response.PagedResponse;
+import com.dat.erp.dto.response.SalaryTemplateDetailListResponse;
 import com.dat.erp.dto.response.SalaryTemplateListResponse;
 import com.dat.erp.dto.response.SalaryTemplateResponse;
+import com.dat.erp.dto.response.SelectionOptionResponse;
 import com.dat.erp.entities.SalaryTemplate;
 import com.dat.erp.exceptions.BadRequestException;
 import com.dat.erp.exceptions.ConflictException;
@@ -109,6 +111,27 @@ public class SalaryTemplateServiceImpl extends AbstractAuditableService implemen
         Page<SalaryTemplate> data = salaryTemplateRepository.searchByConditions(companyCode, name, currency, effectiveFrom,
                 effectiveTo, pageable);
         return PageableUtils.mapPage(data, salaryTemplateMapper::toListResponse, Messages.SUCCESS);
+    }
+
+    @Override
+    public PagedResponse<SelectionOptionResponse> getSalaryTemplateOptions(String name, Integer page, Integer size,
+            String sortBy, String sortDir) {
+        String companyCode = resolveCurrentUserCompanyCode();
+        String normalizedName = name == null || name.isBlank() ? null : name.trim();
+        Pageable pageable = PageableUtils.create(page, size, sortBy, sortDir);
+
+        Page<SalaryTemplate> data = salaryTemplateRepository.findOptionsByFilters(companyCode, normalizedName, pageable);
+        return PageableUtils.mapPage(data, template -> {
+            SelectionOptionResponse option = new SelectionOptionResponse();
+            option.setCode(template.getCode());
+            option.setName(template.getName());
+            return option;
+        }, Messages.SUCCESS);
+    }
+
+    @Override
+    public List<SalaryTemplateDetailListResponse> getSalaryTemplateDetails(String salaryTemplateCode) {
+        return salaryTemplateDetailService.getSalaryTemplateDetails(salaryTemplateCode);
     }
 
     private BigDecimal validateAndCalculateDetails(List<SalaryTemplateDetailRequest> details) {

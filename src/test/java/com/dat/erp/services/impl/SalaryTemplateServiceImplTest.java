@@ -26,8 +26,10 @@ import com.dat.erp.constants.Messages;
 import com.dat.erp.dto.request.SalaryTemplateDetailRequest;
 import com.dat.erp.dto.request.SalaryTemplateRequest;
 import com.dat.erp.dto.response.PagedResponse;
+import com.dat.erp.dto.response.SalaryTemplateDetailListResponse;
 import com.dat.erp.dto.response.SalaryTemplateListResponse;
 import com.dat.erp.dto.response.SalaryTemplateResponse;
+import com.dat.erp.dto.response.SelectionOptionResponse;
 import com.dat.erp.entities.Account;
 import com.dat.erp.entities.SalaryTemplate;
 import com.dat.erp.exceptions.BadRequestException;
@@ -200,6 +202,43 @@ class SalaryTemplateServiceImplTest {
                         LocalDate.of(2025, 1, 1), 0, 20, null, "DESC"));
         assertEquals(Messages.ERROR_SALARY_TEMPLATE_EFFECTIVE_DATES_INVALID, ex.getMessage());
         verify(salaryTemplateRepository, never()).searchByConditions(any(), any(), any(), any(), any(), any());
+    }
+
+    @Test
+    void getSalaryTemplateOptions_success() {
+        Account account = new Account();
+        account.setCompanyCode("CMP-1");
+        when(securityContextService.getCurrentUser()).thenReturn(new CustomUserDetails(account, null));
+
+        SalaryTemplate template = new SalaryTemplate();
+        template.setCode("STP-1");
+        template.setName("Template A");
+
+        when(salaryTemplateRepository.findOptionsByFilters(eq("CMP-1"), isNull(), any()))
+                .thenReturn(new PageImpl<>(List.of(template), PageRequest.of(0, 20), 1));
+
+        PagedResponse<SelectionOptionResponse> result = salaryTemplateService.getSalaryTemplateOptions(null, 0, 20, null,
+                "ASC");
+
+        assertNotNull(result);
+        assertEquals(1, result.getData().size());
+        assertEquals("STP-1", result.getData().get(0).getCode());
+        assertEquals("Template A", result.getData().get(0).getName());
+        assertEquals(Messages.SUCCESS, result.getMessage());
+        verify(salaryTemplateRepository).findOptionsByFilters(eq("CMP-1"), isNull(), any());
+    }
+
+    @Test
+    void getSalaryTemplateDetails_success() {
+        SalaryTemplateDetailListResponse detail = new SalaryTemplateDetailListResponse("SAL-1", "100", 1, "Month", "Base");
+        when(salaryTemplateDetailService.getSalaryTemplateDetails("STP-1")).thenReturn(List.of(detail));
+
+        List<SalaryTemplateDetailListResponse> result = salaryTemplateService.getSalaryTemplateDetails("STP-1");
+
+        assertNotNull(result);
+        assertEquals(1, result.size());
+        assertEquals("SAL-1", result.get(0).getSalaryCode());
+        verify(salaryTemplateDetailService).getSalaryTemplateDetails("STP-1");
     }
 }
 

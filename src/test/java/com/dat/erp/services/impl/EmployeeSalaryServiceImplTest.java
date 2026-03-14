@@ -1,6 +1,7 @@
 package com.dat.erp.services.impl;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
@@ -9,7 +10,9 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.List;
 import java.util.Optional;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -21,7 +24,9 @@ import org.mockito.MockitoAnnotations;
 
 import com.dat.erp.constants.Messages;
 import com.dat.erp.dto.request.EmployeeSalaryRequest;
+import com.dat.erp.dto.response.EmployeeSalaryListResponse;
 import com.dat.erp.dto.response.EmployeeSalaryResponse;
+import com.dat.erp.dto.response.PagedResponse;
 import com.dat.erp.entities.Account;
 import com.dat.erp.entities.Company;
 import com.dat.erp.entities.EmployeeSalary;
@@ -209,5 +214,79 @@ class EmployeeSalaryServiceImplTest {
                 () -> employeeSalaryService.createEmployeeSalary(request));
         assertEquals(Messages.ERROR_EMPLOYEE_SALARY_EMPLOYEE_INACTIVE, ex.getMessage());
         verify(employeeSalaryRepository, never()).save(any());
+    }
+
+    @Test
+    void getEmployeeSalaries_successWithFilters() {
+        Account currentUserAccount = new Account();
+        currentUserAccount.setCompanyCode("CMP-1");
+        when(securityContextService.getCurrentUser()).thenReturn(new CustomUserDetails(currentUserAccount, null));
+
+        Company company = new Company();
+        company.setCode("CMP-1");
+        company.setSecretKey("company-secret-key");
+        when(companyRepository.findByCode("CMP-1")).thenReturn(Optional.of(company));
+
+        UserProfile userProfile1 = new UserProfile();
+        userProfile1.setFirstName("John");
+        userProfile1.setLastName("Doe");
+
+        EmployeeSalary salary1 = new EmployeeSalary();
+        salary1.setCode("ESL-000001");
+        salary1.setUserProfile(userProfile1);
+        salary1.setEffectiveFrom(LocalDate.of(2025, 1, 1));
+        salary1.setEffectiveTo(LocalDate.of(2025, 12, 31));
+        salary1.setTotalAmount(CompanySecretKeyCryptoUtils.encrypt("1000", "company-secret-key"));
+        salary1.setCurrency("USD");
+
+        UserProfile userProfile2 = new UserProfile();
+        userProfile2.setFirstName("Jane");
+        userProfile2.setLastName("Smith");
+
+        EmployeeSalary salary2 = new EmployeeSalary();
+        salary2.setCode("ESL-000002");
+        salary2.setUserProfile(userProfile2);
+        salary2.setEffectiveFrom(LocalDate.of(2025, 2, 1));
+        salary2.setEffectiveTo(LocalDate.of(2025, 12, 31));
+        salary2.setTotalAmount(CompanySecretKeyCryptoUtils.encrypt("3000", "company-secret-key"));
+        salary2.setCurrency("USD");
+
+        when(employeeSalaryRepository.searchByConditions("CMP-1", "Jane",
+                LocalDate.of(2025, 1, 1), LocalDate.of(2025, 12, 31)))
+                .thenReturn(List.of(salary1, salary2));
+
+        PagedResponse<EmployeeSalaryListResponse> result = employeeSalaryService.getEmployeeSalaries(
+                "Jane",
+                new BigDecimal("2000"),
+                new BigDecimal("4000"),
+                LocalDate.of(2025, 1, 1),
+                LocalDate.of(2025, 12, 31),
+                0,
+                20,
+                "salaryCode",
+                "ASC");
+
+        assertNotNull(result);
+        assertEquals(1, result.getData().size());
+        assertEquals("ESL-000002", result.getData().get(0).getSalaryCode());
+        assertEquals("Jane Smith", result.getData().get(0).getEmployeeName());
+        assertEquals("3000", result.getData().get(0).getTotalAmount());
+    }
+
+    @Test
+    void getEmployeeSalaries_badRequestWhenAmountRangeInvalid() {
+        BadRequestException ex = assertThrows(BadRequestException.class,
+                () -> employeeSalaryService.getEmployeeSalaries(
+                        null,
+                        new BigDecimal("2000"),
+                        new BigDecimal("1000"),
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null));
+        assertEquals(Messages.ERROR_EMPLOYEE_SALARY_AMOUNT_RANGE_INVALID, ex.getMessage());
+        assertFalse(ex.getMessage().isBlank());
     }
 }

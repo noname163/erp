@@ -1,6 +1,7 @@
 package com.dat.erp.repositories.customrepositories;
 
 import java.time.LocalDate;
+import java.util.Optional;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -30,6 +31,18 @@ public interface SalaryTemplateRepository extends JpaRepository<SalaryTemplate, 
             @Param("effectiveFrom") LocalDate effectiveFrom,
             @Param("effectiveTo") LocalDate effectiveTo,
             Pageable pageable);
+
+    @Query("""
+            select st
+            from SalaryTemplate st
+            where st.companyCode = :companyCode
+              and st.isDeleted = false
+              and (coalesce(trim(:name), '') = '' or lower(st.name) like lower(concat('%', coalesce(:name, ''), '%')))
+            """)
+    Page<SalaryTemplate> findOptionsByFilters(@Param("companyCode") String companyCode, @Param("name") String name,
+            Pageable pageable);
+
+    Optional<SalaryTemplate> findByCodeAndCompanyCodeAndIsDeletedFalse(String code, String companyCode);
 
     @Query("""
             select count(st) > 0
