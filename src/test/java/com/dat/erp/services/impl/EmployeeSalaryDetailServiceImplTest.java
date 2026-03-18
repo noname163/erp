@@ -2,8 +2,8 @@ package com.dat.erp.services.impl;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.anyCollection;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -26,7 +26,6 @@ import com.dat.erp.entities.Account;
 import com.dat.erp.entities.EmployeeSalary;
 import com.dat.erp.entities.EmployeeSalaryDetail;
 import com.dat.erp.entities.Salary;
-import com.dat.erp.entities.SystemUnit;
 import com.dat.erp.entities.UserProfile;
 import com.dat.erp.exceptions.BadRequestException;
 import com.dat.erp.exceptions.ConflictException;
@@ -34,7 +33,6 @@ import com.dat.erp.exceptions.ResourceNotFoundException;
 import com.dat.erp.repositories.customrepositories.EmployeeSalaryDetailRepository;
 import com.dat.erp.repositories.customrepositories.EmployeeSalaryRepository;
 import com.dat.erp.repositories.customrepositories.SalaryRepository;
-import com.dat.erp.repositories.customrepositories.SystemUnitRepository;
 import com.dat.erp.services.CodeGenerator;
 import com.dat.erp.services.SecurityContextService;
 import com.dat.erp.systemconfigs.CustomUserDetails;
@@ -49,9 +47,6 @@ class EmployeeSalaryDetailServiceImplTest {
 
     @Mock
     private SalaryRepository salaryRepository;
-
-    @Mock
-    private SystemUnitRepository systemUnitRepository;
 
     @Mock
     private CodeGenerator codeGenerator;
@@ -77,6 +72,7 @@ class EmployeeSalaryDetailServiceImplTest {
         allowance.setEmployeeSalaryCode("ESL-1");
         allowance.setSalaryCode("ALLOWANCE");
         allowance.setAmount("3000000");
+
         requests = Arrays.asList(base, allowance);
     }
 
@@ -95,13 +91,13 @@ class EmployeeSalaryDetailServiceImplTest {
         employeeSalary.setUserProfile(userProfile);
         when(employeeSalaryRepository.findByCodeAndIsDeletedFalse("ESL-1")).thenReturn(Optional.of(employeeSalary));
 
-        when(employeeSalaryDetailRepository.existsByEmployeeSalary_CodeAndSalary_CodeAndIsDeletedFalse(eq("ESL-1"),
-                any()))
-                        .thenReturn(false);
+        when(employeeSalaryDetailRepository.findExistingSalaryCodes(eq("ESL-1"), anyCollection())).thenReturn(List.of());
 
-        when(salaryRepository.findByCode("BASE")).thenReturn(Optional.of(new Salary()));
-        when(salaryRepository.findByCode("ALLOWANCE")).thenReturn(Optional.of(new Salary()));
-        when(systemUnitRepository.findByCode("MONTH")).thenReturn(Optional.of(new SystemUnit()));
+        Salary baseSalary = new Salary();
+        baseSalary.setCode("BASE");
+        Salary allowanceSalary = new Salary();
+        allowanceSalary.setCode("ALLOWANCE");
+        when(salaryRepository.findAllByCodeIn(anyCollection())).thenReturn(List.of(baseSalary, allowanceSalary));
 
         when(codeGenerator.nextCode("ESD-")).thenReturn("ESD-000001", "ESD-000002");
         when(employeeSalaryDetailRepository.saveAll(anyList())).thenAnswer(invocation -> invocation.getArgument(0));
@@ -115,6 +111,8 @@ class EmployeeSalaryDetailServiceImplTest {
         assertEquals(2, captor.getValue().size());
         assertEquals("ESD-000001", captor.getValue().get(0).getCode());
         assertEquals("ESD-000002", captor.getValue().get(1).getCode());
+        assertEquals("BASE", captor.getValue().get(0).getSalary().getCode());
+        assertEquals("ALLOWANCE", captor.getValue().get(1).getSalary().getCode());
     }
 
     @Test
@@ -136,17 +134,68 @@ class EmployeeSalaryDetailServiceImplTest {
         employeeSalary.setUserProfile(new UserProfile());
         when(employeeSalaryRepository.findByCodeAndIsDeletedFalse("ESL-1")).thenReturn(Optional.of(employeeSalary));
 
-        when(employeeSalaryDetailRepository.existsByEmployeeSalary_CodeAndSalary_CodeAndIsDeletedFalse(eq("ESL-1"),
-                any()))
-                        .thenReturn(false);
-        when(salaryRepository.findByCode("BASE")).thenReturn(Optional.of(new Salary()));
-        when(systemUnitRepository.findByCode("MONTH")).thenReturn(Optional.of(new SystemUnit()));
+        when(employeeSalaryDetailRepository.findExistingSalaryCodes(eq("ESL-1"), anyCollection())).thenReturn(List.of());
         when(codeGenerator.nextCode("ESD-")).thenReturn("ESD-000001");
 
         ConflictException ex = assertThrows(ConflictException.class,
                 () -> employeeSalaryDetailService.createEmployeeSalaryDetails(requests, employeeSalary.getCode()));
         assertEquals(Messages.ERROR_EMPLOYEE_SALARY_DETAIL_ALREADY_EXISTS, ex.getMessage());
         verify(employeeSalaryDetailRepository, never()).saveAll(anyList());
+    }
+
+    @Test
+    void createEmployeeSalaryDetails_badRequestWhenDependenceCodeNotInRequestList() {
+        requests.get(1).setDependenceCode("BONUS");
+
+        Account currentUserAccount = new Account();
+        currentUserAccount.setCode("ACC-1");
+        currentUserAccount.setCompanyCode("CMP-1");
+        when(securityContextService.getCurrentUser()).thenReturn(new CustomUserDetails(currentUserAccount, null));
+
+        EmployeeSalary employeeSalary = new EmployeeSalary();
+        employeeSalary.setCode("ESL-1");
+        employeeSalary.setCompanyCode("CMP-1");
+        employeeSalary.setUserProfile(new UserProfile());
+        when(employeeSalaryRepository.findByCodeAndIsDeletedFalse("ESL-1")).thenReturn(Optional.of(employeeSalary));
+
+        BadRequestException ex = assertThrows(BadRequestException.class,
+                () -> employeeSalaryDetailService.createEmployeeSalaryDetails(requests, employeeSalary.getCode()));
+        assertEquals(Messages.ERROR_EMPLOYEE_SALARY_DETAIL_DEPENDENCE_CODE_MUST_EXIST_IN_REQUEST, ex.getMessage());
+        verify(employeeSalaryDetailRepository, never()).saveAll(anyList());
+    }
+
+    @Test
+    void createEmployeeSalaryDetails_successWithDependenceCodeInRequestList() {
+        requests.get(1).setDependenceCode("BASE");
+
+        Account currentUserAccount = new Account();
+        currentUserAccount.setCode("ACC-1");
+        currentUserAccount.setCompanyCode("CMP-1");
+        when(securityContextService.getCurrentUser()).thenReturn(new CustomUserDetails(currentUserAccount, null));
+
+        UserProfile userProfile = new UserProfile();
+        userProfile.setCode("EMP001");
+        EmployeeSalary employeeSalary = new EmployeeSalary();
+        employeeSalary.setCode("ESL-1");
+        employeeSalary.setCompanyCode("CMP-1");
+        employeeSalary.setUserProfile(userProfile);
+        when(employeeSalaryRepository.findByCodeAndIsDeletedFalse("ESL-1")).thenReturn(Optional.of(employeeSalary));
+        when(employeeSalaryDetailRepository.findExistingSalaryCodes(eq("ESL-1"), anyCollection())).thenReturn(List.of());
+
+        Salary baseSalary = new Salary();
+        baseSalary.setCode("BASE");
+        Salary allowanceSalary = new Salary();
+        allowanceSalary.setCode("ALLOWANCE");
+        when(salaryRepository.findAllByCodeIn(anyCollection())).thenReturn(List.of(baseSalary, allowanceSalary));
+
+        when(codeGenerator.nextCode("ESD-")).thenReturn("ESD-000001", "ESD-000002");
+        when(employeeSalaryDetailRepository.saveAll(anyList())).thenAnswer(invocation -> invocation.getArgument(0));
+
+        employeeSalaryDetailService.createEmployeeSalaryDetails(requests, employeeSalary.getCode());
+
+        ArgumentCaptor<List<EmployeeSalaryDetail>> captor = ArgumentCaptor.forClass(List.class);
+        verify(employeeSalaryDetailRepository).saveAll(captor.capture());
+        assertEquals("BASE", captor.getValue().get(1).getDependenceCode().getCode());
     }
 
     @Test

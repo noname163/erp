@@ -75,6 +75,8 @@ public final class Messages {
     public static final String ERROR_EMPLOYEE_SALARY_DETAILS_INVALID = "requests is invalid";
     public static final String ERROR_EMPLOYEE_SALARY_DETAIL_EMPLOYEE_SALARY_CODE_INVALID = "employeeSalaryCode is invalid";
     public static final String ERROR_EMPLOYEE_SALARY_DETAIL_SALARY_CODE_INVALID = "salaryCode is invalid";
+    public static final String ERROR_EMPLOYEE_SALARY_DETAIL_DEPENDENCE_CODE_INVALID = "dependenceCode is invalid";
+    public static final String ERROR_EMPLOYEE_SALARY_DETAIL_DEPENDENCE_CODE_MUST_EXIST_IN_REQUEST = "dependenceCode must exist in request list";
     public static final String ERROR_EMPLOYEE_SALARY_DETAIL_UNIT_CODE_INVALID = "unitCode is invalid";
     public static final String ERROR_EMPLOYEE_SALARY_DETAIL_AMOUNT_INVALID = "amount is invalid";
     public static final String ERROR_EMPLOYEE_SALARY_DETAIL_QUANTITY_INVALID = "quantity is invalid";
