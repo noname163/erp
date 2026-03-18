@@ -2,9 +2,12 @@ package com.dat.erp.services.impl;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -67,6 +70,9 @@ public class EmployeeSalaryDetailServiceImpl extends AbstractAuditableService im
         }
 
         Set<String> salaryCodesInRequest = new HashSet<>();
+        Map<EmployeeSalaryDetailRequest, String> normalizedSalaryCodes = new HashMap<>(requests.size());
+        Map<EmployeeSalaryDetailRequest, String> normalizedDependenceCodes = new HashMap<>(requests.size());
+        Set<String> salaryCodesToLoad = new HashSet<>();
         List<EmployeeSalaryDetail> details = new ArrayList<>(requests.size());
         for (EmployeeSalaryDetailRequest request : requests) {
             if (request == null) {
@@ -85,23 +91,56 @@ public class EmployeeSalaryDetailServiceImpl extends AbstractAuditableService im
             if (!salaryCodesInRequest.add(salaryCode)) {
                 throw new ConflictException(Messages.ERROR_EMPLOYEE_SALARY_DETAIL_ALREADY_EXISTS);
             }
+            normalizedSalaryCodes.put(request, salaryCode);
+            salaryCodesToLoad.add(salaryCode);
 
-            if (employeeSalaryDetailRepository.existsByEmployeeSalary_CodeAndSalary_CodeAndIsDeletedFalse(
-                    employeeSalaryCode,
-                    salaryCode)) {
-                throw new ConflictException(Messages.ERROR_EMPLOYEE_SALARY_DETAIL_ALREADY_EXISTS);
+            String dependenceCode = CustomStringUtils.normalizeCode(request.getDependenceCode());
+            if (request.getDependenceCode() != null && dependenceCode == null) {
+                throw new BadRequestException(Messages.ERROR_EMPLOYEE_SALARY_DETAIL_DEPENDENCE_CODE_INVALID);
             }
+            if (dependenceCode != null && !salaryCodesInRequest.contains(dependenceCode)) {
+                throw new BadRequestException(
+                        Messages.ERROR_EMPLOYEE_SALARY_DETAIL_DEPENDENCE_CODE_MUST_EXIST_IN_REQUEST);
+            }
+            normalizedDependenceCodes.put(request, dependenceCode);
+            if (dependenceCode != null) {
+                salaryCodesToLoad.add(dependenceCode);
+            }
+        }
+
+        List<String> existingSalaryCodes = employeeSalaryDetailRepository.findExistingSalaryCodes(employeeSalaryCode,
+                salaryCodesInRequest);
+        if (!existingSalaryCodes.isEmpty()) {
+            throw new ConflictException(Messages.ERROR_EMPLOYEE_SALARY_DETAIL_ALREADY_EXISTS);
+        }
+
+        Map<String, Salary> salaryByCode = salaryRepository.findAllByCodeIn(salaryCodesToLoad).stream()
+                .collect(Collectors.toMap(Salary::getCode, salary -> salary));
+
+        for (EmployeeSalaryDetailRequest request : requests) {
+            String salaryCode = normalizedSalaryCodes.get(request);
+            String dependenceCode = normalizedDependenceCodes.get(request);
 
             BigDecimal amount = CustomStringUtils.parsePositiveBigDecimal(request.getAmount(),
                     Messages.ERROR_EMPLOYEE_SALARY_DETAIL_AMOUNT_INVALID);
 
-            Salary salary = salaryRepository.findByCode(salaryCode)
-                    .orElseThrow(
-                            () -> new BadRequestException(Messages.ERROR_EMPLOYEE_SALARY_DETAIL_SALARY_CODE_INVALID));
+            Salary salary = salaryByCode.get(salaryCode);
+            if (salary == null) {
+                throw new BadRequestException(Messages.ERROR_EMPLOYEE_SALARY_DETAIL_SALARY_CODE_INVALID);
+            }
+
+            Salary dependenceSalary = null;
+            if (dependenceCode != null) {
+                dependenceSalary = salaryByCode.get(dependenceCode);
+                if (dependenceSalary == null) {
+                    throw new BadRequestException(Messages.ERROR_EMPLOYEE_SALARY_DETAIL_DEPENDENCE_CODE_INVALID);
+                }
+            }
 
             EmployeeSalaryDetail detail = EmployeeSalaryDetail.builder()
                     .employeeSalary(employeeSalary)
                     .salary(salary)
+                    .dependenceCode(dependenceSalary)
                     .amount(amount.toPlainString())
                     .build();
             generateCodeIfMissing(detail, CodePrefixes.EMPLOYEE_SALARY_DETAIL);

@@ -3,12 +3,13 @@ package com.dat.erp.services.impl;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.Mockito.any;
-import static org.mockito.Mockito.eq;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyCollection;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
@@ -19,6 +20,7 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
 import com.dat.erp.constants.Messages;
+import com.dat.erp.dto.request.SalaryTemplateDetailRequest;
 import com.dat.erp.dto.response.SalaryTemplateDetailListResponse;
 import com.dat.erp.entities.Account;
 import com.dat.erp.entities.Salary;
@@ -58,9 +60,91 @@ class SalaryTemplateDetailServiceImplTest {
     @InjectMocks
     private SalaryTemplateDetailServiceImpl salaryTemplateDetailService;
 
+    private List<SalaryTemplateDetailRequest> requests;
+    private SalaryTemplate salaryTemplate;
+
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
+
+        SalaryTemplateDetailRequest base = new SalaryTemplateDetailRequest();
+        base.setSalaryCode("BASE");
+        base.setAmount("100");
+        base.setQuantity("1");
+        base.setUnitCode("MONTH");
+        base.setSequenceOrder("1");
+
+        SalaryTemplateDetailRequest allowance = new SalaryTemplateDetailRequest();
+        allowance.setSalaryCode("ALLOWANCE");
+        allowance.setAmount("50");
+        allowance.setQuantity("1");
+        allowance.setUnitCode("MONTH");
+        allowance.setSequenceOrder("2");
+
+        requests = Arrays.asList(base, allowance);
+
+        salaryTemplate = new SalaryTemplate();
+        salaryTemplate.setCode("STP-1");
+    }
+
+    @Test
+    void createSalaryTemplateDetails_success() {
+        Salary baseSalary = new Salary();
+        baseSalary.setCode("BASE");
+        Salary allowanceSalary = new Salary();
+        allowanceSalary.setCode("ALLOWANCE");
+        when(salaryRepository.findAllByCodeIn(anyCollection())).thenReturn(List.of(baseSalary, allowanceSalary));
+
+        SystemUnit month = new SystemUnit();
+        month.setCode("MONTH");
+        when(systemUnitRepository.findAllByCodeIn(anyCollection())).thenReturn(List.of(month));
+
+        when(codeGenerator.nextCode("STD-")).thenReturn("STD-000001", "STD-000002");
+        when(salaryTemplateDetailRepository.saveAll(any())).thenAnswer(invocation -> invocation.getArgument(0));
+
+        List<SalaryTemplateDetail> result = salaryTemplateDetailService.createSalaryTemplateDetails(requests, salaryTemplate);
+
+        assertNotNull(result);
+        assertEquals(2, result.size());
+        assertEquals("BASE", result.get(0).getSalary().getCode());
+        assertEquals("MONTH", result.get(0).getUnit().getCode());
+        assertEquals(1, result.get(0).getQuantity());
+        assertEquals(2, result.get(1).getSequenceOrder());
+        verify(salaryRepository).findAllByCodeIn(anyCollection());
+        verify(systemUnitRepository).findAllByCodeIn(anyCollection());
+    }
+
+    @Test
+    void createSalaryTemplateDetails_badRequestWhenSalaryCodeInvalid() {
+        Salary allowanceSalary = new Salary();
+        allowanceSalary.setCode("ALLOWANCE");
+        when(salaryRepository.findAllByCodeIn(anyCollection())).thenReturn(List.of(allowanceSalary));
+
+        SystemUnit month = new SystemUnit();
+        month.setCode("MONTH");
+        when(systemUnitRepository.findAllByCodeIn(anyCollection())).thenReturn(List.of(month));
+
+        BadRequestException ex = assertThrows(BadRequestException.class,
+                () -> salaryTemplateDetailService.createSalaryTemplateDetails(requests, salaryTemplate));
+
+        assertEquals(Messages.ERROR_SALARY_TEMPLATE_DETAIL_SALARY_CODE_INVALID, ex.getMessage());
+        verify(salaryTemplateDetailRepository, never()).saveAll(any());
+    }
+
+    @Test
+    void createSalaryTemplateDetails_badRequestWhenUnitCodeInvalid() {
+        Salary baseSalary = new Salary();
+        baseSalary.setCode("BASE");
+        Salary allowanceSalary = new Salary();
+        allowanceSalary.setCode("ALLOWANCE");
+        when(salaryRepository.findAllByCodeIn(anyCollection())).thenReturn(List.of(baseSalary, allowanceSalary));
+        when(systemUnitRepository.findAllByCodeIn(anyCollection())).thenReturn(List.of());
+
+        BadRequestException ex = assertThrows(BadRequestException.class,
+                () -> salaryTemplateDetailService.createSalaryTemplateDetails(requests, salaryTemplate));
+
+        assertEquals(Messages.ERROR_SALARY_TEMPLATE_DETAIL_UNIT_CODE_INVALID, ex.getMessage());
+        verify(salaryTemplateDetailRepository, never()).saveAll(any());
     }
 
     @Test

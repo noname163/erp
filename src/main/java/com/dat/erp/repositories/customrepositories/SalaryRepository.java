@@ -1,5 +1,7 @@
 package com.dat.erp.repositories.customrepositories;
 
+import java.util.Collection;
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.domain.Page;
@@ -14,6 +16,8 @@ import com.dat.erp.entities.Salary;
 @Repository
 public interface SalaryRepository extends JpaRepository<Salary, Long> {
     Optional<Salary> findByCode(String code);
+
+    List<Salary> findAllByCodeIn(Collection<String> codes);
 
     boolean existsByNameIgnoreCaseAndCompanyCodeAndIsDeletedFalse(String name, String companyCode);
 

@@ -1,5 +1,7 @@
 package com.dat.erp.repositories.customrepositories;
 
+import java.util.Collection;
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.domain.Page;
@@ -15,6 +17,8 @@ import com.dat.erp.entities.SystemUnit;
 @Repository
 public interface SystemUnitRepository extends JpaRepository<SystemUnit, Long> {
     Optional<SystemUnit> findByCode(String code);
+
+    List<SystemUnit> findAllByCodeIn(Collection<String> codes);
 
     @Query("""
             select su

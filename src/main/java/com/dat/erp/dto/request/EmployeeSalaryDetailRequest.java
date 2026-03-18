@@ -15,4 +15,6 @@ public class EmployeeSalaryDetailRequest {
     @NotBlank(message = "amount is required")
     @Pattern(regexp = "^[0-9]+(\\.[0-9]+)?$", message = "amount must be a positive numeric value")
     private String amount;
+
+    private String dependenceCode;
 }

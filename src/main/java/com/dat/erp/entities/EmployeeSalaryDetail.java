@@ -35,4 +35,8 @@ public class EmployeeSalaryDetail extends BaseAuditableEntity {
     @Column(name = "amount")
     private String amount;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "dependence_code", referencedColumnName = "code")
+    private Salary dependenceCode;
+
 }
