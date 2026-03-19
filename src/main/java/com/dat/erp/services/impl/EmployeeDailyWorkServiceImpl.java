@@ -196,7 +196,8 @@ public class EmployeeDailyWorkServiceImpl extends AbstractAuditableService imple
                 blankToNull(projection.getCreatedByName()),
                 blankToNull(projection.getEditedByName()),
                 projection.getOtTime(),
-                projection.getUsedPto());
+                projection.getUsedPto(),
+                blankToNull(projection.getWorkType()));
     }
 
     private static LocalTime toLocalTime(LocalDateTime dateTime) {

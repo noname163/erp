@@ -21,4 +21,6 @@ public interface EmployeeDailyWorkListProjection {
     Integer getOtTime();
 
     Boolean getUsedPto();
+
+    String getWorkType();
 }

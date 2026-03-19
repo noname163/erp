@@ -20,4 +20,5 @@ public class EmployeeDailyWorkListResponse {
     private String editedBy;
     private Integer otTime;
     private Boolean usedPto;
+    private String workType;
 }

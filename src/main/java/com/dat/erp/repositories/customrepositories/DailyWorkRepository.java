@@ -21,6 +21,7 @@ public interface DailyWorkRepository extends JpaRepository<DailyWork, Long> {
             select
                 up.code as employeeCode,
                 trim(concat(concat(coalesce(up.firstName, ''), ' '), coalesce(up.lastName, ''))) as employeeName,
+                dw.workType as workType,
                 dw.workingDate as logDay,
                 dw.startTime as startTime,
                 dw.endTime as endTime,
