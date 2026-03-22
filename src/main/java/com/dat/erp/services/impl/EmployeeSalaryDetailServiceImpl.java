@@ -142,6 +142,7 @@ public class EmployeeSalaryDetailServiceImpl extends AbstractAuditableService im
                     .salary(salary)
                     .dependenceCode(dependenceSalary)
                     .amount(amount.toPlainString())
+                    .dailyWorkWorkType(request.getDailyWorkWorkType())
                     .build();
             generateCodeIfMissing(detail, CodePrefixes.EMPLOYEE_SALARY_DETAIL);
             applyInsertAudit(detail);

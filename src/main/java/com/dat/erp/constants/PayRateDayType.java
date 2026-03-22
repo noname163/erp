@@ -4,6 +4,6 @@ public enum PayRateDayType {
     NORMAL,
     WEEKEND,
     HOLIDAY,
-    DAY_OFF
+    DAY_OFF,
+    NIGHT
 }
-

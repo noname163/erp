@@ -1,6 +1,7 @@
 package com.dat.erp.repositories.customrepositories;
 
 import java.time.LocalDate;
+import java.util.List;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -16,6 +17,12 @@ import com.dat.erp.repositories.projections.EmployeeDailyWorkListProjection;
 public interface DailyWorkRepository extends JpaRepository<DailyWork, Long> {
     boolean existsByUserProfile_CodeAndWorkingDateAndIsDeletedFalse(String userProfileCode,
             java.time.LocalDate workingDate);
+
+    List<DailyWork> findByCompanyCodeAndUserProfile_CodeAndWorkingDateBetweenAndIsDeletedFalse(
+            String companyCode,
+            String userProfileCode,
+            LocalDate startDate,
+            LocalDate endDate);
 
     @Query("""
             select

@@ -1,6 +1,7 @@
 package com.dat.erp.repositories.customrepositories;
 
 import java.util.Optional;
+import java.util.List;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -18,6 +19,10 @@ public interface UserProfileRepository extends JpaRepository<UserProfile, Long>,
     Optional<UserProfile> findByAccount_Code(String accountCode);
 
     Optional<UserProfile> findByCode(String code);
+
+    Optional<UserProfile> findByCodeAndIsDeletedFalse(String code);
+
+    List<UserProfile> findByCompanyCodeAndIsDeletedFalse(String companyCode);
 
     @Query("""
             select up

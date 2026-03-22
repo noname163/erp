@@ -1,7 +1,10 @@
 package com.dat.erp.entities;
 
 import java.util.List;
+import java.math.BigDecimal;
+import java.time.LocalDate;
 
+import com.dat.erp.constants.PayrollLineType;
 import com.dat.erp.constants.PayrollSourceType;
 
 import jakarta.persistence.Column;
@@ -27,7 +30,7 @@ import lombok.ToString;
 @AllArgsConstructor
 @Builder
 @EqualsAndHashCode(onlyExplicitlyIncluded = true, callSuper = true)
-@ToString(exclude = { "payrollRun", "userProfile", "salary", "unit", "details" })
+@ToString(exclude = { "payrollRun", "employeeSummary", "userProfile", "salary", "unit", "details" })
 @Entity
 @Table(name = "payroll_result")
 public class PayrollResult extends BaseAuditableEntity {
@@ -36,11 +39,15 @@ public class PayrollResult extends BaseAuditableEntity {
     private PayrollRun payrollRun;
 
     @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "employee_summary_code", referencedColumnName = "code")
+    private PayrollEmployeeSummary employeeSummary;
+
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_profile_code", referencedColumnName = "code", nullable = false)
     private UserProfile userProfile;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "salary_code", referencedColumnName = "code", nullable = false)
+    @JoinColumn(name = "salary_code", referencedColumnName = "code")
     private Salary salary;
 
     @Column(name = "amount")
@@ -49,13 +56,50 @@ public class PayrollResult extends BaseAuditableEntity {
     @Column(name = "quantity")
     private Integer quantity;
 
+    @Column(name = "quantity_value")
+    private BigDecimal quantityValue;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "unit_code", referencedColumnName = "code")
     private SystemUnit unit;
 
     @Enumerated(EnumType.STRING)
+    @Column(name = "line_type")
+    private PayrollLineType lineType;
+
+    @Enumerated(EnumType.STRING)
     @Column(name = "source_type")
     private PayrollSourceType sourceType;
+
+    @Column(name = "segment_from")
+    private LocalDate segmentFrom;
+
+    @Column(name = "segment_to")
+    private LocalDate segmentTo;
+
+    @Column(name = "currency")
+    private String currency;
+
+    @Column(name = "rate")
+    private String rate;
+
+    @Column(name = "multiplier")
+    private BigDecimal multiplier;
+
+    @Column(name = "sequence_order")
+    private Integer sequenceOrder;
+
+    @Column(name = "source_ref_code")
+    private String sourceRefCode;
+
+    @Column(name = "policy_snapshot_version")
+    private String policySnapshotVersion;
+
+    @Column(name = "is_manual")
+    private Boolean isManual;
+
+    @Column(name = "is_frozen")
+    private Boolean isFrozen;
 
     @Column(name = "is_retro")
     private Boolean isRetro;

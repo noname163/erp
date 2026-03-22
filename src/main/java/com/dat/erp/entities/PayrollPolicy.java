@@ -1,6 +1,7 @@
 package com.dat.erp.entities;
 
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.List;
 
 import com.dat.erp.constants.PayrollProrationBasis;
@@ -33,6 +34,9 @@ import lombok.ToString;
 @Table(name = "payroll_policy")
 public class PayrollPolicy extends BaseAuditableEntity {
 
+    @Column(name = "name")
+    private String name;
+
     @Enumerated(EnumType.STRING)
     @Column(name = "proration_basis")
     private PayrollProrationBasis prorationBasis;
@@ -45,6 +49,45 @@ public class PayrollPolicy extends BaseAuditableEntity {
 
     @Column(name = "rounding_rule")
     private String roundingRule;
+
+    @Column(name = "standard_hours_per_day")
+    private Integer standardHoursPerDay;
+
+    @Column(name = "standard_minutes_per_day")
+    private Integer standardMinutesPerDay;
+
+    @Column(name = "rounding_mode")
+    private String roundingMode;
+
+    @Column(name = "round_at")
+    private String roundAt;
+
+    @Column(name = "zero_denominator_action")
+    private String zeroDenominatorAction;
+
+    @Column(name = "holiday_weekend_overlap_rule")
+    private String holidayWeekendOverlapRule;
+
+    @Column(name = "approval_mode")
+    private String approvalMode;
+
+    @Column(name = "freeze_snapshot_required")
+    private Boolean freezeSnapshotRequired;
+
+    @Column(name = "night_premium_start")
+    private LocalTime nightPremiumStart;
+
+    @Column(name = "night_premium_end")
+    private LocalTime nightPremiumEnd;
+
+    @Column(name = "ot_requires_approval")
+    private Boolean otRequiresApproval;
+
+    @Column(name = "ot_minimum_minutes")
+    private Integer otMinimumMinutes;
+
+    @Column(name = "ot_rounding_minutes")
+    private Integer otRoundingMinutes;
 
     @Column(name = "effective_from")
     private LocalDate effectiveFrom;

@@ -4,8 +4,13 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
+import com.dat.erp.constants.ApprovalStatus;
+import com.dat.erp.constants.LeavePaidMode;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
@@ -34,6 +39,9 @@ public class EmployeePto extends BaseAuditableEntity {
 
     private String type;
 
+    @Column(name = "leave_type")
+    private String leaveType;
+
     @Column(name = "start_date")
     private LocalDate startDate;
 
@@ -43,6 +51,20 @@ public class EmployeePto extends BaseAuditableEntity {
     private BigDecimal days;
 
     private String status;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "approval_status")
+    private ApprovalStatus approvalStatus;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "paid_mode")
+    private LeavePaidMode paidMode;
+
+    @Column(name = "duration_unit")
+    private String durationUnit;
+
+    @Column(name = "hours")
+    private BigDecimal hours;
 
     @Column(name = "processed_by")
     private Long processedBy;

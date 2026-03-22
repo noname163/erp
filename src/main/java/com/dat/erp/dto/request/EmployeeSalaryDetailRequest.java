@@ -1,6 +1,9 @@
 package com.dat.erp.dto.request;
 
+import com.dat.erp.constants.DailyWorkWorkType;
+
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 import lombok.Data;
 
@@ -17,4 +20,7 @@ public class EmployeeSalaryDetailRequest {
     private String amount;
 
     private String dependenceCode;
+
+    @NotNull(message = "dailyWorkWorkType is required")
+    private DailyWorkWorkType dailyWorkWorkType;
 }

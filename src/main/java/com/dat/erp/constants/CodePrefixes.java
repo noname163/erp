@@ -21,4 +21,16 @@ public final class CodePrefixes {
     public static final String EMPLOYEE_SALARY = "ESL-";
     public static final String EMPLOYEE_SALARY_DETAIL = "ESD-";
     public static final String DAILY_WORK = "DWK-";
+    public static final String PAYROLL_POLICY = "PPL-";
+    public static final String PAY_RATE_RULE = "PRR-";
+    public static final String COMPANY_CALENDAR = "CAL-";
+    public static final String CALENDAR_DATE = "CDD-";
+    public static final String EMPLOYMENT_AGREEMENT = "EAG-";
+    public static final String WORK_SCHEDULE_DETAIL = "WSD-";
+    public static final String EMPLOYEE_SCHEDULE_ASSIGNMENT = "ESA-";
+    public static final String PAYROLL_ADJUSTMENT = "PAD-";
+    public static final String PAYROLL_RUN = "PRN-";
+    public static final String PAYROLL_RESULT = "PRS-";
+    public static final String PAYROLL_RESULT_DETAIL = "PRD-";
+    public static final String PAYROLL_EMPLOYEE_SUMMARY = "PES-";
 }

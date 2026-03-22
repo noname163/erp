@@ -1,8 +1,12 @@
 package com.dat.erp.constants;
 
 public enum PayrollRunStatus {
-    OPEN,
-    CALCULATED,
-    CLOSED
+    QUEUED,
+    RUNNING,
+    PREVIEW_READY,
+    FINALIZING,
+    FINALIZED,
+    FAILED,
+    CANCELLED
 }
 

@@ -42,19 +42,57 @@ public class PayrollResultDetail extends BaseAuditableEntity {
     @Column(name = "basis_days")
     private BigDecimal basisDays;
 
+    @Column(name = "basis_hours")
+    private BigDecimal basisHours;
+
+    @Column(name = "basis_minutes")
+    private BigDecimal basisMinutes;
+
     @Column(name = "paid_days")
     private BigDecimal paidDays;
 
     @Column(name = "unpaid_days")
     private BigDecimal unpaidDays;
 
+    @Column(name = "payable_hours")
+    private BigDecimal payableHours;
+
+    @Column(name = "payable_minutes")
+    private BigDecimal payableMinutes;
+
+    @Column(name = "expected_hours")
+    private BigDecimal expectedHours;
+
+    @Column(name = "expected_minutes")
+    private BigDecimal expectedMinutes;
+
+    @Column(name = "expected_quantity")
+    private BigDecimal expectedQuantity;
+
+    @Column(name = "payable_quantity")
+    private BigDecimal payableQuantity;
+
     @Column(name = "rate_per_day")
     private BigDecimal ratePerDay;
+
+    @Column(name = "rate_per_hour")
+    private BigDecimal ratePerHour;
+
+    @Column(name = "rate_per_minute")
+    private BigDecimal ratePerMinute;
 
     @Column(name = "multiplier_applied")
     private BigDecimal multiplierApplied;
 
     @Column(name = "formula_note")
     private String formulaNote;
-}
 
+    @Column(name = "rounding_note")
+    private String roundingNote;
+
+    @Column(name = "policy_rule_code")
+    private String policyRuleCode;
+
+    @Column(name = "source_date")
+    private java.time.LocalDate sourceDate;
+}

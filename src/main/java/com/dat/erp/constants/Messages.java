@@ -99,4 +99,34 @@ public final class Messages {
     public static final String ERROR_DAILY_WORK_EMPLOYEE_COMPANY_MISMATCH = "Employee does not belong to current company";
     public static final String ERROR_DAILY_WORK_ALREADY_EXISTS = "Daily work already exists";
     public static final String DAILY_WORK_CREATE_SUCCESS = "Create daily work for %s success";
+
+    // Payroll
+    public static final String ERROR_PAYROLL_PERIOD_INVALID = "payroll period is invalid";
+    public static final String ERROR_PAYROLL_POLICY_NOT_FOUND = "Payroll policy not found";
+    public static final String ERROR_PAYROLL_POLICY_OVERLAPS = "Payroll policy period overlaps";
+    public static final String ERROR_PAYROLL_POLICY_NAME_INVALID = "Payroll policy name is invalid";
+    public static final String ERROR_PAYROLL_RUN_NOT_FOUND = "Payroll run not found";
+    public static final String ERROR_PAYROLL_RUN_STATUS_INVALID = "Payroll run status is invalid";
+    public static final String ERROR_PAYROLL_RUN_FINALIZE_BLOCKED = "Payroll run cannot be finalized because blocking issues exist";
+    public static final String ERROR_PAYROLL_RUN_REPLAY_SOURCE_INVALID = "Only finalized payroll runs can be replayed";
+    public static final String ERROR_PAYROLL_NO_SALARY_RECORD = "No active salary record found";
+    public static final String ERROR_PAYROLL_OVERLAPPING_SALARY_RECORD = "Overlapping salary record found";
+    public static final String ERROR_PAYROLL_SALARY_GAP = "Gap between salary records found";
+    public static final String ERROR_PAYROLL_MISSING_SCHEDULE = "No active work schedule found";
+    public static final String ERROR_PAYROLL_MISSING_CALENDAR = "No active company calendar found";
+    public static final String ERROR_PAYROLL_ZERO_DENOMINATOR = "Payroll denominator resolved to zero";
+    public static final String ERROR_PAYROLL_INVALID_MULTIPLIER = "Invalid payroll multiplier";
+    public static final String ERROR_PAYROLL_CONFLICTING_DAY_INPUT = "Conflicting payroll day inputs";
+    public static final String ERROR_PAYROLL_ADJUSTMENT_NOT_FOUND = "Payroll adjustment not found";
+    public static final String ERROR_PAYROLL_ADJUSTMENT_REASON_REQUIRED = "Payroll adjustment reason is required";
+    public static final String ERROR_WORK_SCHEDULE_NOT_FOUND = "Work schedule not found";
+    public static final String ERROR_WORK_SCHEDULE_NAME_INVALID = "Work schedule name is invalid";
+    public static final String ERROR_WORK_SCHEDULE_DETAILS_INVALID = "Work schedule details are invalid";
+    public static final String ERROR_COMPANY_CALENDAR_NOT_FOUND = "Company calendar not found";
+    public static final String ERROR_COMPANY_CALENDAR_NAME_INVALID = "Company calendar name is invalid";
+    public static final String ERROR_COMPANY_CALENDAR_DATES_INVALID = "Company calendar dates are invalid";
+    public static final String ERROR_PAYROLL_SELF_VIEW_FORBIDDEN = "Cannot view another employee payslip";
+    public static final String SUCCESS_PAYROLL_PREVIEW_QUEUED = "Payroll preview queued";
+    public static final String SUCCESS_PAYROLL_FINALIZED = "Payroll finalized";
+    public static final String SUCCESS_PAYROLL_REPLAY_QUEUED = "Payroll replay queued";
 }

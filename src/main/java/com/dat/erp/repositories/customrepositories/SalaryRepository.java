@@ -17,6 +17,8 @@ import com.dat.erp.entities.Salary;
 public interface SalaryRepository extends JpaRepository<Salary, Long> {
     Optional<Salary> findByCode(String code);
 
+    Optional<Salary> findByCodeAndIsDeletedFalse(String code);
+
     List<Salary> findAllByCodeIn(Collection<String> codes);
 
     boolean existsByNameIgnoreCaseAndCompanyCodeAndIsDeletedFalse(String name, String companyCode);

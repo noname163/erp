@@ -46,4 +46,21 @@ public interface EmployeeSalaryRepository extends JpaRepository<EmployeeSalary, 
             @Param("employeeName") String employeeName,
             @Param("effectiveFrom") LocalDate effectiveFrom,
             @Param("effectiveTo") LocalDate effectiveTo);
+
+    @Query("""
+            select es
+            from EmployeeSalary es
+            join fetch es.userProfile up
+            where es.companyCode = :companyCode
+              and es.isDeleted = false
+              and up.code = :userProfileCode
+              and es.effectiveFrom <= :periodEnd
+              and es.effectiveTo >= :periodStart
+            order by es.effectiveFrom asc
+            """)
+    List<EmployeeSalary> findOverlappingForPayroll(
+            @Param("companyCode") String companyCode,
+            @Param("userProfileCode") String userProfileCode,
+            @Param("periodStart") LocalDate periodStart,
+            @Param("periodEnd") LocalDate periodEnd);
 }
