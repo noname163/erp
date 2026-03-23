@@ -1,6 +1,7 @@
 package com.dat.erp.entities;
 
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.List;
 
 import com.dat.erp.constants.PayrollProrationBasis;
@@ -28,20 +29,23 @@ import lombok.ToString;
 @AllArgsConstructor
 @Builder
 @EqualsAndHashCode(onlyExplicitlyIncluded = true, callSuper = true)
-@ToString(exclude = { "rateRules" })
+@ToString(exclude = { "employeePayrollPolicies" })
 @Entity
 @Table(name = "payroll_policy")
 public class PayrollPolicy extends BaseAuditableEntity {
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "proration_basis")
-    private PayrollProrationBasis prorationBasis;
+    @Column(name = "standard_quantity_per_day")
+    private Integer standardQuantityPerDay;
 
-    @Column(name = "standard_days_per_week")
-    private Integer standardDaysPerWeek;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "unit_code", referencedColumnName = "code")
+    private SystemUnit unit;
 
-    @Column(name = "pay_holiday_if_off")
-    private Boolean payHolidayIfOff;
+    @Column(name ="standard_start_time")
+    private LocalTime standardStartTime;
+
+    @Column(name ="standard_end_time")
+    private LocalTime standardEndTime;
 
     @Column(name = "rounding_rule")
     private String roundingRule;
@@ -52,7 +56,10 @@ public class PayrollPolicy extends BaseAuditableEntity {
     @Column(name = "effective_to")
     private LocalDate effectiveTo;
 
-    @OneToMany(mappedBy = "policy", fetch = FetchType.LAZY)
-    private List<PayRateRule> rateRules;
-}
+    @Enumerated(EnumType.STRING)
+    @Column(name = "proration_basis")
+    private PayrollProrationBasis prorationBasis;
 
+    @OneToMany(mappedBy = "payrollPolicy", fetch = FetchType.LAZY)
+    private List<EmployeePayrollPolicy> employeePayrollPolicies;
+}

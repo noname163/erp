@@ -24,7 +24,7 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
 import com.dat.erp.constants.DailyWorkUnit;
-import com.dat.erp.constants.DailyWorkWorkType;
+import com.dat.erp.constants.DateType;
 import com.dat.erp.constants.Messages;
 import com.dat.erp.dto.request.EmployeeDailyWorkRequest;
 import com.dat.erp.entities.Account;
@@ -69,7 +69,7 @@ class EmployeeDailyWorkServiceImplTest {
         request.setEndTime(LocalTime.of(18, 0));
         request.setQuantity(1);
         request.setUnit(DailyWorkUnit.DAY);
-        request.setWorkType(DailyWorkWorkType.NORMAL);
+        request.setWorkType(DateType.NORMAL);
         request.setUsedPto(false);
         request.setOtTime(2);
 
@@ -119,7 +119,7 @@ class EmployeeDailyWorkServiceImplTest {
         copy.setEndTime(LocalTime.of(18, 0));
         copy.setQuantity(1);
         copy.setUnit(DailyWorkUnit.DAY);
-        copy.setWorkType(DailyWorkWorkType.NORMAL);
+        copy.setWorkType(DateType.NORMAL);
 
         requests = Arrays.asList(requests.get(0), copy);
 

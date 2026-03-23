@@ -99,4 +99,11 @@ public final class Messages {
     public static final String ERROR_DAILY_WORK_EMPLOYEE_COMPANY_MISMATCH = "Employee does not belong to current company";
     public static final String ERROR_DAILY_WORK_ALREADY_EXISTS = "Daily work already exists";
     public static final String DAILY_WORK_CREATE_SUCCESS = "Create daily work for %s success";
+
+    // Employee payroll policy
+    public static final String ERROR_EMPLOYEE_PAYROLL_POLICY_NOT_FOUND = "Employee payroll policy not found";
+    public static final String ERROR_EMPLOYEE_PAYROLL_POLICY_USER_PROFILE_CODE_INVALID = "userProfileCode is invalid";
+    public static final String ERROR_EMPLOYEE_PAYROLL_POLICY_POLICY_CODE_INVALID = "payrollPolicyCode is invalid";
+    public static final String ERROR_EMPLOYEE_PAYROLL_POLICY_EFFECTIVE_DATES_INVALID = "effectiveFrom/effectiveTo is invalid";
+    public static final String ERROR_EMPLOYEE_PAYROLL_POLICY_OVERLAPS = "Employee already has an active payroll policy in this period";
 }

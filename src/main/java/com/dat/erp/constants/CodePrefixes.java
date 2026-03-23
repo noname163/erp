@@ -20,5 +20,6 @@ public final class CodePrefixes {
     public static final String SALARY = "SAL-";
     public static final String EMPLOYEE_SALARY = "ESL-";
     public static final String EMPLOYEE_SALARY_DETAIL = "ESD-";
+    public static final String EMPLOYEE_PAYROLL_POLICY = "EPP-";
     public static final String DAILY_WORK = "DWK-";
 }
