@@ -52,6 +52,22 @@ public final class Messages {
     public static final String ERROR_SALARY_TEMPLATE_DETAIL_SEQUENCE_ORDER_INVALID = "sequenceOrder is invalid";
     public static final String ERROR_SALARY_TEMPLATE_TOTAL_AMOUNT_MISMATCH = "totalAmount does not match details";
 
+    // Company calendar
+    public static final String ERROR_COMPANY_CALENDAR_NAME_INVALID = "name is invalid";
+    public static final String ERROR_COMPANY_CALENDAR_EFFECTIVE_DATES_INVALID = "effectiveFrom/effectiveTo is invalid";
+    public static final String ERROR_COMPANY_CALENDAR_DATES_INVALID = "dates is invalid";
+    public static final String ERROR_COMPANY_CALENDAR_REGION_INVALID = "region is invalid";
+    public static final String ERROR_COMPANY_CALENDAR_TIME_ZONE_INVALID = "timeZone is invalid";
+    public static final String ERROR_COMPANY_CALENDAR_NOTE_INVALID = "note is invalid";
+    public static final String ERROR_COMPANY_CALENDAR_CODE_INVALID = "code is invalid";
+    public static final String ERROR_COMPANY_CALENDAR_NOT_FOUND = "Company calendar not found";
+    public static final String ERROR_COMPANY_CALENDAR_YEAR_INVALID = "year is invalid";
+    public static final String ERROR_COMPANY_CALENDAR_CAL_DATE_INVALID = "calDate is invalid";
+    public static final String ERROR_COMPANY_CALENDAR_DAY_TYPE_INVALID = "dayType is invalid";
+    public static final String ERROR_COMPANY_CALENDAR_DATE_NOTE_INVALID = "date note is invalid";
+    public static final String ERROR_COMPANY_CALENDAR_DATE_DUPLICATE = "calDate must be unique";
+    public static final String ERROR_COMPANY_CALENDAR_DATE_OUT_OF_RANGE = "calDate must be within effectiveFrom/effectiveTo";
+
     // Salaries
     public static final String ERROR_SALARY_REQUESTS_INVALID = "requests is invalid";
     public static final String ERROR_SALARY_NAME_INVALID = "name is invalid";

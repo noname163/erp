@@ -1,5 +1,7 @@
 package com.dat.erp.entities;
 
+import com.dat.erp.constants.DayType;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -38,5 +40,8 @@ public class EmployeeSalaryDetail extends BaseAuditableEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "dependence_code", referencedColumnName = "code")
     private Salary dependenceCode;
+
+    @Column(name = "day_type")
+    private DayType dayType;
 
 }

@@ -1,6 +1,6 @@
 package com.dat.erp.constants;
 
-public enum DateType {
+public enum DayType {
     NORMAL,
     HOLIDAY_WORK,
     WEEKEND_WORK,

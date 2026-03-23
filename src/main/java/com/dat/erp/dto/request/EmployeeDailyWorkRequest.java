@@ -4,7 +4,7 @@ import java.time.LocalDate;
 import java.time.LocalTime;
 
 import com.dat.erp.constants.DailyWorkUnit;
-import com.dat.erp.constants.DateType;
+import com.dat.erp.constants.DayType;
 import com.fasterxml.jackson.annotation.JsonFormat;
 
 import jakarta.validation.constraints.NotNull;
@@ -37,7 +37,7 @@ public class EmployeeDailyWorkRequest {
     private DailyWorkUnit unit;
 
     @NotNull(message = "workType is required")
-    private DateType workType;
+    private DayType workType;
 
     private Boolean usedPto;
 

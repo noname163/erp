@@ -5,7 +5,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 import com.dat.erp.constants.DailyWorkUnit;
-import com.dat.erp.constants.DateType;
+import com.dat.erp.constants.DayType;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -61,7 +61,7 @@ public class DailyWork extends BaseAuditableEntity {
 
     @Enumerated(EnumType.STRING)
     @Column(name = "work_type")
-    private DateType workType;
+    private DayType workType;
 
     @Column(name = "hours_worked")
     private BigDecimal hoursWorked;
