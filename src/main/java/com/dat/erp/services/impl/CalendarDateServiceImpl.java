@@ -1,10 +1,14 @@
 package com.dat.erp.services.impl;
 
 import java.time.LocalDate;
+import java.time.YearMonth;
+import java.util.EnumMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
+import com.dat.erp.constants.DayType;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -102,6 +106,25 @@ public class CalendarDateServiceImpl extends AbstractAuditableService implements
                 toDate).stream()
                 .map(calendarDateMapper::toResponse)
                 .toList();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Map<DayType, Integer> getCalendarDateTotalsByCompanyCodeAndMonth(String companyCode, YearMonth month) {
+        if (companyCode == null || companyCode.isBlank()) {
+            throw new BadRequestException(Messages.ERROR_COMPANY_CALENDAR_COMPANY_CODE_INVALID);
+        }
+        if (month == null) {
+            throw new BadRequestException(Messages.ERROR_COMPANY_CALENDAR_MONTH_INVALID);
+        }
+
+        LocalDate fromDate = month.atDay(1);
+        LocalDate toDate = month.atEndOfMonth();
+
+        Map<DayType, Integer> totalsByDayType = new EnumMap<>(DayType.class);
+        calendarDateRepository.countByCompanyCodeAndDateRangeGroupByDayType(companyCode.trim(), fromDate, toDate)
+                .forEach(item -> totalsByDayType.put(item.getDayType(), Math.toIntExact(item.getTotalDates())));
+        return totalsByDayType;
     }
 
     private void validateCalendar(CompanyCalendar calendar) {

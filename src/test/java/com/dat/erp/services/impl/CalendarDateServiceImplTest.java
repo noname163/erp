@@ -10,7 +10,9 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.time.LocalDate;
+import java.time.YearMonth;
 import java.util.List;
+import java.util.Map;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -31,6 +33,7 @@ import com.dat.erp.entities.CompanyCalendar;
 import com.dat.erp.exceptions.BadRequestException;
 import com.dat.erp.mapper.interfaces.CalendarDateMapper;
 import com.dat.erp.repositories.customrepositories.CalendarDateRepository;
+import com.dat.erp.repositories.projections.CalendarDateDayTypeCountProjection;
 import com.dat.erp.services.CodeGenerator;
 import com.dat.erp.services.SecurityContextService;
 import com.dat.erp.systemconfigs.CustomUserDetails;
@@ -198,5 +201,30 @@ class CalendarDateServiceImplTest {
 
         assertEquals(Messages.ERROR_COMPANY_CALENDAR_YEAR_INVALID, ex.getMessage());
         verify(calendarDateRepository, never()).findByCalendarCodeAndCompanyCodeAndDateRange(any(), any(), any(), any());
+    }
+
+    @Test
+    void getCalendarDateTotalsByCompanyCodeAndMonth_returnsCountMapByDayType() {
+        CalendarDateDayTypeCountProjection holidayProjection = org.mockito.Mockito.mock(CalendarDateDayTypeCountProjection.class);
+        when(holidayProjection.getDayType()).thenReturn(DayType.HOLIDAY_WORK);
+        when(holidayProjection.getTotalDates()).thenReturn(2L);
+
+        CalendarDateDayTypeCountProjection weekendProjection = org.mockito.Mockito.mock(CalendarDateDayTypeCountProjection.class);
+        when(weekendProjection.getDayType()).thenReturn(DayType.WEEKEND_WORK);
+        when(weekendProjection.getTotalDates()).thenReturn(4L);
+
+        when(calendarDateRepository.countByCompanyCodeAndDateRangeGroupByDayType(
+                "CMP-001",
+                LocalDate.of(2026, 1, 1),
+                LocalDate.of(2026, 1, 31)))
+                .thenReturn(List.of(holidayProjection, weekendProjection));
+
+        Map<DayType, Integer> result = calendarDateService.getCalendarDateTotalsByCompanyCodeAndMonth(
+                " CMP-001 ",
+                YearMonth.of(2026, 1));
+
+        assertEquals(2, result.size());
+        assertEquals(2, result.get(DayType.HOLIDAY_WORK));
+        assertEquals(4, result.get(DayType.WEEKEND_WORK));
     }
 }

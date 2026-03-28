@@ -9,6 +9,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import com.dat.erp.entities.CalendarDate;
+import com.dat.erp.repositories.projections.CalendarDateDayTypeCountProjection;
 
 @Repository
 public interface CalendarDateRepository extends JpaRepository<CalendarDate, Long> {
@@ -26,6 +27,25 @@ public interface CalendarDateRepository extends JpaRepository<CalendarDate, Long
             """)
     List<CalendarDate> findByCalendarCodeAndCompanyCodeAndDateRange(
             @Param("calendarCode") String calendarCode,
+            @Param("companyCode") String companyCode,
+            @Param("fromDate") LocalDate fromDate,
+            @Param("toDate") LocalDate toDate);
+
+    @Query("""
+            select
+                cd.dayType as dayType,
+                count(cd) as totalDates
+            from CalendarDate cd
+            join cd.calendar cc
+            where cc.companyCode = :companyCode
+              and cc.isDeleted = false
+              and cd.isDeleted = false
+              and cd.calDate >= :fromDate
+              and cd.calDate <= :toDate
+            group by cd.dayType
+            order by cd.dayType asc
+            """)
+    List<CalendarDateDayTypeCountProjection> countByCompanyCodeAndDateRangeGroupByDayType(
             @Param("companyCode") String companyCode,
             @Param("fromDate") LocalDate fromDate,
             @Param("toDate") LocalDate toDate);
