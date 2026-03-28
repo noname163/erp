@@ -8,7 +8,9 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import org.springframework.data.domain.Page;
@@ -17,10 +19,12 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.dat.erp.constants.CodePrefixes;
+import com.dat.erp.constants.DayType;
 import com.dat.erp.constants.Messages;
 import com.dat.erp.dto.request.EmployeeDailyWorkRequest;
 import com.dat.erp.dto.response.EmployeeDailyWorkListResponse;
 import com.dat.erp.dto.response.PagedResponse;
+import com.dat.erp.dto.response.salary.DailyWorkForSalaryResponse;
 import com.dat.erp.entities.DailyWork;
 import com.dat.erp.entities.UserProfile;
 import com.dat.erp.exceptions.BadRequestException;
@@ -237,5 +241,66 @@ public class EmployeeDailyWorkServiceImpl extends AbstractAuditableService imple
             case "usedPto", "isPto" -> "usedPto";
             default -> DEFAULT_SORT_BY;
         };
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Map<String, List<DailyWorkForSalaryResponse>> getEmployeeDailyWorksByEmployeeCodes(
+            List<String> employeeCodes) {
+        if (employeeCodes == null || employeeCodes.isEmpty()) {
+            return Map.of();
+        }
+
+        String companyCode = resolveCurrentUserCompanyCode();
+        if (companyCode == null || companyCode.isBlank() || "SYSTEM".equals(companyCode)) {
+            throw new BadRequestException(Messages.ERROR_CURRENT_USER_COMPANY_MISSING);
+        }
+
+        List<String> normalizedEmployeeCodes = employeeCodes.stream()
+                .map(CustomStringUtils::normalizeCode)
+                .filter(code -> code != null)
+                .distinct()
+                .toList();
+        if (normalizedEmployeeCodes.isEmpty()) {
+            return Map.of();
+        }
+
+        Map<String, Map<DayType, BigDecimal>> aggregatedHoursByEmployeeCode = new LinkedHashMap<>();
+        normalizedEmployeeCodes
+                .forEach(employeeCode -> aggregatedHoursByEmployeeCode.put(employeeCode, new LinkedHashMap<>()));
+
+        List<DailyWork> dailyWorks = dailyWorkRepository.findAllForSalaryByCompanyCodeAndEmployeeCodes(companyCode,
+                normalizedEmployeeCodes);
+        for (DailyWork dailyWork : dailyWorks) {
+            UserProfile userProfile = dailyWork.getUserProfile();
+            if (userProfile == null || userProfile.getCode() == null) {
+                continue;
+            }
+
+            Map<DayType, BigDecimal> employeeDailyWorks = aggregatedHoursByEmployeeCode.get(userProfile.getCode());
+            if (employeeDailyWorks == null || dailyWork.getWorkType() == null) {
+                continue;
+            }
+
+            employeeDailyWorks.merge(
+                    dailyWork.getWorkType(),
+                    dailyWork.getHoursWorked() == null ? BigDecimal.ZERO : dailyWork.getHoursWorked(),
+                    BigDecimal::add);
+        }
+
+        Map<String, List<DailyWorkForSalaryResponse>> dailyWorksByEmployeeCode = new LinkedHashMap<>();
+        aggregatedHoursByEmployeeCode.forEach((employeeCode, hoursByDayType) -> dailyWorksByEmployeeCode.put(
+                employeeCode,
+                hoursByDayType.entrySet().stream()
+                        .map(entry -> new DailyWorkForSalaryResponse(
+                                entry.getKey(),
+                                toTotalWorkHours(entry.getValue())))
+                        .toList()));
+
+        return dailyWorksByEmployeeCode;
+    }
+
+    private static int toTotalWorkHours(BigDecimal hoursWorked) {
+        return hoursWorked == null ? 0 : hoursWorked.intValue();
     }
 }

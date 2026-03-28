@@ -1,6 +1,7 @@
 package com.dat.erp.repositories.customrepositories;
 
 import java.time.LocalDate;
+import java.util.List;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -50,4 +51,18 @@ public interface DailyWorkRepository extends JpaRepository<DailyWork, Long> {
             @Param("endDate") LocalDate endDate,
             @Param("isPto") Boolean isPto,
             Pageable pageable);
+
+    @Query("""
+            select dw
+            from DailyWork dw
+            join fetch dw.userProfile up
+            where dw.companyCode = :companyCode
+              and dw.isDeleted = false
+              and up.isDeleted = false
+              and up.code in :employeeCodes
+            order by up.code asc, dw.workingDate asc, dw.startTime asc
+            """)
+    List<DailyWork> findAllForSalaryByCompanyCodeAndEmployeeCodes(
+            @Param("companyCode") String companyCode,
+            @Param("employeeCodes") List<String> employeeCodes);
 }

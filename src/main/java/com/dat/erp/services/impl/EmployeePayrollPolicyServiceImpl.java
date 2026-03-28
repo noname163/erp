@@ -1,6 +1,9 @@
 package com.dat.erp.services.impl;
 
+import java.time.LocalDate;
 import java.util.List;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.Objects;
 
 import org.springframework.stereotype.Service;
@@ -23,6 +26,7 @@ import com.dat.erp.services.CodeGenerator;
 import com.dat.erp.services.EmployeePayrollPolicyService;
 import com.dat.erp.services.SecurityContextService;
 import com.dat.erp.services.base.AbstractAuditableService;
+import com.dat.erp.utils.CustomStringUtils;
 
 @Service
 public class EmployeePayrollPolicyServiceImpl extends AbstractAuditableService implements EmployeePayrollPolicyService {
@@ -98,6 +102,45 @@ public class EmployeePayrollPolicyServiceImpl extends AbstractAuditableService i
                 .stream()
                 .map(this::toResponse)
                 .toList();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Map<String, PayrollPolicy> getCompanyPoliciesByEmployeeCodesAndDate(List<String> employeeCodes, LocalDate date) {
+        if (date == null) {
+            throw new BadRequestException(Messages.ERROR_EMPLOYEE_PAYROLL_POLICY_EFFECTIVE_DATES_INVALID);
+        }
+        if (employeeCodes == null || employeeCodes.isEmpty()) {
+            return Map.of();
+        }
+
+        String companyCode = resolveCurrentUserCompanyCode();
+        if (companyCode == null || companyCode.isBlank() || "SYSTEM".equals(companyCode)) {
+            throw new BadRequestException(Messages.ERROR_CURRENT_USER_COMPANY_MISSING);
+        }
+
+        List<String> normalizedEmployeeCodes = employeeCodes.stream()
+                .map(CustomStringUtils::normalizeCode)
+                .filter(code -> code != null)
+                .distinct()
+                .toList();
+        if (normalizedEmployeeCodes.isEmpty()) {
+            return Map.of();
+        }
+
+        Map<String, PayrollPolicy> policiesByEmployeeCode = new LinkedHashMap<>();
+        List<EmployeePayrollPolicy> employeePolicies = employeePayrollPolicyRepository
+                .findActivePoliciesByEmployeeCodesAndDate(companyCode, normalizedEmployeeCodes, date);
+        for (EmployeePayrollPolicy employeePolicy : employeePolicies) {
+            UserProfile userProfile = employeePolicy.getUserProfile();
+            PayrollPolicy payrollPolicy = employeePolicy.getPayrollPolicy();
+            if (userProfile == null || userProfile.getCode() == null || payrollPolicy == null) {
+                continue;
+            }
+            policiesByEmployeeCode.putIfAbsent(userProfile.getCode(), payrollPolicy);
+        }
+
+        return policiesByEmployeeCode;
     }
 
     private void validateRequest(EmployeePayrollPolicyRequest request) {

@@ -12,6 +12,7 @@ import static org.mockito.Mockito.when;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -161,5 +162,45 @@ class EmployeePayrollPolicyServiceImplTest {
         assertEquals(1, responses.size());
         assertEquals("USR-001", responses.get(0).getUserProfileCode());
         assertEquals("PPL-001", responses.get(0).getPayrollPolicyCode());
+    }
+
+    @Test
+    void getCompanyPoliciesByEmployeeCodesAndDate_returnsPolicyMapByEmployeeCode() {
+        UserProfile secondUserProfile = new UserProfile();
+        secondUserProfile.setCode("USR-002");
+        secondUserProfile.setCompanyCode("CMP-001");
+
+        PayrollPolicy secondPayrollPolicy = new PayrollPolicy();
+        secondPayrollPolicy.setCode("PPL-002");
+        secondPayrollPolicy.setCompanyCode("CMP-001");
+
+        EmployeePayrollPolicy firstEmployeePolicy = EmployeePayrollPolicy.builder()
+                .userProfile(userProfile)
+                .payrollPolicy(payrollPolicy)
+                .effectiveFrom(LocalDate.of(2026, 1, 1))
+                .effectiveTo(LocalDate.of(2026, 12, 31))
+                .isActive(true)
+                .build();
+        EmployeePayrollPolicy secondEmployeePolicy = EmployeePayrollPolicy.builder()
+                .userProfile(secondUserProfile)
+                .payrollPolicy(secondPayrollPolicy)
+                .effectiveFrom(LocalDate.of(2026, 1, 1))
+                .effectiveTo(LocalDate.of(2026, 12, 31))
+                .isActive(true)
+                .build();
+
+        when(employeePayrollPolicyRepository.findActivePoliciesByEmployeeCodesAndDate(
+                "CMP-001",
+                List.of("USR-001", "USR-002"),
+                LocalDate.of(2026, 3, 25)))
+                .thenReturn(List.of(firstEmployeePolicy, secondEmployeePolicy));
+
+        Map<String, PayrollPolicy> result = employeePayrollPolicyService.getCompanyPoliciesByEmployeeCodesAndDate(
+                List.of(" USR-001 ", "USR-002", "USR-001"),
+                LocalDate.of(2026, 3, 25));
+
+        assertEquals(2, result.size());
+        assertEquals("PPL-001", result.get("USR-001").getCode());
+        assertEquals("PPL-002", result.get("USR-002").getCode());
     }
 }

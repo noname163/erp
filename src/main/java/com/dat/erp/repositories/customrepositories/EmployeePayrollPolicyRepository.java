@@ -32,4 +32,26 @@ public interface EmployeePayrollPolicyRepository extends JpaRepository<EmployeeP
             @Param("effectiveFrom") LocalDate effectiveFrom,
             @Param("effectiveTo") LocalDate effectiveTo,
             @Param("ignoreCode") String ignoreCode);
+
+    @Query("""
+            select epp
+            from EmployeePayrollPolicy epp
+            join fetch epp.userProfile up
+            join fetch epp.payrollPolicy pp
+            where epp.companyCode = :companyCode
+              and epp.isDeleted = false
+              and epp.isActive = true
+              and up.isDeleted = false
+              and pp.isDeleted = false
+              and up.code in :employeeCodes
+              and epp.effectiveFrom <= :date
+              and epp.effectiveTo >= :date
+              and pp.effectiveFrom <= :date
+              and pp.effectiveTo >= :date
+            order by up.code asc, epp.effectiveFrom desc, epp.updatedAt desc
+            """)
+    List<EmployeePayrollPolicy> findActivePoliciesByEmployeeCodesAndDate(
+            @Param("companyCode") String companyCode,
+            @Param("employeeCodes") List<String> employeeCodes,
+            @Param("date") LocalDate date);
 }
