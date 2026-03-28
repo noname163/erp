@@ -28,13 +28,10 @@ import lombok.ToString;
 @AllArgsConstructor
 @Builder
 @EqualsAndHashCode(onlyExplicitlyIncluded = true, callSuper = true)
-@ToString(exclude = { "company", "results" })
+@ToString(exclude = {"results"})
 @Entity
 @Table(name = "payroll_run")
 public class PayrollRun extends BaseAuditableEntity {
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "company_code", referencedColumnName = "code", insertable = false, updatable = false, nullable = false)
-    private Company company;
 
     @Column(name = "period")
     private String period;

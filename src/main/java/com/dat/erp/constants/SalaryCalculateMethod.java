@@ -5,6 +5,7 @@ public enum SalaryCalculateMethod {
     MINUS,
     FIXED,
     PERCENT,
-    FORMULA
+    FORMULA,
+    DIVIDE
 }
 

@@ -5,6 +5,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -12,7 +14,10 @@ import com.dat.erp.constants.CodePrefixes;
 import com.dat.erp.constants.Messages;
 import com.dat.erp.constants.SalaryCalculateMethod;
 import com.dat.erp.dto.request.SalaryRequest;
+import com.dat.erp.dto.response.PagedResponse;
+import com.dat.erp.dto.response.SalaryListResponse;
 import com.dat.erp.dto.response.SalaryResponse;
+import com.dat.erp.dto.response.SelectionOptionResponse;
 import com.dat.erp.entities.Salary;
 import com.dat.erp.exceptions.BadRequestException;
 import com.dat.erp.exceptions.ConflictException;
@@ -22,6 +27,7 @@ import com.dat.erp.services.CodeGenerator;
 import com.dat.erp.services.SalaryService;
 import com.dat.erp.services.SecurityContextService;
 import com.dat.erp.services.base.AbstractAuditableService;
+import com.dat.erp.utils.PageableUtils;
 
 @Service
 public class SalaryServiceImpl extends AbstractAuditableService implements SalaryService {
@@ -53,10 +59,7 @@ public class SalaryServiceImpl extends AbstractAuditableService implements Salar
                 throw new BadRequestException(Messages.ERROR_SALARY_REQUESTS_INVALID);
             }
 
-            String name = request.getName() == null ? null : request.getName().trim();
-            if (name == null || name.isBlank()) {
-                throw new BadRequestException(Messages.ERROR_SALARY_NAME_INVALID);
-            }
+            String name = request.getName().trim();
 
             String key = name.toLowerCase();
             if (!requestNames.add(key)) {
@@ -67,10 +70,6 @@ public class SalaryServiceImpl extends AbstractAuditableService implements Salar
             SalaryCalculateMethod calculateMethod = parseCalculateMethod(request.getCalculateMethod());
             if (calculateMethod == null) {
                 throw new BadRequestException(Messages.ERROR_SALARY_CALCULATE_METHOD_INVALID);
-            }
-
-            if (request.getIsDeduct() == null) {
-                throw new BadRequestException(Messages.ERROR_SALARY_IS_DEDUCT_INVALID);
             }
         }
 
@@ -100,6 +99,46 @@ public class SalaryServiceImpl extends AbstractAuditableService implements Salar
         return salaryMapper.toResponses(persisted);
     }
 
+    @Override
+    public PagedResponse<SalaryListResponse> getSalaries(String name, Integer page, Integer size, String sortBy,
+            String sortDir) {
+        String companyCode = resolveCurrentUserCompanyCode();
+        String normalizedName = normalizeSearchText(name);
+        Pageable pageable = PageableUtils.create(page, size, sortBy, sortDir);
+        Page<Salary> salaries = salaryRepository.findOptionsByFilters(companyCode, normalizedName, pageable);
+
+        return PageableUtils.mapPage(salaries, salary -> new SalaryListResponse(
+                salary.getName(),
+                salary.getCalculateMethod() == null ? null : salary.getCalculateMethod().name(),
+                salary.getCalculateMethod() == null ? null : salary.getCalculateMethod().name(),
+                Boolean.TRUE.equals(salary.getIsDeduct()) ? "Yes" : "No",
+                salary.getCreatedBy(),
+                salary.getUpdatedAt()), Messages.SUCCESS);
+    }
+
+    @Override
+    public PagedResponse<SelectionOptionResponse> getSalaryOptionsByCompanyCode(String name, Integer page, Integer size,
+            String sortBy, String sortDir) {
+        String companyCode = resolveCurrentUserCompanyCode();
+        String normalizedName = normalizeSearchText(name);
+        Pageable pageable = PageableUtils.create(page, size, sortBy, sortDir);
+        Page<Salary> salaries = salaryRepository.findOptionsByFilters(companyCode, normalizedName, pageable);
+
+        return PageableUtils.mapPage(salaries, salary -> {
+            SelectionOptionResponse option = new SelectionOptionResponse();
+            option.setCode(salary.getCode());
+            option.setName(salary.getName());
+            return option;
+        }, Messages.SUCCESS);
+    }
+
+    private String normalizeSearchText(String value) {
+        if (value == null || value.isBlank()) {
+            return null;
+        }
+        return value.trim();
+    }
+
     private SalaryCalculateMethod parseCalculateMethod(String rawValue) {
         if (rawValue == null || rawValue.isBlank()) {
             return null;
@@ -111,4 +150,3 @@ public class SalaryServiceImpl extends AbstractAuditableService implements Salar
         }
     }
 }
-

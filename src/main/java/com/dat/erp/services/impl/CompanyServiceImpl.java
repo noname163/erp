@@ -1,5 +1,7 @@
 package com.dat.erp.services.impl;
 
+import java.util.UUID;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -44,7 +46,7 @@ public class CompanyServiceImpl extends AbstractAuditableService implements Comp
                 .ifPresent(existing -> {
                     throw new ConflictException(Messages.ERROR_COMPANY_TAX_NUMBER_EXISTS);
                 });
-
+        company.setSecretKey(UUID.randomUUID().toString());
         generateCodeIfMissing(company, CodePrefixes.COMPANY);
         companyRepository.save(company);
 
@@ -53,7 +55,6 @@ public class CompanyServiceImpl extends AbstractAuditableService implements Comp
 
         companyDefaultSetupService.setAccountDefault(company.getCode(), company.getEmail(), company.getName(), actorCode);
         companyDefaultSetupService.setDepartmentDefault(company.getCode(), actorCode);
-
         return companyMapper.toResponse(company);
     }
 

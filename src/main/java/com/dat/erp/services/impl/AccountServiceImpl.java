@@ -9,7 +9,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.dat.erp.constants.CodePrefixes;
-import com.dat.erp.constants.Defaults;
+import com.dat.erp.constants.RoleType;
 import com.dat.erp.dto.request.AccountRequest;
 import com.dat.erp.dto.request.EmailRequest;
 import com.dat.erp.entities.Account;
@@ -58,7 +58,7 @@ public class AccountServiceImpl extends AbstractAuditableService implements Acco
             return existing.getCode();
         }
 
-        Role role = resolveOrCreateRole(request.getRoleName());
+        Role role = resolveOrCreateRole(request.getRoleType());
 
         String rawPassword = request.getPassword();
         if (rawPassword == null || rawPassword.isBlank()) {
@@ -76,19 +76,21 @@ public class AccountServiceImpl extends AbstractAuditableService implements Acco
         applyInsertAudit(account);
         accountRepository.save(account);
 
-        log.info("AUDIT action=CREATE_DEFAULT_ACCOUNT actor={} companyCode={} result=SUCCESS username={} accountCode={}",
+        log.info(
+                "AUDIT action=CREATE_DEFAULT_ACCOUNT actor={} companyCode={} result=SUCCESS username={} accountCode={}",
                 actorCode, companyCode, username, account.getCode());
 
         sendCreateAccountEmail(username, rawPassword, request.getFullName(), actorCode, companyCode);
         return account.getCode();
     }
 
-    private Role resolveOrCreateRole(String roleName) {
-        String normalized = (roleName == null || roleName.isBlank()) ? Defaults.ROLE_COMPANY_MANAGER : roleName.trim();
-        return roleRepository.findByName(normalized).orElseGet(() -> {
+    private Role resolveOrCreateRole(String roleType) {
+        String normalized = (roleType == null || roleType.isBlank()) ? RoleType.ROLE_COMPANY_MANAGER : roleType.trim();
+        return roleRepository.findByType(normalized).orElseGet(() -> {
             Role role = new Role();
             role.setCode(CodePrefixes.ROLE + normalized);
             role.setName(normalized);
+            role.setType(normalized);
             role.setDescription("Auto-created role");
             applyInsertAudit(role);
             return roleRepository.save(role);
@@ -124,4 +126,3 @@ public class AccountServiceImpl extends AbstractAuditableService implements Acco
         }
     }
 }
-

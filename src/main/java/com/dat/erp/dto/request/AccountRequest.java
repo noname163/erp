@@ -20,9 +20,9 @@ public class AccountRequest {
     @Size(max = 255, message = "Password must be at most 255 characters")
     private String password;
 
-    @NotBlank(message = "Role name is required")
-    @Size(max = 100, message = "Role name must be at most 100 characters")
-    private String roleName;
+    @NotBlank(message = "Role type is required")
+    @Size(max = 100, message = "Role type must be at most 100 characters")
+    private String roleType;
 
     @JsonIgnore
     private String companyCode;

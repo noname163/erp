@@ -6,6 +6,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -13,7 +15,11 @@ import com.dat.erp.constants.CodePrefixes;
 import com.dat.erp.constants.Messages;
 import com.dat.erp.dto.request.SalaryTemplateDetailRequest;
 import com.dat.erp.dto.request.SalaryTemplateRequest;
+import com.dat.erp.dto.response.PagedResponse;
+import com.dat.erp.dto.response.SalaryTemplateDetailListResponse;
+import com.dat.erp.dto.response.SalaryTemplateListResponse;
 import com.dat.erp.dto.response.SalaryTemplateResponse;
+import com.dat.erp.dto.response.SelectionOptionResponse;
 import com.dat.erp.entities.SalaryTemplate;
 import com.dat.erp.exceptions.BadRequestException;
 import com.dat.erp.exceptions.ConflictException;
@@ -24,6 +30,7 @@ import com.dat.erp.services.SalaryTemplateDetailService;
 import com.dat.erp.services.SalaryTemplateService;
 import com.dat.erp.services.SecurityContextService;
 import com.dat.erp.services.base.AbstractAuditableService;
+import com.dat.erp.utils.PageableUtils;
 
 @Service
 public class SalaryTemplateServiceImpl extends AbstractAuditableService implements SalaryTemplateService {
@@ -53,19 +60,13 @@ public class SalaryTemplateServiceImpl extends AbstractAuditableService implemen
 
         LocalDate effectiveFrom = request.getEffectiveFrom();
         LocalDate effectiveTo = request.getEffectiveTo();
-        if (effectiveFrom == null || effectiveTo == null || effectiveFrom.isAfter(effectiveTo)) {
+        if (effectiveFrom.isAfter(effectiveTo)) {
             throw new BadRequestException(Messages.ERROR_SALARY_TEMPLATE_EFFECTIVE_DATES_INVALID);
         }
 
-        String name = request.getName() == null ? null : request.getName().trim();
-        if (name == null || name.isBlank()) {
-            throw new BadRequestException("name is invalid");
-        }
+        String name = request.getName().trim();
 
         List<SalaryTemplateDetailRequest> details = request.getDetails();
-        if (details == null || details.isEmpty()) {
-            throw new BadRequestException(Messages.ERROR_SALARY_TEMPLATE_DETAILS_INVALID);
-        }
 
         BigDecimal requestTotalAmount = parsePositiveBigDecimal(request.getTotalAmount(),
                 Messages.ERROR_SALARY_TEMPLATE_TOTAL_AMOUNT_INVALID);
@@ -85,9 +86,6 @@ public class SalaryTemplateServiceImpl extends AbstractAuditableService implemen
         }
 
         SalaryTemplate template = salaryTemplateMapper.toEntity(request);
-        if (template.getTotalAmount() == null || template.getTotalAmount().compareTo(BigDecimal.ZERO) <= 0) {
-            throw new BadRequestException(Messages.ERROR_SALARY_TEMPLATE_TOTAL_AMOUNT_INVALID);
-        }
 
         template.setName(name);
         template.setCurrency(request.getCurrency() == null ? null : request.getCurrency().trim().toUpperCase());
@@ -101,8 +99,42 @@ public class SalaryTemplateServiceImpl extends AbstractAuditableService implemen
         return salaryTemplateMapper.toResponse(saved);
     }
 
+    @Override
+    public PagedResponse<SalaryTemplateListResponse> getSalaryTemplates(String name, String currency,
+            LocalDate effectiveFrom, LocalDate effectiveTo, Integer page, Integer size, String sortBy, String sortDir) {
+        if (effectiveFrom != null && effectiveTo != null && effectiveFrom.isAfter(effectiveTo)) {
+            throw new BadRequestException(Messages.ERROR_SALARY_TEMPLATE_EFFECTIVE_DATES_INVALID);
+        }
+
+        String companyCode = resolveCurrentUserCompanyCode();
+        Pageable pageable = PageableUtils.create(page, size, sortBy, sortDir);
+        Page<SalaryTemplate> data = salaryTemplateRepository.searchByConditions(companyCode, name, currency, effectiveFrom,
+                effectiveTo, pageable);
+        return PageableUtils.mapPage(data, salaryTemplateMapper::toListResponse, Messages.SUCCESS);
+    }
+
+    @Override
+    public PagedResponse<SelectionOptionResponse> getSalaryTemplateOptions(String name, Integer page, Integer size,
+            String sortBy, String sortDir) {
+        String companyCode = resolveCurrentUserCompanyCode();
+        String normalizedName = name == null || name.isBlank() ? null : name.trim();
+        Pageable pageable = PageableUtils.create(page, size, sortBy, sortDir);
+
+        Page<SalaryTemplate> data = salaryTemplateRepository.findOptionsByFilters(companyCode, normalizedName, pageable);
+        return PageableUtils.mapPage(data, template -> {
+            SelectionOptionResponse option = new SelectionOptionResponse();
+            option.setCode(template.getCode());
+            option.setName(template.getName());
+            return option;
+        }, Messages.SUCCESS);
+    }
+
+    @Override
+    public List<SalaryTemplateDetailListResponse> getSalaryTemplateDetails(String salaryTemplateCode) {
+        return salaryTemplateDetailService.getSalaryTemplateDetails(salaryTemplateCode);
+    }
+
     private BigDecimal validateAndCalculateDetails(List<SalaryTemplateDetailRequest> details) {
-        Set<String> salaryCodes = new HashSet<>();
         Set<Integer> sequenceOrders = new HashSet<>();
 
         BigDecimal total = BigDecimal.ZERO;
@@ -111,23 +143,8 @@ public class SalaryTemplateServiceImpl extends AbstractAuditableService implemen
                 throw new BadRequestException(Messages.ERROR_SALARY_TEMPLATE_DETAILS_INVALID);
             }
 
-            String salaryCode = detail.getSalaryCode() == null ? null : detail.getSalaryCode().trim();
-            if (salaryCode == null || salaryCode.isBlank()) {
-                throw new BadRequestException(Messages.ERROR_SALARY_TEMPLATE_DETAIL_SALARY_CODE_INVALID);
-            }
-            if (!salaryCodes.add(salaryCode)) {
-                throw new BadRequestException(Messages.ERROR_SALARY_TEMPLATE_DETAILS_INVALID);
-            }
-
-            String unitCode = detail.getUnitCode() == null ? null : detail.getUnitCode().trim();
-            if (unitCode == null || unitCode.isBlank()) {
-                throw new BadRequestException(Messages.ERROR_SALARY_TEMPLATE_DETAIL_UNIT_CODE_INVALID);
-            }
-
             BigDecimal amount = parsePositiveBigDecimal(detail.getAmount(),
                     Messages.ERROR_SALARY_TEMPLATE_DETAIL_AMOUNT_INVALID);
-            int quantity = parsePositiveInt(detail.getQuantity(),
-                    Messages.ERROR_SALARY_TEMPLATE_DETAIL_QUANTITY_INVALID);
             int sequenceOrder = parsePositiveInt(detail.getSequenceOrder(),
                     Messages.ERROR_SALARY_TEMPLATE_DETAIL_SEQUENCE_ORDER_INVALID);
 
@@ -135,7 +152,7 @@ public class SalaryTemplateServiceImpl extends AbstractAuditableService implemen
                 throw new BadRequestException(Messages.ERROR_SALARY_TEMPLATE_DETAILS_INVALID);
             }
 
-            total = total.add(amount.multiply(BigDecimal.valueOf(quantity)));
+            total = total.add(amount);
         }
 
         if (total.compareTo(BigDecimal.ZERO) <= 0) {

@@ -26,6 +26,9 @@ public final class Messages {
     public static final String ERROR_INVALID_CREDENTIALS = "Invalid credentials";
     public static final String LOGIN_SUCCESS = "Login successful";
     public static final String LOGOUT_SUCCESS = "Logout successful";
+    public static final String PASSWORD_RESET_SUCCESS = "Password reset successful";
+    public static final String ERROR_OLD_PASSWORD_INCORRECT = "Old password is incorrect";
+    public static final String ERROR_PASSWORD_CONFIRM_MISMATCH = "confirmPassword does not match newPassword";
 
     // Departments/Companies
     public static final String ERROR_COMPANY_NOT_FOUND_WITH_CODE = "Unable to find company with code %s";
@@ -38,6 +41,7 @@ public final class Messages {
 
     // Salary templates
     public static final String ERROR_SALARY_TEMPLATE_NAME_EXISTS = "Salary template already exists";
+    public static final String ERROR_SALARY_TEMPLATE_NOT_FOUND_WITH_CODE = "Salary template not found with code %s";
     public static final String ERROR_SALARY_TEMPLATE_EFFECTIVE_DATES_INVALID = "effectiveFrom/effectiveTo is invalid";
     public static final String ERROR_SALARY_TEMPLATE_TOTAL_AMOUNT_INVALID = "totalAmount is invalid";
     public static final String ERROR_SALARY_TEMPLATE_DETAILS_INVALID = "details is invalid";
@@ -47,6 +51,24 @@ public final class Messages {
     public static final String ERROR_SALARY_TEMPLATE_DETAIL_QUANTITY_INVALID = "quantity is invalid";
     public static final String ERROR_SALARY_TEMPLATE_DETAIL_SEQUENCE_ORDER_INVALID = "sequenceOrder is invalid";
     public static final String ERROR_SALARY_TEMPLATE_TOTAL_AMOUNT_MISMATCH = "totalAmount does not match details";
+
+    // Company calendar
+    public static final String ERROR_COMPANY_CALENDAR_NAME_INVALID = "name is invalid";
+    public static final String ERROR_COMPANY_CALENDAR_EFFECTIVE_DATES_INVALID = "effectiveFrom/effectiveTo is invalid";
+    public static final String ERROR_COMPANY_CALENDAR_DATES_INVALID = "dates is invalid";
+    public static final String ERROR_COMPANY_CALENDAR_REGION_INVALID = "region is invalid";
+    public static final String ERROR_COMPANY_CALENDAR_TIME_ZONE_INVALID = "timeZone is invalid";
+    public static final String ERROR_COMPANY_CALENDAR_NOTE_INVALID = "note is invalid";
+    public static final String ERROR_COMPANY_CALENDAR_CODE_INVALID = "code is invalid";
+    public static final String ERROR_COMPANY_CALENDAR_NOT_FOUND = "Company calendar not found";
+    public static final String ERROR_COMPANY_CALENDAR_YEAR_INVALID = "year is invalid";
+    public static final String ERROR_COMPANY_CALENDAR_COMPANY_CODE_INVALID = "companyCode is invalid";
+    public static final String ERROR_COMPANY_CALENDAR_MONTH_INVALID = "month is invalid";
+    public static final String ERROR_COMPANY_CALENDAR_CAL_DATE_INVALID = "calDate is invalid";
+    public static final String ERROR_COMPANY_CALENDAR_DAY_TYPE_INVALID = "dayType is invalid";
+    public static final String ERROR_COMPANY_CALENDAR_DATE_NOTE_INVALID = "date note is invalid";
+    public static final String ERROR_COMPANY_CALENDAR_DATE_DUPLICATE = "calDate must be unique";
+    public static final String ERROR_COMPANY_CALENDAR_DATE_OUT_OF_RANGE = "calDate must be within effectiveFrom/effectiveTo";
 
     // Salaries
     public static final String ERROR_SALARY_REQUESTS_INVALID = "requests is invalid";
@@ -58,6 +80,7 @@ public final class Messages {
     // Employee salary
     public static final String ERROR_EMPLOYEE_SALARY_EFFECTIVE_DATES_INVALID = "effectiveFrom/effectiveTo is invalid";
     public static final String ERROR_EMPLOYEE_SALARY_TOTAL_AMOUNT_INVALID = "totalAmount is invalid";
+    public static final String ERROR_EMPLOYEE_SALARY_AMOUNT_RANGE_INVALID = "amount range is invalid";
     public static final String ERROR_EMPLOYEE_SALARY_CURRENCY_INVALID = "currency is invalid";
     public static final String ERROR_EMPLOYEE_SALARY_USER_PROFILE_CODE_INVALID = "userProfileCode is invalid";
     public static final String ERROR_EMPLOYEE_SALARY_EMPLOYEE_NOT_FOUND = "Employee not found";
@@ -70,6 +93,8 @@ public final class Messages {
     public static final String ERROR_EMPLOYEE_SALARY_DETAILS_INVALID = "requests is invalid";
     public static final String ERROR_EMPLOYEE_SALARY_DETAIL_EMPLOYEE_SALARY_CODE_INVALID = "employeeSalaryCode is invalid";
     public static final String ERROR_EMPLOYEE_SALARY_DETAIL_SALARY_CODE_INVALID = "salaryCode is invalid";
+    public static final String ERROR_EMPLOYEE_SALARY_DETAIL_DEPENDENCE_CODE_INVALID = "dependenceCode is invalid";
+    public static final String ERROR_EMPLOYEE_SALARY_DETAIL_DEPENDENCE_CODE_MUST_EXIST_IN_REQUEST = "dependenceCode must exist in request list";
     public static final String ERROR_EMPLOYEE_SALARY_DETAIL_UNIT_CODE_INVALID = "unitCode is invalid";
     public static final String ERROR_EMPLOYEE_SALARY_DETAIL_AMOUNT_INVALID = "amount is invalid";
     public static final String ERROR_EMPLOYEE_SALARY_DETAIL_QUANTITY_INVALID = "quantity is invalid";
@@ -92,4 +117,20 @@ public final class Messages {
     public static final String ERROR_DAILY_WORK_EMPLOYEE_COMPANY_MISMATCH = "Employee does not belong to current company";
     public static final String ERROR_DAILY_WORK_ALREADY_EXISTS = "Daily work already exists";
     public static final String DAILY_WORK_CREATE_SUCCESS = "Create daily work for %s success";
+
+    // Payroll policy
+    public static final String ERROR_PAYROLL_POLICY_NAME_INVALID = "name is invalid";
+    public static final String ERROR_PAYROLL_POLICY_STANDARD_QUANTITY_PER_DAY_INVALID = "standardQuantityPerDay is invalid";
+    public static final String ERROR_PAYROLL_POLICY_UNIT_CODE_INVALID = "unitCode is invalid";
+    public static final String ERROR_PAYROLL_POLICY_STANDARD_TIME_INVALID = "standardStartTime/standardEndTime is invalid";
+    public static final String ERROR_PAYROLL_POLICY_ROUNDING_RULE_INVALID = "roundingRule is invalid";
+    public static final String ERROR_PAYROLL_POLICY_EFFECTIVE_DATES_INVALID = "effectiveFrom/effectiveTo is invalid";
+    public static final String ERROR_PAYROLL_POLICY_NAME_EXISTS = "Payroll policy already exists";
+
+    // Employee payroll policy
+    public static final String ERROR_EMPLOYEE_PAYROLL_POLICY_NOT_FOUND = "Employee payroll policy not found";
+    public static final String ERROR_EMPLOYEE_PAYROLL_POLICY_USER_PROFILE_CODE_INVALID = "userProfileCode is invalid";
+    public static final String ERROR_EMPLOYEE_PAYROLL_POLICY_POLICY_CODE_INVALID = "payrollPolicyCode is invalid";
+    public static final String ERROR_EMPLOYEE_PAYROLL_POLICY_EFFECTIVE_DATES_INVALID = "effectiveFrom/effectiveTo is invalid";
+    public static final String ERROR_EMPLOYEE_PAYROLL_POLICY_OVERLAPS = "Employee already has an active payroll policy in this period";
 }

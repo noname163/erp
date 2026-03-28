@@ -1,10 +1,22 @@
 package com.dat.erp.services;
 
+import java.time.LocalDate;
 import java.util.List;
 
 import com.dat.erp.dto.request.EmployeeDailyWorkRequest;
+import com.dat.erp.dto.response.EmployeeDailyWorkListResponse;
+import com.dat.erp.dto.response.PagedResponse;
 
 public interface EmployeeDailyWorkService {
     String createEmployeeDailyWorks(List<EmployeeDailyWorkRequest> requests);
-}
 
+    PagedResponse<EmployeeDailyWorkListResponse> getEmployeeDailyWorks(
+            String employeeCode,
+            LocalDate startDate,
+            LocalDate endDate,
+            Boolean isPto,
+            Integer page,
+            Integer size,
+            String sortBy,
+            String sortDir);
+}

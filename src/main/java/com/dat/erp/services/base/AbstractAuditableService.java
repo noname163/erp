@@ -67,7 +67,7 @@ public abstract class AbstractAuditableService {
         }
     }
 
-    private String resolveCurrentUserCompanyCode() {
+    public String resolveCurrentUserCompanyCode() {
         try {
             if (securityContextService.getCurrentUser() == null) {
                 return SYSTEM_USER;

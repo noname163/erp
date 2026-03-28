@@ -22,5 +22,9 @@ public class Role extends BaseAuditableEntity {
     @Column(unique = true, nullable = false)
     private String name;
 
+    private String type;
+
     private String description;
+
+    private Boolean isPublic;
 }

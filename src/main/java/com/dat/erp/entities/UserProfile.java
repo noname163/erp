@@ -26,7 +26,8 @@ import lombok.ToString;
 @Builder
 @EqualsAndHashCode(onlyExplicitlyIncluded = true, callSuper = true)
 @ToString(exclude = {
-        "account", "department", "jobTitle", "identities", "skills", "employeeSalaries", "ptos", "dailyWorks"
+        "account", "department", "jobTitle", "identities", "skills", "employeeSalaries", "ptos", "dailyWorks",
+        "employeePayrollPolicies"
 })
 @Entity
 @Table(name = "user_profile")
@@ -58,6 +59,9 @@ public class UserProfile extends BaseAuditableEntity {
     @Column(name = "phone_number")
     private String phoneNumber;
 
+    @Column(name = "birth_date")
+    private LocalDate birthDate;
+
     @Column(name = "hire_date")
     private LocalDate hireDate;
 
@@ -78,4 +82,7 @@ public class UserProfile extends BaseAuditableEntity {
 
     @OneToMany(mappedBy = "userProfile", fetch = FetchType.LAZY)
     private List<DailyWork> dailyWorks;
+
+    @OneToMany(mappedBy = "userProfile", fetch = FetchType.LAZY)
+    private List<EmployeePayrollPolicy> employeePayrollPolicies;
 }
