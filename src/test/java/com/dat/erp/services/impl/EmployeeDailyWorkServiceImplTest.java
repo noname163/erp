@@ -14,7 +14,9 @@ import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.math.BigDecimal;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -27,6 +29,7 @@ import com.dat.erp.constants.DailyWorkUnit;
 import com.dat.erp.constants.DayType;
 import com.dat.erp.constants.Messages;
 import com.dat.erp.dto.request.EmployeeDailyWorkRequest;
+import com.dat.erp.dto.response.salary.DailyWorkForSalaryResponse;
 import com.dat.erp.entities.Account;
 import com.dat.erp.entities.DailyWork;
 import com.dat.erp.entities.UserProfile;
@@ -210,5 +213,51 @@ class EmployeeDailyWorkServiceImplTest {
                 () -> employeeDailyWorkService.createEmployeeDailyWorks(requests));
         assertEquals(Messages.ERROR_DAILY_WORK_START_END_TIME_INVALID, ex.getMessage());
         verify(dailyWorkRepository, never()).saveAll(anyList());
+    }
+
+    @Test
+    void getEmployeeDailyWorksByEmployeeCodes_returnsMappedResponsesByEmployeeCode() {
+        Account currentUserAccount = new Account();
+        currentUserAccount.setCode("ACC-1");
+        currentUserAccount.setCompanyCode("CMP-1");
+        when(securityContextService.getCurrentUser()).thenReturn(new CustomUserDetails(currentUserAccount, null));
+
+        UserProfile employeeOne = new UserProfile();
+        employeeOne.setCode("EMP001");
+        UserProfile employeeTwo = new UserProfile();
+        employeeTwo.setCode("EMP002");
+
+        DailyWork employeeOneNormal = DailyWork.builder()
+                .userProfile(employeeOne)
+                .workType(DayType.NORMAL)
+                .hoursWorked(new BigDecimal("2.50"))
+                .build();
+        DailyWork employeeOneNormalExtra = DailyWork.builder()
+                .userProfile(employeeOne)
+                .workType(DayType.NORMAL)
+                .hoursWorked(new BigDecimal("1.50"))
+                .build();
+        DailyWork employeeOneWeekend = DailyWork.builder()
+                .userProfile(employeeOne)
+                .workType(DayType.WEEKEND_WORK)
+                .hoursWorked(new BigDecimal("4"))
+                .build();
+        DailyWork employeeTwoHoliday = DailyWork.builder()
+                .userProfile(employeeTwo)
+                .workType(DayType.HOLIDAY_WORK)
+                .hoursWorked(new BigDecimal("10"))
+                .build();
+
+        when(dailyWorkRepository.findAllForSalaryByCompanyCodeAndEmployeeCodes("CMP-1", List.of("EMP001", "EMP002")))
+                .thenReturn(List.of(employeeOneNormal, employeeOneWeekend, employeeOneNormalExtra, employeeTwoHoliday));
+
+        Map<String, List<DailyWorkForSalaryResponse>> result = employeeDailyWorkService
+                .getEmployeeDailyWorksByEmployeeCodes(List.of(" EMP001 ", "EMP002", "EMP001"));
+
+        assertEquals(2, result.size());
+        assertEquals(List.of(
+                new DailyWorkForSalaryResponse(DayType.NORMAL, 4),
+                new DailyWorkForSalaryResponse(DayType.WEEKEND_WORK, 4)), result.get("EMP001"));
+        assertEquals(List.of(new DailyWorkForSalaryResponse(DayType.HOLIDAY_WORK, 10)), result.get("EMP002"));
     }
 }
