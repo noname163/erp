@@ -18,6 +18,8 @@ import com.dat.erp.entities.SystemUnit;
 public interface SystemUnitRepository extends JpaRepository<SystemUnit, Long> {
     Optional<SystemUnit> findByCode(String code);
 
+    Optional<SystemUnit> findByCodeAndIsDeletedFalse(String code);
+
     List<SystemUnit> findAllByCodeIn(Collection<String> codes);
 
     @Query("""

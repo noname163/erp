@@ -34,6 +34,9 @@ import lombok.ToString;
 @Table(name = "payroll_policy")
 public class PayrollPolicy extends BaseAuditableEntity {
 
+    @Column(name = "name", nullable = false)
+    private String name;
+
     @Column(name = "standard_quantity_per_day")
     private Integer standardQuantityPerDay;
 
@@ -56,9 +59,6 @@ public class PayrollPolicy extends BaseAuditableEntity {
     @Column(name = "effective_to")
     private LocalDate effectiveTo;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "proration_basis")
-    private PayrollProrationBasis prorationBasis;
 
     @OneToMany(mappedBy = "payrollPolicy", fetch = FetchType.LAZY)
     private List<EmployeePayrollPolicy> employeePayrollPolicies;
