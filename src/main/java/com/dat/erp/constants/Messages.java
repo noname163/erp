@@ -62,6 +62,8 @@ public final class Messages {
     public static final String ERROR_COMPANY_CALENDAR_CODE_INVALID = "code is invalid";
     public static final String ERROR_COMPANY_CALENDAR_NOT_FOUND = "Company calendar not found";
     public static final String ERROR_COMPANY_CALENDAR_YEAR_INVALID = "year is invalid";
+    public static final String ERROR_COMPANY_CALENDAR_COMPANY_CODE_INVALID = "companyCode is invalid";
+    public static final String ERROR_COMPANY_CALENDAR_MONTH_INVALID = "month is invalid";
     public static final String ERROR_COMPANY_CALENDAR_CAL_DATE_INVALID = "calDate is invalid";
     public static final String ERROR_COMPANY_CALENDAR_DAY_TYPE_INVALID = "dayType is invalid";
     public static final String ERROR_COMPANY_CALENDAR_DATE_NOTE_INVALID = "date note is invalid";
@@ -115,6 +117,15 @@ public final class Messages {
     public static final String ERROR_DAILY_WORK_EMPLOYEE_COMPANY_MISMATCH = "Employee does not belong to current company";
     public static final String ERROR_DAILY_WORK_ALREADY_EXISTS = "Daily work already exists";
     public static final String DAILY_WORK_CREATE_SUCCESS = "Create daily work for %s success";
+
+    // Payroll policy
+    public static final String ERROR_PAYROLL_POLICY_NAME_INVALID = "name is invalid";
+    public static final String ERROR_PAYROLL_POLICY_STANDARD_QUANTITY_PER_DAY_INVALID = "standardQuantityPerDay is invalid";
+    public static final String ERROR_PAYROLL_POLICY_UNIT_CODE_INVALID = "unitCode is invalid";
+    public static final String ERROR_PAYROLL_POLICY_STANDARD_TIME_INVALID = "standardStartTime/standardEndTime is invalid";
+    public static final String ERROR_PAYROLL_POLICY_ROUNDING_RULE_INVALID = "roundingRule is invalid";
+    public static final String ERROR_PAYROLL_POLICY_EFFECTIVE_DATES_INVALID = "effectiveFrom/effectiveTo is invalid";
+    public static final String ERROR_PAYROLL_POLICY_NAME_EXISTS = "Payroll policy already exists";
 
     // Employee payroll policy
     public static final String ERROR_EMPLOYEE_PAYROLL_POLICY_NOT_FOUND = "Employee payroll policy not found";
