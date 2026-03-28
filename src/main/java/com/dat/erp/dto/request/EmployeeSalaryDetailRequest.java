@@ -1,5 +1,7 @@
 package com.dat.erp.dto.request;
 
+import com.dat.erp.constants.DayType;
+
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import lombok.Data;
@@ -17,4 +19,7 @@ public class EmployeeSalaryDetailRequest {
     private String amount;
 
     private String dependenceCode;
+
+    @NotBlank(message = "dayType is required")
+    private DayType dayType;
 }

@@ -2,7 +2,7 @@ package com.dat.erp.entities;
 
 import java.util.List;
 
-import com.dat.erp.constants.PayrollSourceType;
+import com.dat.erp.constants.PayrollStatus;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -27,7 +27,7 @@ import lombok.ToString;
 @AllArgsConstructor
 @Builder
 @EqualsAndHashCode(onlyExplicitlyIncluded = true, callSuper = true)
-@ToString(exclude = { "payrollRun", "userProfile", "salary", "unit", "details" })
+@ToString(exclude = { "payrollRun", "employeeSalary", "unit", "details" })
 @Entity
 @Table(name = "payroll_result")
 public class PayrollResult extends BaseAuditableEntity {
@@ -36,18 +36,17 @@ public class PayrollResult extends BaseAuditableEntity {
     private PayrollRun payrollRun;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_profile_code", referencedColumnName = "code", nullable = false)
-    private UserProfile userProfile;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "salary_code", referencedColumnName = "code", nullable = false)
-    private Salary salary;
+    @JoinColumn(name = "employee_salary_code", referencedColumnName = "code", nullable = false)
+    private EmployeeSalary employeeSalary;
 
     @Column(name = "amount")
     private String amount;
 
-    @Column(name = "quantity")
-    private Integer quantity;
+    @Column(name = "expected_quantity")
+    private Integer expectedQuantity;
+
+    @Column(name = "actual_quantity")
+    private Integer actualQuantity;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "unit_code", referencedColumnName = "code")
@@ -55,7 +54,7 @@ public class PayrollResult extends BaseAuditableEntity {
 
     @Enumerated(EnumType.STRING)
     @Column(name = "source_type")
-    private PayrollSourceType sourceType;
+    private PayrollStatus sourceType;
 
     @Column(name = "is_retro")
     private Boolean isRetro;
