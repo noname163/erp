@@ -1,6 +1,8 @@
 package com.dat.erp.repositories.customrepositories;
 
+import java.util.Collection;
 import java.util.Optional;
+import java.util.List;
 
 import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.domain.Page;
@@ -32,6 +34,15 @@ public interface UserProfileRepository extends JpaRepository<UserProfile, Long>,
               and up.isDeleted = false
             """)
     Optional<UserProfile> findByCodeAndIsDeletedFalseForUpdate(@Param("code") String code);
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("""
+            select up
+            from UserProfile up
+            where up.code in :codes
+              and up.isDeleted = false
+            """)
+    List<UserProfile> findAllByCodeInAndIsDeletedFalseForUpdate(@Param("codes") Collection<String> codes);
 
     @Query("""
             select up

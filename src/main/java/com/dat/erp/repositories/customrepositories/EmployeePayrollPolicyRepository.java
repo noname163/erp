@@ -34,6 +34,24 @@ public interface EmployeePayrollPolicyRepository extends JpaRepository<EmployeeP
             @Param("ignoreCode") String ignoreCode);
 
     @Query("""
+            select distinct up.code
+            from EmployeePayrollPolicy epp
+            join epp.userProfile up
+            where epp.companyCode = :companyCode
+              and epp.isDeleted = false
+              and epp.isActive = true
+              and up.code in :userProfileCodes
+              and epp.effectiveFrom <= :effectiveTo
+              and epp.effectiveTo >= :effectiveFrom
+            order by up.code asc
+            """)
+    List<String> findActiveOverlapUserProfileCodes(
+            @Param("companyCode") String companyCode,
+            @Param("userProfileCodes") List<String> userProfileCodes,
+            @Param("effectiveFrom") LocalDate effectiveFrom,
+            @Param("effectiveTo") LocalDate effectiveTo);
+
+    @Query("""
             select epp
             from EmployeePayrollPolicy epp
             join fetch epp.userProfile up

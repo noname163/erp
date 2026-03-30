@@ -11,6 +11,7 @@ import static org.mockito.Mockito.when;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.util.List;
 import java.util.Optional;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -141,5 +142,43 @@ class PayrollPolicyServiceImplTest {
 
         assertEquals(Messages.ERROR_PAYROLL_POLICY_STANDARD_TIME_INVALID, ex.getMessage());
         verify(payrollPolicyRepository, never()).save(any(PayrollPolicy.class));
+    }
+
+    @Test
+    void getPayrollPolicies_returnsFilteredResults() {
+        SystemUnit unit = new SystemUnit();
+        unit.setCode("UNT-001");
+
+        PayrollPolicy payrollPolicy = PayrollPolicy.builder()
+                .name("Office Hour Policy")
+                .standardQuantityPerDay(8)
+                .unit(unit)
+                .standardStartTime(LocalTime.of(9, 0))
+                .standardEndTime(LocalTime.of(18, 0))
+                .roundingRule("ROUND_HALF_UP")
+                .effectiveFrom(LocalDate.of(2026, 1, 1))
+                .effectiveTo(LocalDate.of(2026, 12, 31))
+                .build();
+        payrollPolicy.setCode("PPL-000001");
+
+        when(payrollPolicyRepository.findByFilters("CMP-001", "Office", LocalDate.of(2026, 1, 1),
+                LocalDate.of(2026, 12, 31), "UNT-001"))
+                .thenReturn(List.of(payrollPolicy));
+
+        List<PayrollPolicyResponse> responses = payrollPolicyService.getPayrollPolicies(" Office ",
+                LocalDate.of(2026, 1, 1), LocalDate.of(2026, 12, 31), " UNT-001 ");
+
+        assertEquals(1, responses.size());
+        assertEquals("PPL-000001", responses.get(0).getCode());
+        assertEquals("UNT-001", responses.get(0).getUnitCode());
+    }
+
+    @Test
+    void getPayrollPolicies_badRequestWhenDateRangeInvalid() {
+        BadRequestException ex = assertThrows(BadRequestException.class,
+                () -> payrollPolicyService.getPayrollPolicies(null, LocalDate.of(2026, 12, 31),
+                        LocalDate.of(2026, 1, 1), null));
+
+        assertEquals(Messages.ERROR_PAYROLL_POLICY_EFFECTIVE_DATES_INVALID, ex.getMessage());
     }
 }

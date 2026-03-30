@@ -130,6 +130,7 @@ public final class Messages {
     // Employee payroll policy
     public static final String ERROR_EMPLOYEE_PAYROLL_POLICY_NOT_FOUND = "Employee payroll policy not found";
     public static final String ERROR_EMPLOYEE_PAYROLL_POLICY_USER_PROFILE_CODE_INVALID = "userProfileCode is invalid";
+    public static final String ERROR_EMPLOYEE_PAYROLL_POLICY_USER_PROFILE_CODES_INVALID = "userProfileCodes is invalid";
     public static final String ERROR_EMPLOYEE_PAYROLL_POLICY_POLICY_CODE_INVALID = "payrollPolicyCode is invalid";
     public static final String ERROR_EMPLOYEE_PAYROLL_POLICY_EFFECTIVE_DATES_INVALID = "effectiveFrom/effectiveTo is invalid";
     public static final String ERROR_EMPLOYEE_PAYROLL_POLICY_OVERLAPS = "Employee already has an active payroll policy in this period";

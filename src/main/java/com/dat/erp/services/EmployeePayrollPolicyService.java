@@ -4,11 +4,14 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 
+import com.dat.erp.dto.request.EmployeePayrollPolicyBatchRequest;
 import com.dat.erp.dto.request.EmployeePayrollPolicyRequest;
 import com.dat.erp.dto.response.EmployeePayrollPolicyResponse;
 import com.dat.erp.entities.PayrollPolicy;
 
 public interface EmployeePayrollPolicyService {
+    List<EmployeePayrollPolicyResponse> applyPayrollPolicyToEmployees(EmployeePayrollPolicyBatchRequest request);
+
     EmployeePayrollPolicyResponse createEmployeePayrollPolicy(EmployeePayrollPolicyRequest request);
 
     EmployeePayrollPolicyResponse deactivateEmployeePayrollPolicy(String code);

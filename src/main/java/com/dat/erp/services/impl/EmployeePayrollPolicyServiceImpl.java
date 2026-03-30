@@ -5,12 +5,14 @@ import java.util.List;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
+import java.util.function.Function;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.dat.erp.constants.CodePrefixes;
 import com.dat.erp.constants.Messages;
+import com.dat.erp.dto.request.EmployeePayrollPolicyBatchRequest;
 import com.dat.erp.dto.request.EmployeePayrollPolicyRequest;
 import com.dat.erp.dto.response.EmployeePayrollPolicyResponse;
 import com.dat.erp.entities.EmployeePayrollPolicy;
@@ -55,28 +57,56 @@ public class EmployeePayrollPolicyServiceImpl extends AbstractAuditableService i
 
         UserProfile userProfile = userProfileRepository.findByCodeAndIsDeletedFalseForUpdate(request.getUserProfileCode())
                 .orElseThrow(() -> new ResourceNotFoundException(Messages.ERROR_EMPLOYEE_PAYROLL_POLICY_USER_PROFILE_CODE_INVALID));
-        PayrollPolicy payrollPolicy = payrollPolicyRepository.findByCodeAndIsDeletedFalse(request.getPayrollPolicyCode())
-                .orElseThrow(() -> new ResourceNotFoundException(Messages.ERROR_EMPLOYEE_PAYROLL_POLICY_POLICY_CODE_INVALID));
+        PayrollPolicy payrollPolicy = getPayrollPolicy(request.getPayrollPolicyCode());
 
         ensureCurrentCompanyOwns(userProfile.getCompanyCode());
         ensureCurrentCompanyOwns(payrollPolicy.getCompanyCode());
 
-        if (employeePayrollPolicyRepository.existsActiveOverlap(userProfile.getCode(), request.getEffectiveFrom(),
-                request.getEffectiveTo(), null)) {
-            throw new ConflictException(Messages.ERROR_EMPLOYEE_PAYROLL_POLICY_OVERLAPS);
+        ensureNoActiveOverlap(resolveCurrentUserCompanyCode(), List.of(userProfile.getCode()), request.getEffectiveFrom(),
+                request.getEffectiveTo());
+
+        return toResponse(employeePayrollPolicyRepository
+                .save(buildEmployeePayrollPolicy(userProfile, payrollPolicy, request.getEffectiveFrom(), request.getEffectiveTo())));
+    }
+
+    @Override
+    @Transactional
+    public List<EmployeePayrollPolicyResponse> applyPayrollPolicyToEmployees(EmployeePayrollPolicyBatchRequest request) {
+        validateRequest(request);
+
+        String companyCode = resolveCurrentUserCompanyCode();
+        PayrollPolicy payrollPolicy = getPayrollPolicy(request.getPolicyCode());
+        ensureCurrentCompanyOwns(payrollPolicy.getCompanyCode());
+
+        List<String> normalizedEmployeeCodes = request.getEmployeeCodes().stream()
+                .map(CustomStringUtils::normalizeCode)
+                .filter(Objects::nonNull)
+                .distinct()
+                .toList();
+        if (normalizedEmployeeCodes.isEmpty()) {
+            throw new BadRequestException(Messages.ERROR_EMPLOYEE_PAYROLL_POLICY_USER_PROFILE_CODES_INVALID);
         }
 
-        EmployeePayrollPolicy employeePayrollPolicy = EmployeePayrollPolicy.builder()
-                .userProfile(userProfile)
-                .payrollPolicy(payrollPolicy)
-                .effectiveFrom(request.getEffectiveFrom())
-                .effectiveTo(request.getEffectiveTo())
-                .isActive(true)
-                .build();
-        generateCodeIfMissing(employeePayrollPolicy, CodePrefixes.EMPLOYEE_PAYROLL_POLICY);
-        applyInsertAudit(employeePayrollPolicy);
+        List<UserProfile> userProfiles = userProfileRepository
+                .findAllByCodeInAndIsDeletedFalseForUpdate(normalizedEmployeeCodes);
+        if (userProfiles.size() != normalizedEmployeeCodes.size()) {
+            throw new ResourceNotFoundException(Messages.ERROR_EMPLOYEE_PAYROLL_POLICY_USER_PROFILE_CODES_INVALID);
+        }
 
-        return toResponse(employeePayrollPolicyRepository.save(employeePayrollPolicy));
+        userProfiles.forEach(userProfile -> ensureCurrentCompanyOwns(userProfile.getCompanyCode()));
+        ensureNoActiveOverlap(companyCode, normalizedEmployeeCodes, request.getEffectiveFrom(), request.getEffectiveTo());
+
+        Map<String, UserProfile> userProfileByCode = userProfiles.stream()
+                .collect(java.util.stream.Collectors.toMap(UserProfile::getCode, Function.identity()));
+
+        List<EmployeePayrollPolicy> employeePayrollPolicies = normalizedEmployeeCodes.stream()
+                .map(userProfileCode -> buildEmployeePayrollPolicy(userProfileByCode.get(userProfileCode), payrollPolicy,
+                        request.getEffectiveFrom(), request.getEffectiveTo()))
+                .toList();
+
+        return employeePayrollPolicyRepository.saveAll(employeePayrollPolicies).stream()
+                .map(this::toResponse)
+                .toList();
     }
 
     @Override
@@ -143,6 +173,34 @@ public class EmployeePayrollPolicyServiceImpl extends AbstractAuditableService i
         return policiesByEmployeeCode;
     }
 
+    private PayrollPolicy getPayrollPolicy(String payrollPolicyCode) {
+        return payrollPolicyRepository.findByCodeAndIsDeletedFalse(payrollPolicyCode)
+                .orElseThrow(() -> new ResourceNotFoundException(Messages.ERROR_EMPLOYEE_PAYROLL_POLICY_POLICY_CODE_INVALID));
+    }
+
+    private void ensureNoActiveOverlap(String companyCode, List<String> userProfileCodes, LocalDate effectiveFrom,
+            LocalDate effectiveTo) {
+        List<String> overlappingUserProfileCodes = employeePayrollPolicyRepository.findActiveOverlapUserProfileCodes(
+                companyCode, userProfileCodes, effectiveFrom, effectiveTo);
+        if (!overlappingUserProfileCodes.isEmpty()) {
+            throw new ConflictException(Messages.ERROR_EMPLOYEE_PAYROLL_POLICY_OVERLAPS);
+        }
+    }
+
+    private EmployeePayrollPolicy buildEmployeePayrollPolicy(UserProfile userProfile, PayrollPolicy payrollPolicy,
+            LocalDate effectiveFrom, LocalDate effectiveTo) {
+        EmployeePayrollPolicy employeePayrollPolicy = EmployeePayrollPolicy.builder()
+                .userProfile(userProfile)
+                .payrollPolicy(payrollPolicy)
+                .effectiveFrom(effectiveFrom)
+                .effectiveTo(effectiveTo)
+                .isActive(true)
+                .build();
+        generateCodeIfMissing(employeePayrollPolicy, CodePrefixes.EMPLOYEE_PAYROLL_POLICY);
+        applyInsertAudit(employeePayrollPolicy);
+        return employeePayrollPolicy;
+    }
+
     private void validateRequest(EmployeePayrollPolicyRequest request) {
         if (request == null || request.getEffectiveFrom() == null || request.getEffectiveTo() == null
                 || request.getEffectiveFrom().isAfter(request.getEffectiveTo())) {
@@ -153,6 +211,19 @@ public class EmployeePayrollPolicyServiceImpl extends AbstractAuditableService i
         }
         if (request.getPayrollPolicyCode() == null || request.getPayrollPolicyCode().isBlank()) {
             throw new BadRequestException(Messages.ERROR_EMPLOYEE_PAYROLL_POLICY_POLICY_CODE_INVALID);
+        }
+    }
+
+    private void validateRequest(EmployeePayrollPolicyBatchRequest request) {
+        if (request == null || request.getEffectiveFrom() == null || request.getEffectiveTo() == null
+                || request.getEffectiveFrom().isAfter(request.getEffectiveTo())) {
+            throw new BadRequestException(Messages.ERROR_EMPLOYEE_PAYROLL_POLICY_EFFECTIVE_DATES_INVALID);
+        }
+        if (request.getPolicyCode() == null || request.getPolicyCode().isBlank()) {
+            throw new BadRequestException(Messages.ERROR_EMPLOYEE_PAYROLL_POLICY_POLICY_CODE_INVALID);
+        }
+        if (request.getEmployeeCodes() == null || request.getEmployeeCodes().isEmpty()) {
+            throw new BadRequestException(Messages.ERROR_EMPLOYEE_PAYROLL_POLICY_USER_PROFILE_CODES_INVALID);
         }
     }
 
