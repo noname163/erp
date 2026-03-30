@@ -1,6 +1,7 @@
 package com.dat.erp.repositories.customrepositories;
 
 import java.time.LocalDate;
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -13,6 +14,26 @@ import com.dat.erp.entities.PayrollPolicy;
 @Repository
 public interface PayrollPolicyRepository extends JpaRepository<PayrollPolicy, Long> {
     Optional<PayrollPolicy> findByCodeAndIsDeletedFalse(String code);
+
+    @Query("""
+            select pp
+            from PayrollPolicy pp
+            left join fetch pp.unit unit
+            where pp.companyCode = :companyCode
+              and pp.isDeleted = false
+              and (coalesce(trim(:name), '') = ''
+                   or lower(pp.name) like lower(concat('%', trim(coalesce(:name, '')), '%')))
+              and (:unitCode is null or unit.code = :unitCode)
+              and (:effectiveFrom is null or pp.effectiveTo >= :effectiveFrom)
+              and (:effectiveTo is null or pp.effectiveFrom <= :effectiveTo)
+            order by pp.effectiveFrom desc, pp.updatedAt desc
+            """)
+    List<PayrollPolicy> findByFilters(
+            @Param("companyCode") String companyCode,
+            @Param("name") String name,
+            @Param("effectiveFrom") LocalDate effectiveFrom,
+            @Param("effectiveTo") LocalDate effectiveTo,
+            @Param("unitCode") String unitCode);
 
     @Query("""
             select count(pp) > 0

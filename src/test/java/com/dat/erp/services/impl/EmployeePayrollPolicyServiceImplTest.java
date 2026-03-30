@@ -23,6 +23,7 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
 import com.dat.erp.constants.Messages;
+import com.dat.erp.dto.request.EmployeePayrollPolicyBatchRequest;
 import com.dat.erp.dto.request.EmployeePayrollPolicyRequest;
 import com.dat.erp.dto.response.EmployeePayrollPolicyResponse;
 import com.dat.erp.entities.Account;
@@ -58,6 +59,7 @@ class EmployeePayrollPolicyServiceImplTest {
     private EmployeePayrollPolicyServiceImpl employeePayrollPolicyService;
 
     private EmployeePayrollPolicyRequest request;
+    private EmployeePayrollPolicyBatchRequest batchRequest;
     private UserProfile userProfile;
     private PayrollPolicy payrollPolicy;
 
@@ -70,6 +72,12 @@ class EmployeePayrollPolicyServiceImplTest {
         request.setPayrollPolicyCode("PPL-001");
         request.setEffectiveFrom(LocalDate.of(2026, 3, 22));
         request.setEffectiveTo(LocalDate.of(2026, 4, 22));
+
+        batchRequest = new EmployeePayrollPolicyBatchRequest();
+        batchRequest.setPolicyCode("PPL-001");
+        batchRequest.setEmployeeCodes(List.of("USR-001", "USR-002"));
+        batchRequest.setEffectiveFrom(LocalDate.of(2026, 3, 22));
+        batchRequest.setEffectiveTo(LocalDate.of(2026, 4, 22));
 
         userProfile = new UserProfile();
         userProfile.setCode("USR-001");
@@ -89,8 +97,8 @@ class EmployeePayrollPolicyServiceImplTest {
     void createEmployeePayrollPolicy_successWhenNoActiveOverlap() {
         when(userProfileRepository.findByCodeAndIsDeletedFalseForUpdate("USR-001")).thenReturn(Optional.of(userProfile));
         when(payrollPolicyRepository.findByCodeAndIsDeletedFalse("PPL-001")).thenReturn(Optional.of(payrollPolicy));
-        when(employeePayrollPolicyRepository.existsActiveOverlap("USR-001", request.getEffectiveFrom(),
-                request.getEffectiveTo(), null)).thenReturn(false);
+        when(employeePayrollPolicyRepository.findActiveOverlapUserProfileCodes("CMP-001", List.of("USR-001"),
+                request.getEffectiveFrom(), request.getEffectiveTo())).thenReturn(List.of());
         when(codeGenerator.nextCode("EPP-")).thenReturn("EPP-000001");
         when(employeePayrollPolicyRepository.save(any(EmployeePayrollPolicy.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
@@ -111,8 +119,8 @@ class EmployeePayrollPolicyServiceImplTest {
     void createEmployeePayrollPolicy_conflictWhenActiveOverlapExists() {
         when(userProfileRepository.findByCodeAndIsDeletedFalseForUpdate("USR-001")).thenReturn(Optional.of(userProfile));
         when(payrollPolicyRepository.findByCodeAndIsDeletedFalse("PPL-001")).thenReturn(Optional.of(payrollPolicy));
-        when(employeePayrollPolicyRepository.existsActiveOverlap("USR-001", request.getEffectiveFrom(),
-                request.getEffectiveTo(), null)).thenReturn(true);
+        when(employeePayrollPolicyRepository.findActiveOverlapUserProfileCodes("CMP-001", List.of("USR-001"),
+                request.getEffectiveFrom(), request.getEffectiveTo())).thenReturn(List.of("USR-001"));
 
         ConflictException ex = assertThrows(ConflictException.class,
                 () -> employeePayrollPolicyService.createEmployeePayrollPolicy(request));
@@ -162,6 +170,50 @@ class EmployeePayrollPolicyServiceImplTest {
         assertEquals(1, responses.size());
         assertEquals("USR-001", responses.get(0).getUserProfileCode());
         assertEquals("PPL-001", responses.get(0).getPayrollPolicyCode());
+    }
+
+    @Test
+    void applyPayrollPolicyToEmployees_success() {
+        UserProfile secondUserProfile = new UserProfile();
+        secondUserProfile.setCode("USR-002");
+        secondUserProfile.setCompanyCode("CMP-001");
+
+        when(payrollPolicyRepository.findByCodeAndIsDeletedFalse("PPL-001")).thenReturn(Optional.of(payrollPolicy));
+        when(userProfileRepository.findAllByCodeInAndIsDeletedFalseForUpdate(List.of("USR-001", "USR-002")))
+                .thenReturn(List.of(userProfile, secondUserProfile));
+        when(employeePayrollPolicyRepository.findActiveOverlapUserProfileCodes("CMP-001", List.of("USR-001", "USR-002"),
+                batchRequest.getEffectiveFrom(), batchRequest.getEffectiveTo()))
+                .thenReturn(List.of());
+        when(codeGenerator.nextCode("EPP-")).thenReturn("EPP-000001", "EPP-000002");
+        when(employeePayrollPolicyRepository.saveAll(any())).thenAnswer(invocation -> invocation.getArgument(0));
+
+        List<EmployeePayrollPolicyResponse> responses = employeePayrollPolicyService.applyPayrollPolicyToEmployees(batchRequest);
+
+        assertEquals(2, responses.size());
+        assertEquals("USR-001", responses.get(0).getUserProfileCode());
+        assertEquals("USR-002", responses.get(1).getUserProfileCode());
+        assertEquals("PPL-001", responses.get(0).getPayrollPolicyCode());
+        assertEquals("PPL-001", responses.get(1).getPayrollPolicyCode());
+    }
+
+    @Test
+    void applyPayrollPolicyToEmployees_conflictWhenAnyEmployeeOverlaps() {
+        UserProfile secondUserProfile = new UserProfile();
+        secondUserProfile.setCode("USR-002");
+        secondUserProfile.setCompanyCode("CMP-001");
+
+        when(payrollPolicyRepository.findByCodeAndIsDeletedFalse("PPL-001")).thenReturn(Optional.of(payrollPolicy));
+        when(userProfileRepository.findAllByCodeInAndIsDeletedFalseForUpdate(List.of("USR-001", "USR-002")))
+                .thenReturn(List.of(userProfile, secondUserProfile));
+        when(employeePayrollPolicyRepository.findActiveOverlapUserProfileCodes("CMP-001", List.of("USR-001", "USR-002"),
+                batchRequest.getEffectiveFrom(), batchRequest.getEffectiveTo()))
+                .thenReturn(List.of("USR-002"));
+
+        ConflictException ex = assertThrows(ConflictException.class,
+                () -> employeePayrollPolicyService.applyPayrollPolicyToEmployees(batchRequest));
+
+        assertEquals(Messages.ERROR_EMPLOYEE_PAYROLL_POLICY_OVERLAPS, ex.getMessage());
+        verify(employeePayrollPolicyRepository, never()).saveAll(any());
     }
 
     @Test

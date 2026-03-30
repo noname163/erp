@@ -1,6 +1,8 @@
 package com.dat.erp.services.impl;
 
+import java.time.LocalDate;
 import java.time.LocalTime;
+import java.util.List;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -35,6 +37,26 @@ public class PayrollPolicyServiceImpl extends AbstractAuditableService implement
         this.systemUnitRepository = systemUnitRepository;
         this.codeGenerator = codeGenerator;
         this.securityContextService = securityContextService;
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<PayrollPolicyResponse> getPayrollPolicies(String name, LocalDate effectiveFrom, LocalDate effectiveTo,
+            String unitCode) {
+        if (effectiveFrom != null && effectiveTo != null && effectiveFrom.isAfter(effectiveTo)) {
+            throw new BadRequestException(Messages.ERROR_PAYROLL_POLICY_EFFECTIVE_DATES_INVALID);
+        }
+
+        String companyCode = resolveCurrentUserCompanyCode();
+        if (companyCode == null || companyCode.isBlank() || "SYSTEM".equals(companyCode)) {
+            throw new BadRequestException(Messages.ERROR_CURRENT_USER_COMPANY_MISSING);
+        }
+
+        return payrollPolicyRepository.findByFilters(companyCode, normalizeText(name), effectiveFrom, effectiveTo,
+                CustomStringUtils.normalizeCode(unitCode))
+                .stream()
+                .map(this::toResponse)
+                .toList();
     }
 
     @Override

@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.dat.erp.dto.request.EmployeePayrollPolicyBatchRequest;
 import com.dat.erp.dto.request.EmployeePayrollPolicyRequest;
 import com.dat.erp.dto.response.EmployeePayrollPolicyResponse;
 import com.dat.erp.services.EmployeePayrollPolicyService;
@@ -47,6 +48,20 @@ public class EmployeePayrollPolicyController {
     public ResponseEntity<EmployeePayrollPolicyResponse> createEmployeePayrollPolicy(
             @Valid @RequestBody EmployeePayrollPolicyRequest request) {
         return ResponseEntity.status(201).body(employeePayrollPolicyService.createEmployeePayrollPolicy(request));
+    }
+
+    @Operation(summary = "Apply payroll policy to employee list", description = "Assigns one payroll policy to multiple employees and rejects the full request if any active assignment overlaps.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "201", description = "Employee payroll policies created successfully"),
+            @ApiResponse(responseCode = "400", description = "Invalid input"),
+            @ApiResponse(responseCode = "403", description = "Forbidden"),
+            @ApiResponse(responseCode = "409", description = "At least one employee already has an overlapping active payroll policy")
+    })
+    @PostMapping("/apply")
+    @PreAuthorize("hasRoles({'HUMAN_RESOURCES'})")
+    public ResponseEntity<List<EmployeePayrollPolicyResponse>> applyPayrollPolicyToEmployees(
+            @Valid @RequestBody EmployeePayrollPolicyBatchRequest request) {
+        return ResponseEntity.status(201).body(employeePayrollPolicyService.applyPayrollPolicyToEmployees(request));
     }
 
     @Operation(summary = "Deactivate employee payroll policy", description = "Marks the employee payroll policy inactive so a new policy can be assigned.")

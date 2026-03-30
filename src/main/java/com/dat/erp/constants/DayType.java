@@ -6,6 +6,9 @@ public enum DayType {
     WEEKEND_WORK,
     PTO_PAID,
     PTO_UNPAID,
-    UNPAID_LEAVE
+    UNPAID_LEAVE,
+    HOLIDAY,
+    WEEKEND,
+    COMPANY_DAY_OFF
 }
 
