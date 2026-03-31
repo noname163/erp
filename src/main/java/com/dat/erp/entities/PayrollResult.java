@@ -39,8 +39,11 @@ public class PayrollResult extends BaseAuditableEntity {
     @JoinColumn(name = "employee_salary_code", referencedColumnName = "code", nullable = false)
     private EmployeeSalary employeeSalary;
 
-    @Column(name = "amount")
-    private String amount;
+    @Column(name = "expected_amount")
+    private String expectedAmount;
+
+    @Column(name = "actual_amount")
+    private String actualAmount;
 
     @Column(name = "currency")
     private String currency;
