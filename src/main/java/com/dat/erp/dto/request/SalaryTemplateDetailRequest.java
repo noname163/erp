@@ -23,5 +23,6 @@ public class SalaryTemplateDetailRequest {
     @NotBlank(message = "sequenceOrder is required")
     @Pattern(regexp = "^[0-9]+$", message = "sequenceOrder must be a positive integer")
     private String sequenceOrder;
-}
 
+    private Boolean isFixed;
+}

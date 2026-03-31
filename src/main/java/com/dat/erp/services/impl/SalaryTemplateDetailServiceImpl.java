@@ -122,6 +122,7 @@ public class SalaryTemplateDetailServiceImpl extends AbstractAuditableService im
                     .amount(request.getAmount() == null ? null : request.getAmount().trim())
                     .quantity(quantity)
                     .sequenceOrder(sequenceOrder)
+                    .isFixed(Boolean.TRUE.equals(request.getIsFixed()))
                     .build();
 
             generateCodeIfMissing(detail, CodePrefixes.SALARY_TEMPLATE_DETAIL);
@@ -151,7 +152,8 @@ public class SalaryTemplateDetailServiceImpl extends AbstractAuditableService im
                         detail.getAmount(),
                         detail.getQuantity(),
                         detail.getUnit() == null ? null : detail.getUnit().getName(),
-                        detail.getSalary() == null ? null : detail.getSalary().getName()))
+                        detail.getSalary() == null ? null : detail.getSalary().getName(),
+                        Boolean.TRUE.equals(detail.getIsFixed())))
                 .toList();
     }
 }
