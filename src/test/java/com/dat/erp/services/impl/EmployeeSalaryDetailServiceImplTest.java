@@ -21,6 +21,7 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
 import com.dat.erp.constants.Messages;
+import com.dat.erp.constants.DayType;
 import com.dat.erp.dto.request.EmployeeSalaryDetailRequest;
 import com.dat.erp.entities.Account;
 import com.dat.erp.entities.EmployeeSalary;
@@ -67,11 +68,14 @@ class EmployeeSalaryDetailServiceImplTest {
         base.setEmployeeSalaryCode("ESL-1");
         base.setSalaryCode("BASE");
         base.setAmount("15000000");
+        base.setDayType(DayType.NORMAL);
+        base.setIsFixed(Boolean.TRUE);
 
         EmployeeSalaryDetailRequest allowance = new EmployeeSalaryDetailRequest();
         allowance.setEmployeeSalaryCode("ESL-1");
         allowance.setSalaryCode("ALLOWANCE");
         allowance.setAmount("3000000");
+        allowance.setDayType(DayType.NORMAL);
 
         requests = Arrays.asList(base, allowance);
     }
@@ -113,6 +117,8 @@ class EmployeeSalaryDetailServiceImplTest {
         assertEquals("ESD-000002", captor.getValue().get(1).getCode());
         assertEquals("BASE", captor.getValue().get(0).getSalary().getCode());
         assertEquals("ALLOWANCE", captor.getValue().get(1).getSalary().getCode());
+        assertEquals(Boolean.TRUE, captor.getValue().get(0).getIsFixed());
+        assertEquals(DayType.NORMAL, captor.getValue().get(0).getDayType());
     }
 
     @Test
@@ -121,6 +127,7 @@ class EmployeeSalaryDetailServiceImplTest {
         duplicate.setEmployeeSalaryCode("ESL-1");
         duplicate.setSalaryCode("BASE");
         duplicate.setAmount("15000000");
+        duplicate.setDayType(DayType.NORMAL);
         requests = Arrays.asList(requests.get(0), duplicate);
 
         Account currentUserAccount = new Account();

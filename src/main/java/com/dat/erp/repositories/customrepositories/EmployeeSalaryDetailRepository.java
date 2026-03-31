@@ -23,4 +23,17 @@ public interface EmployeeSalaryDetailRepository extends JpaRepository<EmployeeSa
             """)
     List<String> findExistingSalaryCodes(@Param("employeeSalaryCode") String employeeSalaryCode,
             @Param("salaryCodes") Collection<String> salaryCodes);
+
+    @Query("""
+            select d
+            from EmployeeSalaryDetail d
+            join fetch d.salary s
+            left join fetch d.dependenceCode dc
+            where d.companyCode = :companyCode
+              and d.isDeleted = false
+              and d.employeeSalary.code = :employeeSalaryCode
+            """)
+    List<EmployeeSalaryDetail> findForPayrollByEmployeeSalaryCodeAndCompanyCode(
+            @Param("employeeSalaryCode") String employeeSalaryCode,
+            @Param("companyCode") String companyCode);
 }

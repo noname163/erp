@@ -2,6 +2,7 @@ package com.dat.erp.repositories.customrepositories;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -46,4 +47,25 @@ public interface EmployeeSalaryRepository extends JpaRepository<EmployeeSalary, 
             @Param("employeeName") String employeeName,
             @Param("effectiveFrom") LocalDate effectiveFrom,
             @Param("effectiveTo") LocalDate effectiveTo);
+
+    @Query("""
+            select es
+            from EmployeeSalary es
+            join fetch es.userProfile up
+            where es.companyCode = :companyCode
+              and es.isDeleted = false
+              and up.code = :employeeCode
+              and es.effectiveFrom <= :asOfDate
+              and es.effectiveTo >= :asOfDate
+            order by es.effectiveFrom desc
+            """)
+    List<EmployeeSalary> findActiveByEmployeeCodeAndCompanyCodeAndDate(
+            @Param("employeeCode") String employeeCode,
+            @Param("companyCode") String companyCode,
+            @Param("asOfDate") LocalDate asOfDate);
+
+    default Optional<EmployeeSalary> findFirstActiveByEmployeeCodeAndCompanyCodeAndDate(
+            String employeeCode, String companyCode, LocalDate asOfDate) {
+        return findActiveByEmployeeCodeAndCompanyCodeAndDate(employeeCode, companyCode, asOfDate).stream().findFirst();
+    }
 }

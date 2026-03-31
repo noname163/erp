@@ -65,4 +65,22 @@ public interface DailyWorkRepository extends JpaRepository<DailyWork, Long> {
     List<DailyWork> findAllForSalaryByCompanyCodeAndEmployeeCodes(
             @Param("companyCode") String companyCode,
             @Param("employeeCodes") List<String> employeeCodes);
+
+    @Query("""
+            select dw
+            from DailyWork dw
+            join fetch dw.userProfile up
+            where dw.companyCode = :companyCode
+              and dw.isDeleted = false
+              and up.isDeleted = false
+              and up.code = :employeeCode
+              and dw.workingDate >= :fromDate
+              and dw.workingDate <= :toDate
+            order by dw.workingDate asc, dw.startTime asc
+            """)
+    List<DailyWork> findAllByEmployeeCodeAndCompanyCodeAndDateRange(
+            @Param("employeeCode") String employeeCode,
+            @Param("companyCode") String companyCode,
+            @Param("fromDate") LocalDate fromDate,
+            @Param("toDate") LocalDate toDate);
 }

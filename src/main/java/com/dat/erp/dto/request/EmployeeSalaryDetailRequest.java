@@ -22,4 +22,6 @@ public class EmployeeSalaryDetailRequest {
 
     @NotBlank(message = "dayType is required")
     private DayType dayType;
+
+    private Boolean isFixed;
 }

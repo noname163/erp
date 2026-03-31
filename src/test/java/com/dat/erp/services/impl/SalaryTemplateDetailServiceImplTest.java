@@ -73,6 +73,7 @@ class SalaryTemplateDetailServiceImplTest {
         base.setQuantity("1");
         base.setUnitCode("MONTH");
         base.setSequenceOrder("1");
+        base.setIsFixed(Boolean.TRUE);
 
         SalaryTemplateDetailRequest allowance = new SalaryTemplateDetailRequest();
         allowance.setSalaryCode("ALLOWANCE");
@@ -110,6 +111,7 @@ class SalaryTemplateDetailServiceImplTest {
         assertEquals("MONTH", result.get(0).getUnit().getCode());
         assertEquals(1, result.get(0).getQuantity());
         assertEquals(2, result.get(1).getSequenceOrder());
+        assertEquals(Boolean.TRUE, result.get(0).getIsFixed());
         verify(salaryRepository).findAllByCodeIn(anyCollection());
         verify(systemUnitRepository).findAllByCodeIn(anyCollection());
     }
@@ -182,6 +184,7 @@ class SalaryTemplateDetailServiceImplTest {
         assertEquals(1, result.get(0).getQuantity());
         assertEquals("Month", result.get(0).getUnitName());
         assertEquals("Base Salary", result.get(0).getSalaryName());
+        assertEquals(Boolean.FALSE, result.get(0).getIsFixed());
     }
 
     @Test

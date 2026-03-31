@@ -230,7 +230,8 @@ class SalaryTemplateServiceImplTest {
 
     @Test
     void getSalaryTemplateDetails_success() {
-        SalaryTemplateDetailListResponse detail = new SalaryTemplateDetailListResponse("SAL-1", "100", 1, "Month", "Base");
+        SalaryTemplateDetailListResponse detail = new SalaryTemplateDetailListResponse("SAL-1", "100", 1, "Month", "Base",
+                Boolean.FALSE);
         when(salaryTemplateDetailService.getSalaryTemplateDetails("STP-1")).thenReturn(List.of(detail));
 
         List<SalaryTemplateDetailListResponse> result = salaryTemplateService.getSalaryTemplateDetails("STP-1");
@@ -241,4 +242,3 @@ class SalaryTemplateServiceImplTest {
         verify(salaryTemplateDetailService).getSalaryTemplateDetails("STP-1");
     }
 }
-

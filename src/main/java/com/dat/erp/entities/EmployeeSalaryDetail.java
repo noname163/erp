@@ -44,4 +44,8 @@ public class EmployeeSalaryDetail extends BaseAuditableEntity {
     @Column(name = "day_type")
     private DayType dayType;
 
+    @Column(name = "is_fixed")
+    @Builder.Default
+    private Boolean isFixed = Boolean.FALSE;
+
 }
