@@ -24,5 +24,7 @@ public final class CodePrefixes {
     public static final String EMPLOYEE_SALARY_DETAIL = "ESD-";
     public static final String PAYROLL_POLICY = "PPL-";
     public static final String EMPLOYEE_PAYROLL_POLICY = "EPP-";
+    public static final String PAYROLL_RUN = "PRN-";
+    public static final String PAYROLL_RESULT = "PRR-";
     public static final String DAILY_WORK = "DWK-";
 }

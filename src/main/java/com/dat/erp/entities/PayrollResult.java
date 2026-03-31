@@ -42,6 +42,9 @@ public class PayrollResult extends BaseAuditableEntity {
     @Column(name = "amount")
     private String amount;
 
+    @Column(name = "currency")
+    private String currency;
+
     @Column(name = "expected_quantity")
     private Integer expectedQuantity;
 

@@ -1,5 +1,7 @@
 package com.dat.erp.services;
 
+import java.util.List;
+
 import com.dat.erp.dto.request.UserProfileCreateRequest;
 import com.dat.erp.dto.response.PagedResponse;
 import com.dat.erp.dto.response.SelectionOptionResponse;
@@ -10,4 +12,6 @@ public interface UserProfileService {
 
     PagedResponse<SelectionOptionResponse> getUserProfileOptionsByFirstName(String firstName, Integer page, Integer size,
             String sortBy, String sortDir);
+
+    List<String> getActiveUserProfileCodesOfCurrentCompany();
 }

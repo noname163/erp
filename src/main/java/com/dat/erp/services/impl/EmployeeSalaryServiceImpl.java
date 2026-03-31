@@ -14,9 +14,11 @@ import com.dat.erp.constants.Messages;
 import com.dat.erp.dto.request.EmployeeSalaryRequest;
 import com.dat.erp.dto.response.EmployeeSalaryListResponse;
 import com.dat.erp.dto.response.PagedResponse;
+import com.dat.erp.dto.response.SelectionOptionResponse;
 import com.dat.erp.dto.response.EmployeeSalaryResponse;
 import com.dat.erp.entities.Company;
 import com.dat.erp.entities.EmployeeSalary;
+import com.dat.erp.entities.PayrollResult;
 import com.dat.erp.entities.UserProfile;
 import com.dat.erp.exceptions.BadRequestException;
 import com.dat.erp.exceptions.ConflictException;
@@ -254,5 +256,13 @@ public class EmployeeSalaryServiceImpl extends AbstractAuditableService implemen
         };
 
         return isDesc ? comparator.reversed() : comparator;
+    }
+
+    @Override
+    public List<PayrollResult> employeeSalaryCalculation(List<Long> employeeCodes, LocalDate runDate) {
+        // Get list active employeeSalary by call employee salary service
+        // Call employee payroll policy to get map of pay roll policy for each employee of current month
+        // Call employee daily work service to get map of daily work for each employee of current month      
+        throw new UnsupportedOperationException("Unimplemented method 'employeeSalaryCalculation'");
     }
 }

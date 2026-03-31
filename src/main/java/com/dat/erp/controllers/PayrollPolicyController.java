@@ -15,7 +15,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.dat.erp.dto.request.PayrollPolicyRequest;
 import com.dat.erp.dto.response.PayrollPolicyResponse;
-import com.dat.erp.services.PayrollPolicyService;
+import com.dat.erp.services.payroll.PayrollPolicyService;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;

@@ -56,6 +56,16 @@ public interface UserProfileRepository extends JpaRepository<UserProfile, Long>,
     Page<UserProfile> findOptionsByFilters(@Param("companyCode") String companyCode, @Param("firstName") String firstName,
             Pageable pageable);
 
+    @Query("""
+            select up.code
+            from UserProfile up
+            where up.companyCode = :companyCode
+              and up.isDeleted = false
+              and up.isActive = true
+            order by up.code asc
+            """)
+    List<String> findActiveCodesByCompanyCode(@Param("companyCode") String companyCode);
+
     @Override
     @EntityGraph(attributePaths = { "account", "department" })
     org.springframework.data.domain.Page<UserProfile> findAll(
