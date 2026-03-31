@@ -31,5 +31,16 @@ public class AsyncConfig {
         executor.initialize();
         return executor;
     }
+
+    @Bean(name = "payrollCalculationTaskExecutor")
+    public Executor payrollCalculationTaskExecutor() {
+        ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
+        executor.setCorePoolSize(2);
+        executor.setMaxPoolSize(10);
+        executor.setQueueCapacity(200);
+        executor.setThreadNamePrefix("payroll-calc-");
+        executor.initialize();
+        return executor;
+    }
 }
 

@@ -15,7 +15,6 @@ import java.time.LocalDate;
 import java.time.YearMonth;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -43,6 +42,7 @@ import com.dat.erp.repositories.customrepositories.PayrollRunRepository;
 import com.dat.erp.services.CalendarDateService;
 import com.dat.erp.services.CodeGenerator;
 import com.dat.erp.services.EmployeePayrollPolicyService;
+import com.dat.erp.services.EmployeeSalaryService;
 import com.dat.erp.services.SecurityContextService;
 import com.dat.erp.services.UserProfileService;
 import com.dat.erp.systemconfigs.CustomUserDetails;
@@ -71,6 +71,9 @@ class PayrollResultServiceImplTest {
     private PayrollResultRepository payrollResultRepository;
 
     @Mock
+    private EmployeeSalaryService employeeSalaryService;
+
+    @Mock
     private CodeGenerator codeGenerator;
 
     @Mock
@@ -89,6 +92,7 @@ class PayrollResultServiceImplTest {
                 dailyWorkRepository,
                 payrollRunRepository,
                 payrollResultRepository,
+                employeeSalaryService,
                 codeGenerator,
                 securityContextService);
     }
@@ -97,6 +101,9 @@ class PayrollResultServiceImplTest {
     void generatePayrollResult_createsPreviewResultsForActiveEmployees() {
         LocalDate today = LocalDate.now();
         YearMonth currentMonth = YearMonth.from(today);
+        PayrollRun payrollRun = new PayrollRun();
+        payrollRun.setCode("PRN-1");
+        payrollRun.setPeriod(currentMonth.toString());
 
         Account currentUserAccount = new Account();
         currentUserAccount.setCode("ACC-1");
@@ -137,16 +144,13 @@ class PayrollResultServiceImplTest {
                 .currency("USD")
                 .build();
 
-        when(employeeSalaryRepository.findActiveByCompanyCodeAndUserProfileCodesAndDate("CMP-1", List.of("USR-1", "USR-2"),
+        when(employeeSalaryRepository.findActiveByCompanyCodeAndUserProfileCodesAndDate("CMP-1",
+                List.of("USR-1", "USR-2"),
                 today))
-                .thenReturn(List.of(firstSalary, secondSalary));
+                        .thenReturn(List.of(firstSalary, secondSalary));
 
-        when(payrollRunRepository.findByCompanyCodeAndPeriodAndIsDeletedFalse("CMP-1", currentMonth.toString()))
-                .thenReturn(Optional.empty());
-        when(codeGenerator.nextCode("PRN-")).thenReturn("PRN-1");
         when(codeGenerator.nextCode("PRR-")).thenReturn("PRR-1", "PRR-2");
         when(payrollRunRepository.save(any(PayrollRun.class))).thenAnswer(invocation -> invocation.getArgument(0));
-        when(payrollResultRepository.findByPayrollRun_CodeAndIsDeletedFalse("PRN-1")).thenReturn(List.of());
         when(payrollResultRepository.saveAll(any())).thenAnswer(invocation -> invocation.getArgument(0));
 
         when(calendarDateService.getCalendarDateTotalsByCompanyCodeAndMonth("CMP-1", currentMonth))
@@ -176,9 +180,9 @@ class PayrollResultServiceImplTest {
                 List.of("USR-1", "USR-2"),
                 currentMonth.atDay(1),
                 currentMonth.atEndOfMonth()))
-                .thenReturn(List.of(paidLeave, unpaidLeave, normalWork));
+                        .thenReturn(List.of(paidLeave, unpaidLeave, normalWork));
 
-        payrollResultService.generatePayrollResult();
+        payrollResultService.generatePayrollResult(payrollRun);
 
         ArgumentCaptor<List<PayrollResult>> payrollResultsCaptor = ArgumentCaptor.forClass(List.class);
         verify(payrollResultRepository).saveAll(payrollResultsCaptor.capture());
@@ -188,27 +192,36 @@ class PayrollResultServiceImplTest {
 
         PayrollResult firstResult = savedResults.get(0);
         assertEquals("PRN-1", firstResult.getPayrollRun().getCode());
-        assertEquals("ENC-100", firstResult.getAmount());
+        assertEquals("ENC-100", firstResult.getExpectedAmount());
         assertEquals("MMK", firstResult.getCurrency());
         assertEquals(168, firstResult.getExpectedQuantity());
-        assertEquals(160, firstResult.getActualQuantity());
-        assertEquals(PayrollStatus.PREVIEW, firstResult.getSourceType());
+        assertEquals(null, firstResult.getActualQuantity());
+        assertEquals(PayrollStatus.RUNNING, firstResult.getSourceType());
         assertFalse(firstResult.getIsRetro());
         assertEquals(workingHourUnit, firstResult.getUnit());
 
         PayrollResult secondResult = savedResults.get(1);
-        assertEquals("ENC-200", secondResult.getAmount());
+        assertEquals("ENC-200", secondResult.getExpectedAmount());
         assertEquals("USD", secondResult.getCurrency());
         assertEquals(168, secondResult.getExpectedQuantity());
-        assertEquals(152, secondResult.getActualQuantity());
-        assertEquals(PayrollStatus.PREVIEW, secondResult.getSourceType());
+        assertEquals(null, secondResult.getActualQuantity());
+        assertEquals(PayrollStatus.RUNNING, secondResult.getSourceType());
 
         ArgumentCaptor<PayrollRun> payrollRunCaptor = ArgumentCaptor.forClass(PayrollRun.class);
-        verify(payrollRunRepository, org.mockito.Mockito.atLeastOnce()).save(payrollRunCaptor.capture());
+        verify(payrollRunRepository).save(payrollRunCaptor.capture());
         PayrollRun finalSavedRun = payrollRunCaptor.getValue();
         assertEquals("PRN-1", finalSavedRun.getCode());
         assertEquals(currentMonth.toString(), finalSavedRun.getPeriod());
         assertEquals(PayrollRunStatus.CALCULATED, finalSavedRun.getStatus());
+
+        ArgumentCaptor<List<String>> employeeCodesCaptor = ArgumentCaptor.forClass(List.class);
+        ArgumentCaptor<List<PayrollResult>> payrollResultsForCalculationCaptor = ArgumentCaptor.forClass(List.class);
+        verify(employeeSalaryService).employeeSalaryCalculation(
+                employeeCodesCaptor.capture(),
+                payrollResultsForCalculationCaptor.capture(),
+                eq(today));
+        assertEquals(List.of("USR-1", "USR-2"), employeeCodesCaptor.getValue());
+        assertEquals(2, payrollResultsForCalculationCaptor.getValue().size());
     }
 
     @Test
@@ -216,13 +229,15 @@ class PayrollResultServiceImplTest {
         Account currentUserAccount = new Account();
         currentUserAccount.setCompanyCode(" ");
         when(securityContextService.getCurrentUser()).thenReturn(new CustomUserDetails(currentUserAccount, null));
+        PayrollRun payrollRun = new PayrollRun();
 
         BadRequestException exception = assertThrows(BadRequestException.class,
-                () -> payrollResultService.generatePayrollResult());
+                () -> payrollResultService.generatePayrollResult(payrollRun));
 
         assertEquals(Messages.ERROR_CURRENT_USER_COMPANY_MISSING, exception.getMessage());
-        verifyNoInteractions(userProfileService, employeePayrollPolicyService, calendarDateService, employeeSalaryRepository,
-                dailyWorkRepository, payrollRunRepository, payrollResultRepository);
+        verifyNoInteractions(userProfileService, employeePayrollPolicyService, calendarDateService,
+                employeeSalaryRepository,
+                dailyWorkRepository, payrollRunRepository, payrollResultRepository, employeeSalaryService);
         verify(codeGenerator, never()).nextCode(any());
     }
 }

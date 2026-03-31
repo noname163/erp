@@ -13,6 +13,8 @@ import java.util.Set;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import com.dat.erp.constants.CodePrefixes;
 import com.dat.erp.constants.DayType;
@@ -34,6 +36,7 @@ import com.dat.erp.repositories.customrepositories.PayrollRunRepository;
 import com.dat.erp.services.CalendarDateService;
 import com.dat.erp.services.CodeGenerator;
 import com.dat.erp.services.EmployeePayrollPolicyService;
+import com.dat.erp.services.EmployeeSalaryService;
 import com.dat.erp.services.SecurityContextService;
 import com.dat.erp.services.UserProfileService;
 import com.dat.erp.services.base.AbstractAuditableService;
@@ -60,6 +63,7 @@ public class PayrollResultServiceImpl extends AbstractAuditableService implement
     private final DailyWorkRepository dailyWorkRepository;
     private final PayrollRunRepository payrollRunRepository;
     private final PayrollResultRepository payrollResultRepository;
+    private final EmployeeSalaryService employeeSalaryService;
 
     public PayrollResultServiceImpl(
             UserProfileService userProfileService,
@@ -69,6 +73,7 @@ public class PayrollResultServiceImpl extends AbstractAuditableService implement
             DailyWorkRepository dailyWorkRepository,
             PayrollRunRepository payrollRunRepository,
             PayrollResultRepository payrollResultRepository,
+            EmployeeSalaryService employeeSalaryService,
             CodeGenerator codeGenerator,
             SecurityContextService securityContextService) {
         this.userProfileService = userProfileService;
@@ -78,6 +83,7 @@ public class PayrollResultServiceImpl extends AbstractAuditableService implement
         this.dailyWorkRepository = dailyWorkRepository;
         this.payrollRunRepository = payrollRunRepository;
         this.payrollResultRepository = payrollResultRepository;
+        this.employeeSalaryService = employeeSalaryService;
         this.codeGenerator = codeGenerator;
         this.securityContextService = securityContextService;
     }
@@ -127,13 +133,39 @@ public class PayrollResultServiceImpl extends AbstractAuditableService implement
         }
 
         if (!payrollResults.isEmpty()) {
-            payrollResultRepository.saveAll(payrollResults);
+            List<PayrollResult> savedPayrollResults = payrollResultRepository.saveAll(payrollResults);
+            scheduleEmployeeSalaryCalculation(activeEmployeeCodes, savedPayrollResults, runDate);
         }
 
         payrollRun.setStatus(PayrollRunStatus.CALCULATED);
         payrollRun.setRunAt(LocalDateTime.now(ZoneOffset.UTC));
         applyUpdateAudit(payrollRun);
         payrollRunRepository.save(payrollRun);
+    }
+
+    private void scheduleEmployeeSalaryCalculation(
+            List<String> employeeCodes,
+            List<PayrollResult> payrollResults,
+            LocalDate runDate) {
+        List<String> employeeCodesSnapshot = List.copyOf(employeeCodes);
+        List<PayrollResult> payrollResultsSnapshot = List.copyOf(payrollResults);
+        Runnable task = () -> employeeSalaryService.employeeSalaryCalculation(
+                employeeCodesSnapshot,
+                payrollResultsSnapshot,
+                runDate);
+
+        if (TransactionSynchronizationManager.isSynchronizationActive()
+                && TransactionSynchronizationManager.isActualTransactionActive()) {
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                @Override
+                public void afterCommit() {
+                    task.run();
+                }
+            });
+            return;
+        }
+
+        task.run();
     }
 
     private int calculateTotalWorkingDays(Map<DayType, Integer> totalsByDayType) {
@@ -202,17 +234,15 @@ public class PayrollResultServiceImpl extends AbstractAuditableService implement
                 ? 0
                 : payrollPolicy.getStandardQuantityPerDay();
         int expectedQuantity = standardQuantityPerDay * totalWorkingDays;
-        int actualQuantity = Math.max(expectedQuantity - leaveQuantity, 0);
 
         PayrollResult payrollResult = PayrollResult.builder()
                 .payrollRun(payrollRun)
                 .employeeSalary(employeeSalary)
-                .amount(employeeSalary.getTotalAmount())
+                .expectedAmount(employeeSalary.getTotalAmount())
                 .currency(employeeSalary.getCurrency())
                 .expectedQuantity(expectedQuantity)
-                .actualQuantity(actualQuantity)
                 .unit(payrollPolicy.getUnit())
-                .sourceType(PayrollStatus.PREVIEW)
+                .sourceType(PayrollStatus.RUNNING)
                 .isRetro(false)
                 .retroReason(null)
                 .build();

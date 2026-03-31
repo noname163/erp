@@ -2,10 +2,16 @@ package com.dat.erp.services.impl;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.YearMonth;
+import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 
 import org.springframework.data.domain.PageImpl;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -16,6 +22,7 @@ import com.dat.erp.dto.response.EmployeeSalaryListResponse;
 import com.dat.erp.dto.response.PagedResponse;
 import com.dat.erp.dto.response.SelectionOptionResponse;
 import com.dat.erp.dto.response.EmployeeSalaryResponse;
+import com.dat.erp.dto.response.salary.MonthlySalaryCalculationResponse;
 import com.dat.erp.entities.Company;
 import com.dat.erp.entities.EmployeeSalary;
 import com.dat.erp.entities.PayrollResult;
@@ -26,13 +33,16 @@ import com.dat.erp.exceptions.ResourceNotFoundException;
 import com.dat.erp.mapper.interfaces.EmployeeSalaryMapper;
 import com.dat.erp.repositories.customrepositories.CompanyRepository;
 import com.dat.erp.repositories.customrepositories.EmployeeSalaryRepository;
+import com.dat.erp.repositories.customrepositories.PayrollResultRepository;
 import com.dat.erp.repositories.customrepositories.UserProfileRepository;
 import com.dat.erp.services.CodeGenerator;
 import com.dat.erp.services.EmployeeSalaryDetailService;
 import com.dat.erp.services.EmployeeSalaryService;
+import com.dat.erp.services.MonthlySalaryCalculationService;
 import com.dat.erp.services.SecurityContextService;
 import com.dat.erp.services.base.AbstractAuditableService;
 import com.dat.erp.utils.CompanySecretKeyCryptoUtils;
+import com.dat.erp.utils.CustomStringUtils;
 
 @Service
 public class EmployeeSalaryServiceImpl extends AbstractAuditableService implements EmployeeSalaryService {
@@ -42,6 +52,8 @@ public class EmployeeSalaryServiceImpl extends AbstractAuditableService implemen
     private final UserProfileRepository userProfileRepository;
     private final EmployeeSalaryMapper employeeSalaryMapper;
     private final EmployeeSalaryDetailService employeeSalaryDetailService;
+    private final MonthlySalaryCalculationService monthlySalaryCalculationService;
+    private final PayrollResultRepository payrollResultRepository;
 
     public EmployeeSalaryServiceImpl(EmployeeSalaryRepository employeeSalaryRepository,
             CompanyRepository companyRepository,
@@ -49,13 +61,17 @@ public class EmployeeSalaryServiceImpl extends AbstractAuditableService implemen
             EmployeeSalaryMapper employeeSalaryMapper,
             CodeGenerator codeGenerator,
             SecurityContextService securityContextService,
-            EmployeeSalaryDetailService employeeSalaryDetailService) {
+            EmployeeSalaryDetailService employeeSalaryDetailService,
+            MonthlySalaryCalculationService monthlySalaryCalculationService,
+            PayrollResultRepository payrollResultRepository) {
         this.employeeSalaryRepository = employeeSalaryRepository;
         this.companyRepository = companyRepository;
         this.userProfileRepository = userProfileRepository;
         this.employeeSalaryMapper = employeeSalaryMapper;
         this.codeGenerator = codeGenerator;
         this.employeeSalaryDetailService = employeeSalaryDetailService;
+        this.monthlySalaryCalculationService = monthlySalaryCalculationService;
+        this.payrollResultRepository = payrollResultRepository;
         this.securityContextService = securityContextService;
     }
 
@@ -259,10 +275,57 @@ public class EmployeeSalaryServiceImpl extends AbstractAuditableService implemen
     }
 
     @Override
-    public List<PayrollResult> employeeSalaryCalculation(List<Long> employeeCodes, LocalDate runDate) {
-        // Get list active employeeSalary by call employee salary service
-        // Call employee payroll policy to get map of pay roll policy for each employee of current month
-        // Call employee daily work service to get map of daily work for each employee of current month      
-        throw new UnsupportedOperationException("Unimplemented method 'employeeSalaryCalculation'");
+    @Async("payrollCalculationTaskExecutor")
+    @Transactional
+    public void employeeSalaryCalculation(List<String> employeeCodes, List<PayrollResult> payrollResults,
+            LocalDate runDate) {
+        if (runDate == null) {
+            throw new BadRequestException(Messages.ERROR_PAYROLL_MONTH_INVALID);
+        }
+        if (employeeCodes == null || employeeCodes.isEmpty() || payrollResults == null || payrollResults.isEmpty()) {
+            return;
+        }
+
+        YearMonth runMonth = YearMonth.from(runDate);
+        Map<String, PayrollResult> payrollResultsByEmployeeCode = new LinkedHashMap<>();
+
+        for (PayrollResult payrollResult : payrollResults) {
+            if (payrollResult == null || payrollResult.getEmployeeSalary() == null
+                    || payrollResult.getEmployeeSalary().getUserProfile() == null) {
+                continue;
+            }
+
+            UserProfile userProfile = payrollResult.getEmployeeSalary().getUserProfile();
+            String employeeCode = CustomStringUtils.normalizeCode(userProfile.getCode());
+            if (employeeCode != null) {
+                payrollResultsByEmployeeCode.putIfAbsent(employeeCode, payrollResult);
+            }
+        }
+
+        List<PayrollResult> updatedPayrollResults = new ArrayList<>();
+        for (String employeeCode : employeeCodes.stream()
+                .map(CustomStringUtils::normalizeCode)
+                .filter(Objects::nonNull)
+                .distinct()
+                .toList()) {
+            PayrollResult payrollResult = payrollResultsByEmployeeCode.get(employeeCode);
+            if (payrollResult == null) {
+                continue;
+            }
+
+            MonthlySalaryCalculationResponse calculation = monthlySalaryCalculationService
+                    .calculateEmployeeMonthlySalary(employeeCode, runMonth);
+
+            payrollResult.setActualAmount(calculation.getFinalSalary().toPlainString());
+            if (calculation.getActualWorkingHourPerMonth() != null) {
+                payrollResult.setActualQuantity(calculation.getActualWorkingHourPerMonth().intValue());
+            }
+            applyUpdateAudit(payrollResult);
+            updatedPayrollResults.add(payrollResult);
+        }
+
+        if (!updatedPayrollResults.isEmpty()) {
+            payrollResultRepository.saveAll(updatedPayrollResults);
+        }
     }
 }
