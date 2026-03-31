@@ -134,4 +134,14 @@ public final class Messages {
     public static final String ERROR_EMPLOYEE_PAYROLL_POLICY_POLICY_CODE_INVALID = "payrollPolicyCode is invalid";
     public static final String ERROR_EMPLOYEE_PAYROLL_POLICY_EFFECTIVE_DATES_INVALID = "effectiveFrom/effectiveTo is invalid";
     public static final String ERROR_EMPLOYEE_PAYROLL_POLICY_OVERLAPS = "Employee already has an active payroll policy in this period";
+
+    // Monthly salary calculation
+    public static final String ERROR_PAYROLL_MONTH_INVALID = "month is invalid";
+    public static final String ERROR_PAYROLL_EMPLOYEE_CODE_INVALID = "employeeCode is invalid";
+    public static final String ERROR_PAYROLL_EMPLOYEE_SALARY_NOT_FOUND = "No active employee salary found for employee %s in %s";
+    public static final String ERROR_PAYROLL_POLICY_NOT_FOUND = "No active payroll policy found for employee %s in %s";
+    public static final String ERROR_PAYROLL_EXPECTED_WORKING_HOURS_INVALID = "expectedWorkingHourPerMonth must be greater than zero";
+    public static final String ERROR_PAYROLL_DEPENDENCE_CODE_MISSING = "Missing dependency salary detail for code %s";
+    public static final String ERROR_PAYROLL_DAY_TYPE_HOURS_MISSING = "Missing working-hour mapping for dayType %s";
+    public static final String ERROR_PAYROLL_CIRCULAR_DEPENDENCY = "Circular dependency detected in salary details: %s";
 }

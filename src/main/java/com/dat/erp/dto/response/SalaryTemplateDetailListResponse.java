@@ -13,4 +13,5 @@ public class SalaryTemplateDetailListResponse {
     private Integer quantity;
     private String unitName;
     private String salaryName;
+    private Boolean isFixed;
 }

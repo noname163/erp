@@ -44,4 +44,8 @@ public class SalaryTemplateDetail extends BaseAuditableEntity {
 
     @Column(name = "sequence_order")
     private Integer sequenceOrder;
+
+    @Column(name = "is_fixed")
+    @Builder.Default
+    private Boolean isFixed = Boolean.FALSE;
 }

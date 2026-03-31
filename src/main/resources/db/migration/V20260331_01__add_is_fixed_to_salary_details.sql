@@ -1,0 +1,5 @@
+ALTER TABLE employee_salary_detail
+    ADD COLUMN IF NOT EXISTS is_fixed BOOLEAN NOT NULL DEFAULT FALSE;
+
+ALTER TABLE salary_template_detail
+    ADD COLUMN IF NOT EXISTS is_fixed BOOLEAN NOT NULL DEFAULT FALSE;
