@@ -23,9 +23,9 @@ public interface PayrollPolicyRepository extends JpaRepository<PayrollPolicy, Lo
               and pp.isDeleted = false
               and (coalesce(trim(:name), '') = ''
                    or lower(pp.name) like lower(concat('%', trim(coalesce(:name, '')), '%')))
-              and (:unitCode is null or unit.code = :unitCode)
-              and (:effectiveFrom is null or pp.effectiveTo >= :effectiveFrom)
-              and (:effectiveTo is null or pp.effectiveFrom <= :effectiveTo)
+              and (coalesce(trim(:unitCode), '') = '' or unit.code = trim(coalesce(:unitCode, '')))
+              and pp.effectiveTo >= coalesce(:effectiveFrom, pp.effectiveTo)
+              and pp.effectiveFrom <= coalesce(:effectiveTo, pp.effectiveFrom)
             order by pp.effectiveFrom desc, pp.updatedAt desc
             """)
     List<PayrollPolicy> findByFilters(

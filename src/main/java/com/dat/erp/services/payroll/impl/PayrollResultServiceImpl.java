@@ -3,7 +3,6 @@ package com.dat.erp.services.payroll.impl;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.YearMonth;
-import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.LinkedHashMap;
@@ -11,6 +10,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionSynchronization;
@@ -21,7 +22,10 @@ import com.dat.erp.constants.DayType;
 import com.dat.erp.constants.Messages;
 import com.dat.erp.constants.PayrollRunStatus;
 import com.dat.erp.constants.PayrollStatus;
+import com.dat.erp.dto.response.PagedResponse;
+import com.dat.erp.dto.response.PayrollResultListResponse;
 import com.dat.erp.dto.response.salary.DailyWorkForSalaryResponse;
+import com.dat.erp.entities.Company;
 import com.dat.erp.entities.DailyWork;
 import com.dat.erp.entities.EmployeeSalary;
 import com.dat.erp.entities.PayrollPolicy;
@@ -29,10 +33,13 @@ import com.dat.erp.entities.PayrollResult;
 import com.dat.erp.entities.PayrollRun;
 import com.dat.erp.entities.UserProfile;
 import com.dat.erp.exceptions.BadRequestException;
+import com.dat.erp.exceptions.ResourceNotFoundException;
+import com.dat.erp.repositories.customrepositories.CompanyRepository;
 import com.dat.erp.repositories.customrepositories.DailyWorkRepository;
 import com.dat.erp.repositories.customrepositories.EmployeeSalaryRepository;
 import com.dat.erp.repositories.customrepositories.PayrollResultRepository;
 import com.dat.erp.repositories.customrepositories.PayrollRunRepository;
+import com.dat.erp.repositories.projections.PayrollResultListProjection;
 import com.dat.erp.services.CalendarDateService;
 import com.dat.erp.services.CodeGenerator;
 import com.dat.erp.services.EmployeePayrollPolicyService;
@@ -41,6 +48,9 @@ import com.dat.erp.services.SecurityContextService;
 import com.dat.erp.services.UserProfileService;
 import com.dat.erp.services.base.AbstractAuditableService;
 import com.dat.erp.services.payroll.PayrollResultService;
+import com.dat.erp.utils.CompanySecretKeyCryptoUtils;
+import com.dat.erp.utils.CustomStringUtils;
+import com.dat.erp.utils.PageableUtils;
 
 @Service
 public class PayrollResultServiceImpl extends AbstractAuditableService implements PayrollResultService {
@@ -63,6 +73,7 @@ public class PayrollResultServiceImpl extends AbstractAuditableService implement
     private final DailyWorkRepository dailyWorkRepository;
     private final PayrollRunRepository payrollRunRepository;
     private final PayrollResultRepository payrollResultRepository;
+    private final CompanyRepository companyRepository;
     private final EmployeeSalaryService employeeSalaryService;
 
     public PayrollResultServiceImpl(
@@ -73,6 +84,7 @@ public class PayrollResultServiceImpl extends AbstractAuditableService implement
             DailyWorkRepository dailyWorkRepository,
             PayrollRunRepository payrollRunRepository,
             PayrollResultRepository payrollResultRepository,
+            CompanyRepository companyRepository,
             EmployeeSalaryService employeeSalaryService,
             CodeGenerator codeGenerator,
             SecurityContextService securityContextService) {
@@ -83,9 +95,41 @@ public class PayrollResultServiceImpl extends AbstractAuditableService implement
         this.dailyWorkRepository = dailyWorkRepository;
         this.payrollRunRepository = payrollRunRepository;
         this.payrollResultRepository = payrollResultRepository;
+        this.companyRepository = companyRepository;
         this.employeeSalaryService = employeeSalaryService;
         this.codeGenerator = codeGenerator;
         this.securityContextService = securityContextService;
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public PagedResponse<PayrollResultListResponse> getPayrollResults(
+            LocalDate createdDate,
+            PayrollStatus sourceType,
+            String employeeCode,
+            Integer page,
+            Integer size,
+            String sortBy,
+            String sortDir) {
+        String companyCode = resolveCompanyCode();
+        String companySecretKey = resolveCompanySecretKey(companyCode);
+        LocalDate targetDate = createdDate == null ? LocalDate.now() : createdDate;
+        LocalDateTime createdAtFrom = targetDate.atStartOfDay();
+        LocalDateTime createdAtTo = targetDate.plusDays(1).atStartOfDay();
+        Pageable pageable = PageableUtils.create(
+                page,
+                size,
+                resolveSortBy(sortBy),
+                sortDir == null || sortDir.isBlank() ? "DESC" : sortDir);
+
+        Page<PayrollResultListProjection> payrollResults = payrollResultRepository.searchByConditions(
+                companyCode,
+                createdAtFrom,
+                createdAtTo,
+                sourceType,
+                CustomStringUtils.normalizeCode(employeeCode),
+                pageable);
+        return PageableUtils.mapPage(payrollResults, projection -> toListResponse(projection, companySecretKey), Messages.SUCCESS);
     }
 
     @Override
@@ -100,6 +144,7 @@ public class PayrollResultServiceImpl extends AbstractAuditableService implement
         YearMonth runMonth = YearMonth.from(runDate);
         List<String> activeEmployeeCodes = userProfileService.getActiveUserProfileCodesOfCurrentCompany();
         if (activeEmployeeCodes == null || activeEmployeeCodes.isEmpty()) {
+            finalizePayrollRun(payrollRun);
             return;
         }
 
@@ -137,8 +182,11 @@ public class PayrollResultServiceImpl extends AbstractAuditableService implement
             scheduleEmployeeSalaryCalculation(activeEmployeeCodes, savedPayrollResults, runDate);
         }
 
+        finalizePayrollRun(payrollRun);
+    }
+
+    private void finalizePayrollRun(PayrollRun payrollRun) {
         payrollRun.setStatus(PayrollRunStatus.CALCULATED);
-        payrollRun.setRunAt(LocalDateTime.now(ZoneOffset.UTC));
         applyUpdateAudit(payrollRun);
         payrollRunRepository.save(payrollRun);
     }
@@ -256,5 +304,74 @@ public class PayrollResultServiceImpl extends AbstractAuditableService implement
                 dailyWork.getWorkType(),
                 dailyWork.getHoursWorked() == null ? 0 : dailyWork.getHoursWorked().intValue())
                 .getTotalWorkHours();
+    }
+
+    private String resolveCompanyCode() {
+        String companyCode = resolveCurrentUserCompanyCode();
+        if (companyCode == null || companyCode.isBlank() || "SYSTEM".equals(companyCode)) {
+            throw new BadRequestException(Messages.ERROR_CURRENT_USER_COMPANY_MISSING);
+        }
+        return companyCode;
+    }
+
+    private String resolveCompanySecretKey(String companyCode) {
+        Company company = companyRepository.findByCode(companyCode)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        String.format(Messages.ERROR_COMPANY_NOT_FOUND_WITH_CODE, companyCode)));
+        String companySecretKey = company.getSecretKey();
+        if (companySecretKey == null || companySecretKey.isBlank()) {
+            throw new BadRequestException(Messages.ERROR_EMPLOYEE_SALARY_COMPANY_SECRET_KEY_MISSING);
+        }
+        return companySecretKey;
+    }
+
+    private String resolveSortBy(String sortBy) {
+        if (sortBy == null || sortBy.isBlank()) {
+            return "createdAt";
+        }
+
+        return switch (sortBy.trim()) {
+            case "salaryName" -> "employeeSalary.salaryTemplate.name";
+            case "employeeName" -> "employeeSalary.userProfile.firstName";
+            case "expectedAmount" -> "expectedAmount";
+            case "actualAmount" -> "actualAmount";
+            case "currency" -> "currency";
+            case "expectedQuantity" -> "expectedQuantity";
+            case "actualQuantity" -> "actualQuantity";
+            case "unitName" -> "unit.name";
+            case "sourceType" -> "sourceType";
+            case "isRetro" -> "isRetro";
+            case "retroReason" -> "retroReason";
+            case "createdDate", "createdAt" -> "createdAt";
+            default -> "createdAt";
+        };
+    }
+
+    private PayrollResultListResponse toListResponse(PayrollResultListProjection projection, String companySecretKey) {
+        return new PayrollResultListResponse(
+                normalizeText(projection.getSalaryName()),
+                decryptExpectedAmount(projection.getExpectedAmount(), companySecretKey),
+                normalizeText(projection.getEmployeeName()),
+                normalizeText(projection.getActualAmount()),
+                normalizeText(projection.getCurrency()),
+                projection.getExpectedQuantity(),
+                projection.getActualQuantity(),
+                normalizeText(projection.getUnitName()),
+                projection.getSourceType(),
+                projection.getIsRetro(),
+                normalizeText(projection.getRetroReason()));
+    }
+
+    private String decryptExpectedAmount(String encryptedAmount, String companySecretKey) {
+        String decrypted = CompanySecretKeyCryptoUtils.decrypt(encryptedAmount, companySecretKey);
+        return normalizeText(decrypted);
+    }
+
+    private String normalizeText(String value) {
+        if (value == null) {
+            return null;
+        }
+        String trimmed = value.trim();
+        return trimmed.isBlank() ? null : trimmed;
     }
 }

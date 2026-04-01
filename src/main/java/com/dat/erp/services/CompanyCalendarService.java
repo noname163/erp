@@ -11,6 +11,8 @@ import com.dat.erp.dto.response.PagedResponse;
 public interface CompanyCalendarService {
     CompanyCalendarResponse createCompanyCalendar(CompanyCalendarRequest request);
 
+    CompanyCalendarResponse updateCompanyCalendar(String code, CompanyCalendarRequest request);
+
     PagedResponse<CompanyCalendarListResponse> getCompanyCalendars(
             String name,
             String region,
@@ -20,5 +22,5 @@ public interface CompanyCalendarService {
             String sortBy,
             String sortDir);
 
-    List<CompanyCalendarDateResponse> getCompanyCalendarDates(String code, Integer year);
+    List<CompanyCalendarDateResponse> getCompanyCalendarDates(String code);
 }

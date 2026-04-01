@@ -7,6 +7,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -49,6 +50,21 @@ public class CompanyCalendarController {
         return ResponseEntity.status(201).body(companyCalendarService.createCompanyCalendar(request));
     }
 
+    @Operation(summary = "Update company calendar", description = "Updates one company calendar and replaces its date list with the submitted dates.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Company calendar updated successfully"),
+            @ApiResponse(responseCode = "400", description = "Invalid input"),
+            @ApiResponse(responseCode = "403", description = "Forbidden"),
+            @ApiResponse(responseCode = "404", description = "Company calendar not found")
+    })
+    @PutMapping("/{code}")
+    @PreAuthorize("hasRoles({'HUMAN_RESOURCES'})")
+    public ResponseEntity<CompanyCalendarResponse> updateCompanyCalendar(
+            @Parameter(description = "Company calendar code") @PathVariable String code,
+            @Valid @RequestBody CompanyCalendarRequest request) {
+        return ResponseEntity.ok(companyCalendarService.updateCompanyCalendar(code, request));
+    }
+
     @Operation(summary = "Get company calendar list", description = "Returns a paginated company calendar list filtered by name, region, and time zone.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Company calendar list retrieved successfully"),
@@ -68,7 +84,7 @@ public class CompanyCalendarController {
         return ResponseEntity.ok(companyCalendarService.getCompanyCalendars(name, region, timeZone, page, size, sortBy, sortDir));
     }
 
-    @Operation(summary = "Get company calendar dates by code and year", description = "Returns company calendar dates for one calendar code within a specific year.")
+    @Operation(summary = "Get company calendar dates by code", description = "Returns all company calendar dates for one calendar code.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Company calendar dates retrieved successfully"),
             @ApiResponse(responseCode = "400", description = "Invalid input"),
@@ -77,8 +93,7 @@ public class CompanyCalendarController {
     @GetMapping("/{code}/dates")
     @PreAuthorize("hasRoles({'HUMAN_RESOURCES'})")
     public ResponseEntity<List<CompanyCalendarDateResponse>> getCompanyCalendarDates(
-            @Parameter(description = "Company calendar code") @PathVariable String code,
-            @Parameter(description = "Calendar year", example = "2026") @RequestParam Integer year) {
-        return ResponseEntity.ok(companyCalendarService.getCompanyCalendarDates(code, year));
+            @Parameter(description = "Company calendar code") @PathVariable String code) {
+        return ResponseEntity.ok(companyCalendarService.getCompanyCalendarDates(code));
     }
 }
