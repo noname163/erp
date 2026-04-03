@@ -155,8 +155,9 @@ class PayrollRunServiceImplTest {
         account.setCompanyCode("CMP-1");
         when(securityContextService.getCurrentUser()).thenReturn(new CustomUserDetails(account, null));
 
-        String currentPeriod = YearMonth.now().toString();
-        when(payrollRunRepository.findByCompanyCodeAndPeriodAndIsDeletedFalse("CMP-1", currentPeriod))
+        YearMonth requestedRunMonth = YearMonth.now().minusMonths(1);
+        String requestedPeriod = requestedRunMonth.toString();
+        when(payrollRunRepository.findByCompanyCodeAndPeriodAndIsDeletedFalse("CMP-1", requestedPeriod))
                 .thenReturn(Optional.empty());
         when(codeGenerator.nextCode("PRN-")).thenReturn("PRN-000001");
         when(payrollRunRepository.save(any(PayrollRun.class))).thenAnswer(invocation -> invocation.getArgument(0));
@@ -166,11 +167,11 @@ class PayrollRunServiceImplTest {
             return null;
         }).when(payrollResultService).generatePayrollResult(any(PayrollRun.class));
 
-        PayrollRunResponse response = payrollRunService.runPayroll();
+        PayrollRunResponse response = payrollRunService.runPayroll(requestedRunMonth);
 
         assertNotNull(response);
         assertEquals("PRN-000001", response.getCode());
-        assertEquals(currentPeriod, response.getPeriod());
+        assertEquals(requestedPeriod, response.getPeriod());
         assertEquals(PayrollRunStatus.CALCULATED, response.getStatus());
         assertNotNull(response.getRunAt());
         assertEquals("ACC-1", response.getRunBy());
@@ -181,26 +182,41 @@ class PayrollRunServiceImplTest {
         PayrollRun savedPayrollRun = payrollRunCaptor.getValue();
         assertEquals("CMP-1", savedPayrollRun.getCompanyCode());
         assertEquals("PRN-000001", savedPayrollRun.getCode());
-        assertEquals(currentPeriod, savedPayrollRun.getPeriod());
+        assertEquals(requestedPeriod, savedPayrollRun.getPeriod());
         assertEquals("ACC-1", savedPayrollRun.getCreatedBy());
         assertNotNull(savedPayrollRun.getRunAt());
         verify(payrollResultService).generatePayrollResult(savedPayrollRun);
     }
 
     @Test
-    void runPayroll_conflictWhenCurrentPeriodAlreadyExists() {
+    void runPayroll_conflictWhenRequestedPeriodAlreadyExists() {
         Account account = new Account();
         account.setCode("ACC-1");
         account.setCompanyCode("CMP-1");
         when(securityContextService.getCurrentUser()).thenReturn(new CustomUserDetails(account, null));
 
-        String currentPeriod = YearMonth.now().toString();
-        when(payrollRunRepository.findByCompanyCodeAndPeriodAndIsDeletedFalse("CMP-1", currentPeriod))
+        YearMonth requestedRunMonth = YearMonth.now();
+        String requestedPeriod = requestedRunMonth.toString();
+        when(payrollRunRepository.findByCompanyCodeAndPeriodAndIsDeletedFalse("CMP-1", requestedPeriod))
                 .thenReturn(Optional.of(new PayrollRun()));
 
-        ConflictException exception = assertThrows(ConflictException.class, () -> payrollRunService.runPayroll());
+        ConflictException exception = assertThrows(
+                ConflictException.class,
+                () -> payrollRunService.runPayroll(requestedRunMonth));
 
         assertEquals(Messages.ERROR_PAYROLL_RUN_ALREADY_EXISTS, exception.getMessage());
+        verify(payrollRunRepository, never()).save(any(PayrollRun.class));
+        verify(payrollResultService, never()).generatePayrollResult(any(PayrollRun.class));
+    }
+
+    @Test
+    void runPayroll_badRequestWhenRunMonthTooOld() {
+        BadRequestException exception = assertThrows(
+                BadRequestException.class,
+                () -> payrollRunService.runPayroll(YearMonth.now().minusMonths(4)));
+
+        assertEquals(Messages.ERROR_PAYROLL_RUN_MONTH_TOO_OLD, exception.getMessage());
+        verify(payrollRunRepository, never()).findByCompanyCodeAndPeriodAndIsDeletedFalse(any(), any());
         verify(payrollRunRepository, never()).save(any(PayrollRun.class));
         verify(payrollResultService, never()).generatePayrollResult(any(PayrollRun.class));
     }
@@ -212,7 +228,9 @@ class PayrollRunServiceImplTest {
         account.setCompanyCode(" ");
         when(securityContextService.getCurrentUser()).thenReturn(new CustomUserDetails(account, null));
 
-        BadRequestException exception = assertThrows(BadRequestException.class, () -> payrollRunService.runPayroll());
+        BadRequestException exception = assertThrows(
+                BadRequestException.class,
+                () -> payrollRunService.runPayroll(YearMonth.now()));
 
         assertEquals(Messages.ERROR_CURRENT_USER_COMPANY_MISSING, exception.getMessage());
         verify(payrollRunRepository, never()).save(any(PayrollRun.class));

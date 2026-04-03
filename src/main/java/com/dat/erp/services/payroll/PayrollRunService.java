@@ -1,6 +1,7 @@
 package com.dat.erp.services.payroll;
 
 import java.time.LocalDateTime;
+import java.time.YearMonth;
 
 import com.dat.erp.constants.PayrollRunStatus;
 import com.dat.erp.dto.response.PagedResponse;
@@ -18,5 +19,5 @@ public interface PayrollRunService {
             String sortBy,
             String sortDir);
 
-    PayrollRunResponse runPayroll();
+    PayrollRunResponse runPayroll(YearMonth runDate);
 }

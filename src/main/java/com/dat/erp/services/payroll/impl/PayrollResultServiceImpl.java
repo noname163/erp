@@ -3,6 +3,7 @@ package com.dat.erp.services.payroll.impl;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.YearMonth;
+import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.LinkedHashMap;
@@ -140,8 +141,8 @@ public class PayrollResultServiceImpl extends AbstractAuditableService implement
             throw new BadRequestException(Messages.ERROR_CURRENT_USER_COMPANY_MISSING);
         }
 
-        LocalDate runDate = LocalDate.now();
-        YearMonth runMonth = YearMonth.from(runDate);
+        YearMonth runMonth = resolveRunMonth(payrollRun);
+        LocalDate runDate = runMonth.atEndOfMonth();
         List<String> activeEmployeeCodes = userProfileService.getActiveUserProfileCodesOfCurrentCompany();
         if (activeEmployeeCodes == null || activeEmployeeCodes.isEmpty()) {
             finalizePayrollRun(payrollRun);
@@ -214,6 +215,18 @@ public class PayrollResultServiceImpl extends AbstractAuditableService implement
         }
 
         task.run();
+    }
+
+    private YearMonth resolveRunMonth(PayrollRun payrollRun) {
+        if (payrollRun == null || payrollRun.getPeriod() == null || payrollRun.getPeriod().isBlank()) {
+            throw new BadRequestException(Messages.ERROR_PAYROLL_MONTH_INVALID);
+        }
+
+        try {
+            return YearMonth.parse(payrollRun.getPeriod().trim());
+        } catch (DateTimeParseException ex) {
+            throw new BadRequestException(Messages.ERROR_PAYROLL_MONTH_INVALID);
+        }
     }
 
     private int calculateTotalWorkingDays(Map<DayType, Integer> totalsByDayType) {

@@ -1,6 +1,7 @@
 package com.dat.erp.controllers;
 
 import java.time.LocalDateTime;
+import java.time.YearMonth;
 
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
@@ -63,7 +64,7 @@ public class PayrollRunController {
                 sortDir));
     }
 
-    @Operation(summary = "Run payroll", description = "Creates a payroll run for the current period and starts payroll calculation for the current company.")
+    @Operation(summary = "Run payroll", description = "Creates a payroll run for the requested period and starts payroll calculation for the current company.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "201", description = "Payroll run created successfully"),
             @ApiResponse(responseCode = "400", description = "Invalid input"),
@@ -72,7 +73,8 @@ public class PayrollRunController {
     })
     @PostMapping("")
     @PreAuthorize("hasRoles({'HUMAN_RESOURCES'})")
-    public ResponseEntity<PayrollRunResponse> runPayroll() {
-        return ResponseEntity.status(201).body(payrollRunService.runPayroll());
+    public ResponseEntity<PayrollRunResponse> runPayroll(
+            @Parameter(description = "Payroll run month (yyyy-MM)", example = "2026-04") @DateTimeFormat(pattern = "yyyy-MM") @RequestParam YearMonth runDate) {
+        return ResponseEntity.status(201).body(payrollRunService.runPayroll(runDate));
     }
 }

@@ -28,6 +28,7 @@ import com.dat.erp.utils.PageableUtils;
 @Service
 public class PayrollRunServiceImpl extends AbstractAuditableService implements PayrollRunService {
 
+    private static final int MAX_PAST_RUN_MONTHS = 3;
     private static final String DEFAULT_SORT_BY = "runAt";
     private static final String DEFAULT_SORT_DIR = "DESC";
     private static final LocalDateTime MIN_FILTER_DATE = LocalDateTime.of(1900, 1, 1, 0, 0);
@@ -88,9 +89,10 @@ public class PayrollRunServiceImpl extends AbstractAuditableService implements P
 
     @Override
     @Transactional
-    public PayrollRunResponse runPayroll() {
+    public PayrollRunResponse runPayroll(YearMonth runDate) {
+        YearMonth requestedRunMonth = validateAndResolveRunMonth(runDate);
         String companyCode = resolveCompanyCode();
-        String period = YearMonth.now().toString();
+        String period = requestedRunMonth.toString();
 
         if (payrollRunRepository.findByCompanyCodeAndPeriodAndIsDeletedFalse(companyCode, period).isPresent()) {
             throw new ConflictException(Messages.ERROR_PAYROLL_RUN_ALREADY_EXISTS);
@@ -107,6 +109,19 @@ public class PayrollRunServiceImpl extends AbstractAuditableService implements P
         PayrollRun savedPayrollRun = payrollRunRepository.save(payrollRun);
         payrollResultService.generatePayrollResult(savedPayrollRun);
         return toResponse(savedPayrollRun);
+    }
+
+    private YearMonth validateAndResolveRunMonth(YearMonth runDate) {
+        if (runDate == null) {
+            throw new BadRequestException(Messages.ERROR_PAYROLL_MONTH_INVALID);
+        }
+
+        YearMonth minimumAllowedRunMonth = YearMonth.now().minusMonths(MAX_PAST_RUN_MONTHS);
+        if (runDate.isBefore(minimumAllowedRunMonth)) {
+            throw new BadRequestException(Messages.ERROR_PAYROLL_RUN_MONTH_TOO_OLD);
+        }
+
+        return runDate;
     }
 
     private void validateDateRange(LocalDateTime from, LocalDateTime to, String errorMessage) {

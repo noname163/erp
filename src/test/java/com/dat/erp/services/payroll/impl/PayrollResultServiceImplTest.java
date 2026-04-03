@@ -250,11 +250,11 @@ class PayrollResultServiceImplTest {
 
     @Test
     void generatePayrollResult_createsPreviewResultsForActiveEmployees() {
-        LocalDate today = LocalDate.now();
-        YearMonth currentMonth = YearMonth.from(today);
+        YearMonth targetMonth = YearMonth.of(2026, 2);
+        LocalDate runDate = targetMonth.atEndOfMonth();
         PayrollRun payrollRun = new PayrollRun();
         payrollRun.setCode("PRN-1");
-        payrollRun.setPeriod(currentMonth.toString());
+        payrollRun.setPeriod(targetMonth.toString());
 
         Account currentUserAccount = new Account();
         currentUserAccount.setCode("ACC-1");
@@ -276,7 +276,7 @@ class PayrollResultServiceImplTest {
         secondPolicy.setStandardQuantityPerDay(8);
         secondPolicy.setUnit(workingHourUnit);
 
-        when(employeePayrollPolicyService.getCompanyPoliciesByEmployeeCodesAndDate(List.of("USR-1", "USR-2"), today))
+        when(employeePayrollPolicyService.getCompanyPoliciesByEmployeeCodesAndDate(List.of("USR-1", "USR-2"), runDate))
                 .thenReturn(Map.of("USR-1", firstPolicy, "USR-2", secondPolicy));
 
         UserProfile firstUserProfile = new UserProfile();
@@ -297,14 +297,14 @@ class PayrollResultServiceImplTest {
 
         when(employeeSalaryRepository.findActiveByCompanyCodeAndUserProfileCodesAndDate("CMP-1",
                 List.of("USR-1", "USR-2"),
-                today))
+                runDate))
                         .thenReturn(List.of(firstSalary, secondSalary));
 
         when(codeGenerator.nextCode("PRR-")).thenReturn("PRR-1", "PRR-2");
         when(payrollRunRepository.save(any(PayrollRun.class))).thenAnswer(invocation -> invocation.getArgument(0));
         when(payrollResultRepository.saveAll(any())).thenAnswer(invocation -> invocation.getArgument(0));
 
-        when(calendarDateService.getCalendarDateTotalsByCompanyCodeAndMonth("CMP-1", currentMonth))
+        when(calendarDateService.getCalendarDateTotalsByCompanyCodeAndMonth("CMP-1", targetMonth))
                 .thenReturn(Map.of(
                         DayType.NORMAL, 20,
                         DayType.HOLIDAY, 2,
@@ -329,8 +329,8 @@ class PayrollResultServiceImplTest {
         when(dailyWorkRepository.findAllForSalaryByCompanyCodeAndEmployeeCodesAndWorkingDateBetween(
                 "CMP-1",
                 List.of("USR-1", "USR-2"),
-                currentMonth.atDay(1),
-                currentMonth.atEndOfMonth()))
+                targetMonth.atDay(1),
+                targetMonth.atEndOfMonth()))
                         .thenReturn(List.of(paidLeave, unpaidLeave, normalWork));
 
         payrollResultService.generatePayrollResult(payrollRun);
@@ -362,7 +362,7 @@ class PayrollResultServiceImplTest {
         verify(payrollRunRepository).save(payrollRunCaptor.capture());
         PayrollRun finalSavedRun = payrollRunCaptor.getValue();
         assertEquals("PRN-1", finalSavedRun.getCode());
-        assertEquals(currentMonth.toString(), finalSavedRun.getPeriod());
+        assertEquals(targetMonth.toString(), finalSavedRun.getPeriod());
         assertEquals(PayrollRunStatus.CALCULATED, finalSavedRun.getStatus());
 
         ArgumentCaptor<List<String>> employeeCodesCaptor = ArgumentCaptor.forClass(List.class);
@@ -370,7 +370,7 @@ class PayrollResultServiceImplTest {
         verify(employeeSalaryService).employeeSalaryCalculation(
                 employeeCodesCaptor.capture(),
                 payrollResultsForCalculationCaptor.capture(),
-                eq(today));
+                eq(runDate));
         assertEquals(List.of("USR-1", "USR-2"), employeeCodesCaptor.getValue());
         assertEquals(2, payrollResultsForCalculationCaptor.getValue().size());
     }
