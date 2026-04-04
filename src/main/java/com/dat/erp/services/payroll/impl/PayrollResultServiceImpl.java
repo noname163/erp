@@ -186,7 +186,7 @@ public class PayrollResultServiceImpl extends AbstractAuditableService implement
 
         if (!payrollResults.isEmpty()) {
             List<PayrollResult> savedPayrollResults = payrollResultRepository.saveAll(payrollResults);
-            scheduleEmployeeSalaryCalculation(activeEmployeeCodes, savedPayrollResults, runDate);
+            scheduleEmployeeSalaryCalculation(companyCode, activeEmployeeCodes, savedPayrollResults, runDate);
         }
 
         finalizePayrollRun(payrollRun);
@@ -199,12 +199,15 @@ public class PayrollResultServiceImpl extends AbstractAuditableService implement
     }
 
     private void scheduleEmployeeSalaryCalculation(
+            String companyCode,
             List<String> employeeCodes,
             List<PayrollResult> payrollResults,
             LocalDate runDate) {
+        String companyCodeSnapshot = companyCode;
         List<String> employeeCodesSnapshot = List.copyOf(employeeCodes);
         List<PayrollResult> payrollResultsSnapshot = List.copyOf(payrollResults);
         Runnable task = () -> employeeSalaryService.employeeSalaryCalculation(
+                companyCodeSnapshot,
                 employeeCodesSnapshot,
                 payrollResultsSnapshot,
                 runDate);
@@ -301,7 +304,6 @@ public class PayrollResultServiceImpl extends AbstractAuditableService implement
                 ? 0
                 : payrollPolicy.getStandardQuantityPerDay();
         int expectedQuantity = standardQuantityPerDay * totalWorkingDays;
-
         PayrollResult payrollResult = PayrollResult.builder()
                 .payrollRun(payrollRun)
                 .employeeSalary(employeeSalary)
@@ -371,9 +373,9 @@ public class PayrollResultServiceImpl extends AbstractAuditableService implement
         return new PayrollResultListResponse(
                 normalizeText(projection.getPayrollRunCode()),
                 normalizeText(projection.getSalaryName()),
-                decryptExpectedAmount(projection.getExpectedAmount(), companySecretKey),
+                CompanySecretKeyCryptoUtils.decrypt(projection.getExpectedAmount(), companySecretKey),
                 normalizeText(projection.getEmployeeName()),
-                normalizeText(projection.getActualAmount()),
+                CompanySecretKeyCryptoUtils.decrypt(projection.getActualAmount(), companySecretKey),
                 normalizeText(projection.getCurrency()),
                 projection.getExpectedQuantity(),
                 projection.getActualQuantity(),
@@ -385,11 +387,6 @@ public class PayrollResultServiceImpl extends AbstractAuditableService implement
                 projection.getCreatedAt(),
                 projection.getEmployeeCode()
             );
-    }
-
-    private String decryptExpectedAmount(String encryptedAmount, String companySecretKey) {
-        String decrypted = CompanySecretKeyCryptoUtils.decrypt(encryptedAmount, companySecretKey);
-        return normalizeText(decrypted);
     }
 
     private String normalizeText(String value) {

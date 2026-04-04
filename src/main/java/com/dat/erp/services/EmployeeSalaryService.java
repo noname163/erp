@@ -17,5 +17,6 @@ public interface EmployeeSalaryService {
             BigDecimal maxAmount, LocalDate effectiveFrom, LocalDate effectiveTo, Integer page, Integer size,
             String sortBy, String sortDir);
 
-    void employeeSalaryCalculation(List<String> employeeCodes, List<PayrollResult> payrollResults, LocalDate runDate);
+    void employeeSalaryCalculation(String companyCode, List<String> employeeCodes, List<PayrollResult> payrollResults,
+            LocalDate runDate);
 }

@@ -125,6 +125,7 @@ class PayrollResultServiceImplTest {
         when(companyRepository.findByCode("CMP-1")).thenReturn(java.util.Optional.of(company));
 
         String encryptedAmount = CompanySecretKeyCryptoUtils.encrypt("1500", "secret-key");
+        String encryptedActualAmount = CompanySecretKeyCryptoUtils.encrypt("1450", "secret-key");
         PayrollResultListProjection projection = new PayrollResultListProjection() {
             @Override
             public String getPayrollRunCode() {
@@ -148,7 +149,7 @@ class PayrollResultServiceImplTest {
 
             @Override
             public String getActualAmount() {
-                return "1450";
+                return encryptedActualAmount;
             }
 
             @Override
@@ -230,6 +231,7 @@ class PayrollResultServiceImplTest {
         assertEquals("1500", response.getData().get(0).getExpectedAmount());
         assertEquals("Ann Smith", response.getData().get(0).getEmployeeName());
         assertEquals("1450", response.getData().get(0).getActualAmount());
+        assertEquals("USD", response.getData().get(0).getCurrency());
         assertEquals("Hour", response.getData().get(0).getUnitName());
         assertEquals(PayrollStatus.RUNNING, response.getData().get(0).getSourceType());
         assertEquals(Messages.SUCCESS, response.getMessage());
@@ -420,6 +422,7 @@ class PayrollResultServiceImplTest {
         ArgumentCaptor<List<String>> employeeCodesCaptor = ArgumentCaptor.forClass(List.class);
         ArgumentCaptor<List<PayrollResult>> payrollResultsForCalculationCaptor = ArgumentCaptor.forClass(List.class);
         verify(employeeSalaryService).employeeSalaryCalculation(
+                eq("CMP-1"),
                 employeeCodesCaptor.capture(),
                 payrollResultsForCalculationCaptor.capture(),
                 eq(runDate));

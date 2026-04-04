@@ -308,6 +308,11 @@ class EmployeeSalaryServiceImplTest {
         currentUserAccount.setCompanyCode("CMP-1");
         when(securityContextService.getCurrentUser()).thenReturn(new CustomUserDetails(currentUserAccount, null));
 
+        Company company = new Company();
+        company.setCode("CMP-1");
+        company.setSecretKey("company-secret-key");
+        when(companyRepository.findByCode("CMP-1")).thenReturn(Optional.of(company));
+
         PayrollResult firstPayrollResult = payrollResult(1L, "EMP001");
         PayrollResult secondPayrollResult = payrollResult(2L, "EMP002");
 
@@ -317,6 +322,7 @@ class EmployeeSalaryServiceImplTest {
                 .thenReturn(monthlySalaryCalculationResponse("EMP002", "2345.0000", "152"));
 
         employeeSalaryService.employeeSalaryCalculation(
+                "CMP-1",
                 List.of("EMP001", "EMP002"),
                 List.of(firstPayrollResult, secondPayrollResult),
                 LocalDate.of(2025, 3, 31));
@@ -326,17 +332,23 @@ class EmployeeSalaryServiceImplTest {
 
         List<PayrollResult> savedResults = captor.getValue();
         assertEquals(2, savedResults.size());
-        assertEquals("1234.5000", savedResults.get(0).getActualAmount());
+        assertEquals("1234.5000",
+                CompanySecretKeyCryptoUtils.decrypt(savedResults.get(0).getActualAmount(), "company-secret-key"));
         assertEquals(160, savedResults.get(0).getActualQuantity());
         assertEquals("ACC-1", savedResults.get(0).getUpdatedBy());
-        assertEquals("2345.0000", savedResults.get(1).getActualAmount());
+        assertEquals("2345.0000",
+                CompanySecretKeyCryptoUtils.decrypt(savedResults.get(1).getActualAmount(), "company-secret-key"));
         assertEquals(152, savedResults.get(1).getActualQuantity());
     }
 
     @Test
     void employeeSalaryCalculation_badRequestWhenRunDateMissing() {
         BadRequestException ex = assertThrows(BadRequestException.class,
-                () -> employeeSalaryService.employeeSalaryCalculation(List.of("EMP001"), List.of(new PayrollResult()), null));
+                () -> employeeSalaryService.employeeSalaryCalculation(
+                        "CMP-1",
+                        List.of("EMP001"),
+                        List.of(new PayrollResult()),
+                        null));
 
         assertEquals(Messages.ERROR_PAYROLL_MONTH_INVALID, ex.getMessage());
         verify(payrollResultRepository, never()).saveAll(any());
