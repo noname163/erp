@@ -144,4 +144,11 @@ public final class Messages {
     public static final String ERROR_PAYROLL_DEPENDENCE_CODE_MISSING = "Missing dependency salary detail for code %s";
     public static final String ERROR_PAYROLL_DAY_TYPE_HOURS_MISSING = "Missing working-hour mapping for dayType %s";
     public static final String ERROR_PAYROLL_CIRCULAR_DEPENDENCY = "Circular dependency detected in salary details: %s";
+
+    // Payroll run
+    public static final String ERROR_PAYROLL_RUN_ALREADY_EXISTS = "Payroll run already exists for requested period";
+    public static final String ERROR_PAYROLL_RUN_CODE_INVALID = "payrollRunCode is invalid";
+    public static final String ERROR_PAYROLL_RUN_MONTH_TOO_OLD = "runDate must not be earlier than current month minus 3 months";
+    public static final String ERROR_PAYROLL_RUN_RUN_AT_RANGE_INVALID = "runAt range is invalid";
+    public static final String ERROR_PAYROLL_RUN_CLOSE_AT_RANGE_INVALID = "closeAt range is invalid";
 }

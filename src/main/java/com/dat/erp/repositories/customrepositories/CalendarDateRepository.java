@@ -32,6 +32,20 @@ public interface CalendarDateRepository extends JpaRepository<CalendarDate, Long
             @Param("toDate") LocalDate toDate);
 
     @Query("""
+            select cd
+            from CalendarDate cd
+            join fetch cd.calendar cc
+            where cc.companyCode = :companyCode
+              and cc.isDeleted = false
+              and cd.isDeleted = false
+              and cc.code = :calendarCode
+            order by cd.calDate asc
+            """)
+    List<CalendarDate> findByCalendarCodeAndCompanyCode(
+            @Param("calendarCode") String calendarCode,
+            @Param("companyCode") String companyCode);
+
+    @Query("""
             select
                 cd.dayType as dayType,
                 count(cd) as totalDates

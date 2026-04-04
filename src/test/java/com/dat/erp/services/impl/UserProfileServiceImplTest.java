@@ -2,10 +2,12 @@ package com.dat.erp.services.impl;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import java.util.List;
@@ -24,6 +26,7 @@ import com.dat.erp.dto.response.PagedResponse;
 import com.dat.erp.dto.response.SelectionOptionResponse;
 import com.dat.erp.entities.Account;
 import com.dat.erp.entities.UserProfile;
+import com.dat.erp.exceptions.BadRequestException;
 import com.dat.erp.mapper.interfaces.UserProfileMapper;
 import com.dat.erp.repositories.customrepositories.AccountRepository;
 import com.dat.erp.repositories.customrepositories.DepartmentRepository;
@@ -97,5 +100,31 @@ class UserProfileServiceImplTest {
         assertNotNull(result);
         assertEquals(0, result.getData().size());
         verify(userProfileRepository).findOptionsByFilters(eq("CMP-1"), eq("Ann"), any());
+    }
+
+    @Test
+    void getActiveUserProfileCodesOfCurrentCompany_success() {
+        Account account = new Account();
+        account.setCompanyCode("CMP-1");
+        when(securityContextService.getCurrentUser()).thenReturn(new CustomUserDetails(account, null));
+        when(userProfileRepository.findActiveCodesByCompanyCode("CMP-1")).thenReturn(List.of("USR-1", "USR-2"));
+
+        List<String> result = userProfileService.getActiveUserProfileCodesOfCurrentCompany();
+
+        assertEquals(List.of("USR-1", "USR-2"), result);
+        verify(userProfileRepository).findActiveCodesByCompanyCode("CMP-1");
+    }
+
+    @Test
+    void getActiveUserProfileCodesOfCurrentCompany_missingCompany_throwsBadRequest() {
+        Account account = new Account();
+        account.setCompanyCode(" ");
+        when(securityContextService.getCurrentUser()).thenReturn(new CustomUserDetails(account, null));
+
+        BadRequestException exception = assertThrows(BadRequestException.class,
+                () -> userProfileService.getActiveUserProfileCodesOfCurrentCompany());
+
+        assertEquals(Messages.ERROR_CURRENT_USER_COMPANY_MISSING, exception.getMessage());
+        verifyNoInteractions(userProfileRepository);
     }
 }

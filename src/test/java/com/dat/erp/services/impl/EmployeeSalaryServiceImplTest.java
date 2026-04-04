@@ -12,6 +12,7 @@ import static org.mockito.Mockito.when;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.YearMonth;
 import java.util.List;
 import java.util.Optional;
 
@@ -27,9 +28,11 @@ import com.dat.erp.dto.request.EmployeeSalaryRequest;
 import com.dat.erp.dto.response.EmployeeSalaryListResponse;
 import com.dat.erp.dto.response.EmployeeSalaryResponse;
 import com.dat.erp.dto.response.PagedResponse;
+import com.dat.erp.dto.response.salary.MonthlySalaryCalculationResponse;
 import com.dat.erp.entities.Account;
 import com.dat.erp.entities.Company;
 import com.dat.erp.entities.EmployeeSalary;
+import com.dat.erp.entities.PayrollResult;
 import com.dat.erp.entities.UserProfile;
 import com.dat.erp.exceptions.BadRequestException;
 import com.dat.erp.exceptions.ConflictException;
@@ -37,9 +40,11 @@ import com.dat.erp.exceptions.ResourceNotFoundException;
 import com.dat.erp.mapper.interfaces.EmployeeSalaryMapper;
 import com.dat.erp.repositories.customrepositories.CompanyRepository;
 import com.dat.erp.repositories.customrepositories.EmployeeSalaryRepository;
+import com.dat.erp.repositories.customrepositories.PayrollResultRepository;
 import com.dat.erp.repositories.customrepositories.UserProfileRepository;
 import com.dat.erp.services.CodeGenerator;
 import com.dat.erp.services.EmployeeSalaryDetailService;
+import com.dat.erp.services.MonthlySalaryCalculationService;
 import com.dat.erp.services.SecurityContextService;
 import com.dat.erp.systemconfigs.CustomUserDetails;
 import com.dat.erp.utils.CompanySecretKeyCryptoUtils;
@@ -66,6 +71,12 @@ class EmployeeSalaryServiceImplTest {
 
     @Mock
     private EmployeeSalaryDetailService employeeSalaryDetailService;
+
+    @Mock
+    private MonthlySalaryCalculationService monthlySalaryCalculationService;
+
+    @Mock
+    private PayrollResultRepository payrollResultRepository;
 
     @InjectMocks
     private EmployeeSalaryServiceImpl employeeSalaryService;
@@ -288,5 +299,74 @@ class EmployeeSalaryServiceImplTest {
                         null));
         assertEquals(Messages.ERROR_EMPLOYEE_SALARY_AMOUNT_RANGE_INVALID, ex.getMessage());
         assertFalse(ex.getMessage().isBlank());
+    }
+
+    @Test
+    void employeeSalaryCalculation_updatesActualAmountsAndPersistsResults() {
+        Account currentUserAccount = new Account();
+        currentUserAccount.setCode("ACC-1");
+        currentUserAccount.setCompanyCode("CMP-1");
+        when(securityContextService.getCurrentUser()).thenReturn(new CustomUserDetails(currentUserAccount, null));
+
+        PayrollResult firstPayrollResult = payrollResult(1L, "EMP001");
+        PayrollResult secondPayrollResult = payrollResult(2L, "EMP002");
+
+        when(monthlySalaryCalculationService.calculateEmployeeMonthlySalary("EMP001", YearMonth.of(2025, 3)))
+                .thenReturn(monthlySalaryCalculationResponse("EMP001", "1234.5000", "160"));
+        when(monthlySalaryCalculationService.calculateEmployeeMonthlySalary("EMP002", YearMonth.of(2025, 3)))
+                .thenReturn(monthlySalaryCalculationResponse("EMP002", "2345.0000", "152"));
+
+        employeeSalaryService.employeeSalaryCalculation(
+                List.of("EMP001", "EMP002"),
+                List.of(firstPayrollResult, secondPayrollResult),
+                LocalDate.of(2025, 3, 31));
+
+        ArgumentCaptor<List<PayrollResult>> captor = ArgumentCaptor.forClass(List.class);
+        verify(payrollResultRepository).saveAll(captor.capture());
+
+        List<PayrollResult> savedResults = captor.getValue();
+        assertEquals(2, savedResults.size());
+        assertEquals("1234.5000", savedResults.get(0).getActualAmount());
+        assertEquals(160, savedResults.get(0).getActualQuantity());
+        assertEquals("ACC-1", savedResults.get(0).getUpdatedBy());
+        assertEquals("2345.0000", savedResults.get(1).getActualAmount());
+        assertEquals(152, savedResults.get(1).getActualQuantity());
+    }
+
+    @Test
+    void employeeSalaryCalculation_badRequestWhenRunDateMissing() {
+        BadRequestException ex = assertThrows(BadRequestException.class,
+                () -> employeeSalaryService.employeeSalaryCalculation(List.of("EMP001"), List.of(new PayrollResult()), null));
+
+        assertEquals(Messages.ERROR_PAYROLL_MONTH_INVALID, ex.getMessage());
+        verify(payrollResultRepository, never()).saveAll(any());
+    }
+
+    private PayrollResult payrollResult(Long userProfileId, String userProfileCode) {
+        UserProfile userProfile = new UserProfile();
+        userProfile.setId(userProfileId);
+        userProfile.setCode(userProfileCode);
+
+        EmployeeSalary employeeSalary = new EmployeeSalary();
+        employeeSalary.setUserProfile(userProfile);
+
+        PayrollResult payrollResult = new PayrollResult();
+        payrollResult.setEmployeeSalary(employeeSalary);
+        return payrollResult;
+    }
+
+    private MonthlySalaryCalculationResponse monthlySalaryCalculationResponse(
+            String employeeCode,
+            String finalSalary,
+            String actualWorkingHours) {
+        return new MonthlySalaryCalculationResponse(
+                employeeCode,
+                YearMonth.of(2025, 3),
+                new BigDecimal("160"),
+                new BigDecimal(actualWorkingHours),
+                new BigDecimal("7.5000"),
+                new BigDecimal(finalSalary),
+                java.util.Map.of(),
+                List.of());
     }
 }

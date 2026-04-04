@@ -23,7 +23,7 @@ public interface EmployeePayrollPolicyRepository extends JpaRepository<EmployeeP
             where epp.userProfile.code = :userProfileCode
               and epp.isDeleted = false
               and epp.isActive = true
-              and (:ignoreCode is null or epp.code <> :ignoreCode)
+              and (coalesce(trim(:ignoreCode), '') = '' or epp.code <> trim(coalesce(:ignoreCode, '')))
               and epp.effectiveFrom <= :effectiveTo
               and epp.effectiveTo >= :effectiveFrom
             """)

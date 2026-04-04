@@ -1,15 +1,17 @@
 package com.dat.erp.services;
 
+import java.util.List;
+
 import com.dat.erp.dto.request.CompanyCalendarRequest;
 import com.dat.erp.dto.response.CompanyCalendarDateResponse;
 import com.dat.erp.dto.response.CompanyCalendarListResponse;
-import com.dat.erp.dto.response.PagedResponse;
 import com.dat.erp.dto.response.CompanyCalendarResponse;
-
-import java.util.List;
+import com.dat.erp.dto.response.PagedResponse;
 
 public interface CompanyCalendarService {
     CompanyCalendarResponse createCompanyCalendar(CompanyCalendarRequest request);
+
+    CompanyCalendarResponse updateCompanyCalendar(String code, CompanyCalendarRequest request);
 
     PagedResponse<CompanyCalendarListResponse> getCompanyCalendars(
             String name,
@@ -20,5 +22,5 @@ public interface CompanyCalendarService {
             String sortBy,
             String sortDir);
 
-    List<CompanyCalendarDateResponse> getCompanyCalendarDates(String code, Integer year);
+    List<CompanyCalendarDateResponse> getCompanyCalendarDates(String code);
 }

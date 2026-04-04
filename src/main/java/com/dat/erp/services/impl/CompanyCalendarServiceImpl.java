@@ -85,6 +85,39 @@ public class CompanyCalendarServiceImpl extends AbstractAuditableService impleme
     }
 
     @Override
+    @Transactional
+    public CompanyCalendarResponse updateCompanyCalendar(String code, CompanyCalendarRequest request) {
+        if (code == null || code.isBlank()) {
+            throw new BadRequestException(Messages.ERROR_COMPANY_CALENDAR_CODE_INVALID);
+        }
+        if (request == null) {
+            throw new BadRequestException("request is invalid");
+        }
+        if (request.getDates() == null || request.getDates().isEmpty()) {
+            throw new BadRequestException(Messages.ERROR_COMPANY_CALENDAR_DATES_INVALID);
+        }
+
+        validateEffectiveDates(request.getEffectiveFrom(), request.getEffectiveTo());
+
+        CompanyCalendar calendar = companyCalendarRepository.findByCodeAndCompanyCodeAndIsDeletedFalse(
+                code.trim(),
+                resolveCurrentCompanyCode())
+                .orElseThrow(() -> new ResourceNotFoundException(Messages.ERROR_COMPANY_CALENDAR_NOT_FOUND));
+
+        CompanyCalendar mappedCalendar = companyCalendarMapper.toEntity(request);
+        validateCalendar(mappedCalendar);
+        applyCalendarUpdates(calendar, mappedCalendar);
+        applyUpdateAudit(calendar);
+
+        CompanyCalendar savedCalendar = companyCalendarRepository.save(calendar);
+        List<CalendarDate> savedDates = calendarDateService.replaceCalendarDates(request.getDates(), savedCalendar);
+        savedCalendar.setDates(savedDates.stream()
+                .sorted(Comparator.comparing(CalendarDate::getCalDate))
+                .toList());
+        return companyCalendarMapper.toResponse(savedCalendar);
+    }
+
+    @Override
     @Transactional(readOnly = true)
     public PagedResponse<CompanyCalendarListResponse> getCompanyCalendars(
             String name,
@@ -108,7 +141,7 @@ public class CompanyCalendarServiceImpl extends AbstractAuditableService impleme
 
     @Override
     @Transactional(readOnly = true)
-    public List<CompanyCalendarDateResponse> getCompanyCalendarDates(String code, Integer year) {
+    public List<CompanyCalendarDateResponse> getCompanyCalendarDates(String code) {
         if (code == null || code.isBlank()) {
             throw new BadRequestException(Messages.ERROR_COMPANY_CALENDAR_CODE_INVALID);
         }
@@ -118,7 +151,7 @@ public class CompanyCalendarServiceImpl extends AbstractAuditableService impleme
                 resolveCurrentCompanyCode())
                 .orElseThrow(() -> new ResourceNotFoundException(Messages.ERROR_COMPANY_CALENDAR_NOT_FOUND));
 
-        return calendarDateService.getCompanyCalendarDates(calendar, year);
+        return calendarDateService.getCompanyCalendarDates(calendar);
     }
 
     private void validateEffectiveDates(LocalDate effectiveFrom, LocalDate effectiveTo) {
@@ -148,6 +181,15 @@ public class CompanyCalendarServiceImpl extends AbstractAuditableService impleme
         } catch (DateTimeException ex) {
             throw new BadRequestException(Messages.ERROR_COMPANY_CALENDAR_TIME_ZONE_INVALID);
         }
+    }
+
+    private void applyCalendarUpdates(CompanyCalendar target, CompanyCalendar source) {
+        target.setName(source.getName());
+        target.setEffectiveFrom(source.getEffectiveFrom());
+        target.setEffectiveTo(source.getEffectiveTo());
+        target.setRegion(source.getRegion());
+        target.setTimeZone(source.getTimeZone());
+        target.setNote(source.getNote());
     }
 
     private String resolveCurrentCompanyCode() {

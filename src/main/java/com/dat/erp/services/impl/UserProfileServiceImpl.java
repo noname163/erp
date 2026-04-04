@@ -1,6 +1,7 @@
 package com.dat.erp.services.impl;
 
 import java.time.LocalDate;
+import java.util.List;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -94,5 +95,18 @@ public class UserProfileServiceImpl extends AbstractAuditableService implements 
         String ln = lastName == null ? "" : lastName.trim();
         String full = (fn + " " + ln).trim();
         return full.isBlank() ? null : full;
+    }
+
+    @Override
+    public List<String> getActiveUserProfileCodesOfCurrentCompany() {
+        var currentUser = securityContextService.getCurrentUser();
+        String companyCode = currentUser == null
+                || currentUser.getAccount() == null
+                        ? null
+                        : currentUser.getAccount().getCompanyCode();
+        if (companyCode == null || companyCode.isBlank()) {
+            throw new BadRequestException(Messages.ERROR_CURRENT_USER_COMPANY_MISSING);
+        }
+        return userProfileRepository.findActiveCodesByCompanyCode(companyCode.trim());
     }
 }

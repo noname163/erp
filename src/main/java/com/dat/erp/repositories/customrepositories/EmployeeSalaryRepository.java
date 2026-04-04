@@ -68,4 +68,21 @@ public interface EmployeeSalaryRepository extends JpaRepository<EmployeeSalary, 
             String employeeCode, String companyCode, LocalDate asOfDate) {
         return findActiveByEmployeeCodeAndCompanyCodeAndDate(employeeCode, companyCode, asOfDate).stream().findFirst();
     }
+
+    @Query("""
+            select es
+            from EmployeeSalary es
+            join fetch es.userProfile up
+            where es.companyCode = :companyCode
+              and es.isDeleted = false
+              and up.isDeleted = false
+              and up.code in :employeeCodes
+              and es.effectiveFrom <= :date
+              and es.effectiveTo >= :date
+            order by up.code asc, es.effectiveFrom desc, es.updatedAt desc
+            """)
+    List<EmployeeSalary> findActiveByCompanyCodeAndUserProfileCodesAndDate(
+            @Param("companyCode") String companyCode,
+            @Param("employeeCodes") List<String> employeeCodes,
+            @Param("date") LocalDate date);
 }

@@ -205,6 +205,78 @@ class CompanyCalendarServiceImplTest {
     }
 
     @Test
+    void updateCompanyCalendar_success() {
+        CompanyCalendar existingCalendar = CompanyCalendar.builder()
+                .name("2025 Standard Calendar")
+                .effectiveFrom(LocalDate.of(2025, 1, 1))
+                .effectiveTo(LocalDate.of(2025, 12, 31))
+                .region("GLOBAL")
+                .timeZone("UTC")
+                .note("Old calendar")
+                .build();
+        existingCalendar.setCode("CCA-000001");
+        existingCalendar.setCompanyCode("CMP-001");
+
+        CompanyCalendar mappedCalendar = CompanyCalendar.builder()
+                .name("2026 Standard Calendar")
+                .effectiveFrom(request.getEffectiveFrom())
+                .effectiveTo(request.getEffectiveTo())
+                .region("APAC")
+                .timeZone("Asia/Bangkok")
+                .note("Main regional calendar")
+                .build();
+        CalendarDate savedDate = CalendarDate.builder()
+                .calDate(LocalDate.of(2026, 1, 1))
+                .dayType(DayType.HOLIDAY_WORK)
+                .note("New Year holiday")
+                .build();
+        savedDate.setCode("CAD-000001");
+        CompanyCalendarResponse mappedResponse = new CompanyCalendarResponse(
+                "CCA-000001",
+                "2026 Standard Calendar",
+                request.getEffectiveFrom(),
+                request.getEffectiveTo(),
+                "APAC",
+                "Asia/Bangkok",
+                "Main regional calendar",
+                List.of(new CompanyCalendarDateResponse(LocalDate.of(2026, 1, 1), DayType.HOLIDAY_WORK, "New Year holiday")));
+
+        when(companyCalendarRepository.findByCodeAndCompanyCodeAndIsDeletedFalse("CCA-000001", "CMP-001"))
+                .thenReturn(Optional.of(existingCalendar));
+        when(companyCalendarMapper.toEntity(request)).thenReturn(mappedCalendar);
+        when(companyCalendarRepository.save(existingCalendar)).thenReturn(existingCalendar);
+        when(calendarDateService.replaceCalendarDates(request.getDates(), existingCalendar)).thenReturn(List.of(savedDate));
+        when(companyCalendarMapper.toResponse(existingCalendar)).thenReturn(mappedResponse);
+
+        CompanyCalendarResponse response = companyCalendarService.updateCompanyCalendar("CCA-000001", request);
+
+        assertNotNull(response);
+        assertEquals("CCA-000001", response.getCode());
+        assertEquals("2026 Standard Calendar", response.getName());
+        assertEquals("Asia/Bangkok", response.getTimeZone());
+        verify(companyCalendarRepository).save(existingCalendar);
+        verify(calendarDateService).replaceCalendarDates(request.getDates(), existingCalendar);
+        assertEquals("2026 Standard Calendar", existingCalendar.getName());
+        assertEquals(LocalDate.of(2026, 1, 1), existingCalendar.getEffectiveFrom());
+        assertEquals(LocalDate.of(2026, 1, 31), existingCalendar.getEffectiveTo());
+        assertEquals("APAC", existingCalendar.getRegion());
+        assertEquals("Asia/Bangkok", existingCalendar.getTimeZone());
+        assertEquals("Main regional calendar", existingCalendar.getNote());
+    }
+
+    @Test
+    void updateCompanyCalendar_notFoundWhenCodeMissing() {
+        when(companyCalendarRepository.findByCodeAndCompanyCodeAndIsDeletedFalse("CCA-404", "CMP-001"))
+                .thenReturn(Optional.empty());
+
+        ResourceNotFoundException ex = assertThrows(ResourceNotFoundException.class,
+                () -> companyCalendarService.updateCompanyCalendar("CCA-404", request));
+
+        assertEquals(Messages.ERROR_COMPANY_CALENDAR_NOT_FOUND, ex.getMessage());
+        verify(companyCalendarRepository, never()).save(any(CompanyCalendar.class));
+    }
+
+    @Test
     void getCompanyCalendars_success() {
         CompanyCalendar calendar = CompanyCalendar.builder()
                 .name("Bangkok Calendar")
@@ -266,9 +338,9 @@ class CompanyCalendarServiceImplTest {
 
         when(companyCalendarRepository.findByCodeAndCompanyCodeAndIsDeletedFalse("CCA-000001", "CMP-001"))
                 .thenReturn(Optional.of(calendar));
-        when(calendarDateService.getCompanyCalendarDates(calendar, 2026)).thenReturn(dateResponses);
+        when(calendarDateService.getCompanyCalendarDates(calendar)).thenReturn(dateResponses);
 
-        List<CompanyCalendarDateResponse> response = companyCalendarService.getCompanyCalendarDates("CCA-000001", 2026);
+        List<CompanyCalendarDateResponse> response = companyCalendarService.getCompanyCalendarDates("CCA-000001");
 
         assertEquals(1, response.size());
         assertEquals("New Year holiday", response.get(0).getNote());
@@ -280,7 +352,7 @@ class CompanyCalendarServiceImplTest {
                 .thenReturn(Optional.empty());
 
         ResourceNotFoundException ex = assertThrows(ResourceNotFoundException.class,
-                () -> companyCalendarService.getCompanyCalendarDates("CCA-404", 2026));
+                () -> companyCalendarService.getCompanyCalendarDates("CCA-404"));
 
         assertEquals(Messages.ERROR_COMPANY_CALENDAR_NOT_FOUND, ex.getMessage());
     }

@@ -2,8 +2,10 @@ package com.dat.erp.services.impl;
 
 import java.time.LocalDate;
 import java.time.YearMonth;
+import java.util.ArrayList;
 import java.util.EnumMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -47,39 +49,8 @@ public class CalendarDateServiceImpl extends AbstractAuditableService implements
     @Transactional
     public List<CalendarDate> createCalendarDates(List<CompanyCalendarDateRequest> requests, CompanyCalendar calendar) {
         validateCalendar(calendar);
-        if (requests == null || requests.isEmpty()) {
-            throw new BadRequestException(Messages.ERROR_COMPANY_CALENDAR_DATES_INVALID);
-        }
-
-        List<CalendarDate> calendarDates = calendarDateMapper.toEntities(requests);
-        Set<LocalDate> uniqueDates = new HashSet<>();
-
+        List<CalendarDate> calendarDates = mapAndValidateCalendarDates(requests, calendar);
         for (CalendarDate calendarDate : calendarDates) {
-            if (calendarDate == null) {
-                throw new BadRequestException(Messages.ERROR_COMPANY_CALENDAR_DATES_INVALID);
-            }
-
-            LocalDate calDate = calendarDate.getCalDate();
-            if (calDate == null) {
-                throw new BadRequestException(Messages.ERROR_COMPANY_CALENDAR_CAL_DATE_INVALID);
-            }
-
-            if (calendarDate.getDayType() == null) {
-                throw new BadRequestException(Messages.ERROR_COMPANY_CALENDAR_DAY_TYPE_INVALID);
-            }
-
-            if (calendarDate.getNote() == null || calendarDate.getNote().isBlank()) {
-                throw new BadRequestException(Messages.ERROR_COMPANY_CALENDAR_DATE_NOTE_INVALID);
-            }
-
-            if (calDate.isBefore(calendar.getEffectiveFrom()) || calDate.isAfter(calendar.getEffectiveTo())) {
-                throw new BadRequestException(Messages.ERROR_COMPANY_CALENDAR_DATE_OUT_OF_RANGE);
-            }
-
-            if (!uniqueDates.add(calDate)) {
-                throw new BadRequestException(Messages.ERROR_COMPANY_CALENDAR_DATE_DUPLICATE);
-            }
-
             calendarDate.setCalendar(calendar);
             generateCodeIfMissing(calendarDate, CodePrefixes.CALENDAR_DATE);
             applyInsertAudit(calendarDate);
@@ -89,21 +60,45 @@ public class CalendarDateServiceImpl extends AbstractAuditableService implements
     }
 
     @Override
-    @Transactional(readOnly = true)
-    public List<CompanyCalendarDateResponse> getCompanyCalendarDates(CompanyCalendar calendar, Integer year) {
+    @Transactional
+    public List<CalendarDate> replaceCalendarDates(List<CompanyCalendarDateRequest> requests, CompanyCalendar calendar) {
         validateCalendar(calendar);
-        if (year == null || year < 1) {
-            throw new BadRequestException(Messages.ERROR_COMPANY_CALENDAR_YEAR_INVALID);
+        List<CalendarDate> requestedCalendarDates = mapAndValidateCalendarDates(requests, calendar);
+        Map<LocalDate, CalendarDate> existingByDate = new LinkedHashMap<>();
+        calendarDateRepository.findByCalendarCodeAndCompanyCode(calendar.getCode(), calendar.getCompanyCode())
+                .forEach(calendarDate -> existingByDate.put(calendarDate.getCalDate(), calendarDate));
+
+        List<CalendarDate> calendarDatesToSave = new ArrayList<>();
+        for (CalendarDate requestedCalendarDate : requestedCalendarDates) {
+            CalendarDate existingCalendarDate = existingByDate.remove(requestedCalendarDate.getCalDate());
+            if (existingCalendarDate != null) {
+                existingCalendarDate.setDayType(requestedCalendarDate.getDayType());
+                existingCalendarDate.setNote(requestedCalendarDate.getNote());
+                applyUpdateAudit(existingCalendarDate);
+                calendarDatesToSave.add(existingCalendarDate);
+                continue;
+            }
+
+            requestedCalendarDate.setCalendar(calendar);
+            generateCodeIfMissing(requestedCalendarDate, CodePrefixes.CALENDAR_DATE);
+            applyInsertAudit(requestedCalendarDate);
+            calendarDatesToSave.add(requestedCalendarDate);
         }
 
-        LocalDate fromDate = LocalDate.of(year, 1, 1);
-        LocalDate toDate = LocalDate.of(year, 12, 31);
+        if (!existingByDate.isEmpty()) {
+            calendarDateRepository.deleteAll(existingByDate.values());
+        }
 
-        return calendarDateRepository.findByCalendarCodeAndCompanyCodeAndDateRange(
+        return calendarDateRepository.saveAll(calendarDatesToSave);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<CompanyCalendarDateResponse> getCompanyCalendarDates(CompanyCalendar calendar) {
+        validateCalendar(calendar);
+        return calendarDateRepository.findByCalendarCodeAndCompanyCode(
                 calendar.getCode(),
-                calendar.getCompanyCode(),
-                fromDate,
-                toDate).stream()
+                calendar.getCompanyCode()).stream()
                 .map(calendarDateMapper::toResponse)
                 .toList();
     }
@@ -134,5 +129,37 @@ public class CalendarDateServiceImpl extends AbstractAuditableService implements
         if (calendar.getEffectiveFrom() == null || calendar.getEffectiveTo() == null) {
             throw new BadRequestException(Messages.ERROR_COMPANY_CALENDAR_EFFECTIVE_DATES_INVALID);
         }
+    }
+
+    private List<CalendarDate> mapAndValidateCalendarDates(List<CompanyCalendarDateRequest> requests, CompanyCalendar calendar) {
+        if (requests == null || requests.isEmpty()) {
+            throw new BadRequestException(Messages.ERROR_COMPANY_CALENDAR_DATES_INVALID);
+        }
+
+        List<CalendarDate> calendarDates = calendarDateMapper.toEntities(requests);
+        Set<LocalDate> uniqueDates = new HashSet<>();
+        for (CalendarDate calendarDate : calendarDates) {
+            if (calendarDate == null) {
+                throw new BadRequestException(Messages.ERROR_COMPANY_CALENDAR_DATES_INVALID);
+            }
+
+            LocalDate calDate = calendarDate.getCalDate();
+            if (calDate == null) {
+                throw new BadRequestException(Messages.ERROR_COMPANY_CALENDAR_CAL_DATE_INVALID);
+            }
+            if (calendarDate.getDayType() == null) {
+                throw new BadRequestException(Messages.ERROR_COMPANY_CALENDAR_DAY_TYPE_INVALID);
+            }
+            if (calendarDate.getNote() == null || calendarDate.getNote().isBlank()) {
+                throw new BadRequestException(Messages.ERROR_COMPANY_CALENDAR_DATE_NOTE_INVALID);
+            }
+            if (calDate.isBefore(calendar.getEffectiveFrom()) || calDate.isAfter(calendar.getEffectiveTo())) {
+                throw new BadRequestException(Messages.ERROR_COMPANY_CALENDAR_DATE_OUT_OF_RANGE);
+            }
+            if (!uniqueDates.add(calDate)) {
+                throw new BadRequestException(Messages.ERROR_COMPANY_CALENDAR_DATE_DUPLICATE);
+            }
+        }
+        return calendarDates;
     }
 }

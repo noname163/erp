@@ -55,6 +55,9 @@ class CalendarDateServiceImplTest {
     @Captor
     private ArgumentCaptor<List<CalendarDate>> captor;
 
+    @Captor
+    private ArgumentCaptor<Iterable<CalendarDate>> deleteCaptor;
+
     @InjectMocks
     private CalendarDateServiceImpl calendarDateService;
 
@@ -168,6 +171,58 @@ class CalendarDateServiceImplTest {
     }
 
     @Test
+    void replaceCalendarDates_success() {
+        CalendarDate updatedRequestedDate = CalendarDate.builder()
+                .calDate(LocalDate.of(2026, 1, 1))
+                .dayType(DayType.HOLIDAY)
+                .note("Updated New Year holiday")
+                .build();
+        CalendarDate newRequestedDate = CalendarDate.builder()
+                .calDate(LocalDate.of(2026, 1, 5))
+                .dayType(DayType.NORMAL)
+                .note("Back to work")
+                .build();
+        CalendarDate existingDateToUpdate = CalendarDate.builder()
+                .calDate(LocalDate.of(2026, 1, 1))
+                .dayType(DayType.HOLIDAY_WORK)
+                .note("Old note")
+                .build();
+        existingDateToUpdate.setCode("CAD-000001");
+        existingDateToUpdate.setCompanyCode("CMP-001");
+        CalendarDate existingDateToDelete = CalendarDate.builder()
+                .calDate(LocalDate.of(2026, 1, 4))
+                .dayType(DayType.WEEKEND_WORK)
+                .note("Remove this date")
+                .build();
+        existingDateToDelete.setCode("CAD-000002");
+        existingDateToDelete.setCompanyCode("CMP-001");
+
+        when(calendarDateMapper.toEntities(requests)).thenReturn(List.of(updatedRequestedDate, newRequestedDate));
+        when(calendarDateRepository.findByCalendarCodeAndCompanyCode("CCA-000001", "CMP-001"))
+                .thenReturn(List.of(existingDateToUpdate, existingDateToDelete));
+        when(codeGenerator.nextCode("CAD-")).thenReturn("CAD-000003");
+        when(calendarDateRepository.saveAll(ArgumentMatchers.<List<CalendarDate>>any()))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+
+        List<CalendarDate> result = calendarDateService.replaceCalendarDates(requests, calendar);
+
+        assertEquals(2, result.size());
+        assertEquals("CAD-000001", result.get(0).getCode());
+        assertEquals(DayType.HOLIDAY, result.get(0).getDayType());
+        assertEquals("Updated New Year holiday", result.get(0).getNote());
+        assertEquals("CAD-000003", result.get(1).getCode());
+        assertEquals(calendar, result.get(1).getCalendar());
+
+        verify(calendarDateRepository).deleteAll(deleteCaptor.capture());
+        List<CalendarDate> deletedDates = new java.util.ArrayList<>();
+        deleteCaptor.getValue().forEach(deletedDates::add);
+        assertEquals(1, deletedDates.size());
+        assertEquals(existingDateToDelete, deletedDates.get(0));
+        verify(calendarDateRepository).saveAll(captor.capture());
+        assertEquals(2, captor.getValue().size());
+    }
+
+    @Test
     void getCompanyCalendarDates_success() {
         CalendarDate firstDate = CalendarDate.builder()
                 .calDate(LocalDate.of(2026, 1, 1))
@@ -179,28 +234,17 @@ class CalendarDateServiceImplTest {
                 DayType.HOLIDAY_WORK,
                 "New Year holiday");
 
-        when(calendarDateRepository.findByCalendarCodeAndCompanyCodeAndDateRange(
+        when(calendarDateRepository.findByCalendarCodeAndCompanyCode(
                 "CCA-000001",
-                "CMP-001",
-                LocalDate.of(2026, 1, 1),
-                LocalDate.of(2026, 12, 31)))
+                "CMP-001"))
                 .thenReturn(List.of(firstDate));
         when(calendarDateMapper.toResponse(firstDate)).thenReturn(firstResponse);
 
-        List<CompanyCalendarDateResponse> result = calendarDateService.getCompanyCalendarDates(calendar, 2026);
+        List<CompanyCalendarDateResponse> result = calendarDateService.getCompanyCalendarDates(calendar);
 
         assertNotNull(result);
         assertEquals(1, result.size());
         assertEquals("New Year holiday", result.get(0).getNote());
-    }
-
-    @Test
-    void getCompanyCalendarDates_badRequestWhenYearInvalid() {
-        BadRequestException ex = assertThrows(BadRequestException.class,
-                () -> calendarDateService.getCompanyCalendarDates(calendar, 0));
-
-        assertEquals(Messages.ERROR_COMPANY_CALENDAR_YEAR_INVALID, ex.getMessage());
-        verify(calendarDateRepository, never()).findByCalendarCodeAndCompanyCodeAndDateRange(any(), any(), any(), any());
     }
 
     @Test

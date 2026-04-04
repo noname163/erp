@@ -5,11 +5,9 @@ import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
-import com.dat.erp.constants.Defaults;
 import com.dat.erp.constants.RoleType;
 import com.dat.erp.dto.request.AccountRequest;
 import com.dat.erp.dto.request.DepartmentRequest;
-import com.dat.erp.entities.Role;
 import com.dat.erp.services.AccountService;
 import com.dat.erp.services.DepartmentService;
 import com.dat.erp.services.PasswordGenerator;
