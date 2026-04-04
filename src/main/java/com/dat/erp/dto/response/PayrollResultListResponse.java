@@ -1,5 +1,7 @@
 package com.dat.erp.dto.response;
 
+import java.time.LocalDateTime;
+
 import com.dat.erp.constants.PayrollStatus;
 
 import lombok.AllArgsConstructor;
@@ -10,6 +12,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class PayrollResultListResponse {
+    private String payrollRunCode;
     private String salaryName;
     private String expectedAmount;
     private String employeeName;
@@ -21,4 +24,7 @@ public class PayrollResultListResponse {
     private PayrollStatus sourceType;
     private Boolean isRetro;
     private String retroReason;
+    private String period;
+    private LocalDateTime createdAt;
+    private String employeeCode;
 }

@@ -9,6 +9,7 @@ import com.dat.erp.entities.PayrollRun;
 
 public interface PayrollResultService {
     PagedResponse<PayrollResultListResponse> getPayrollResults(
+            String payrollRunCode,
             LocalDate createdDate,
             PayrollStatus sourceType,
             String employeeCode,

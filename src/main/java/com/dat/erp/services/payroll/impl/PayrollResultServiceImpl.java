@@ -105,6 +105,7 @@ public class PayrollResultServiceImpl extends AbstractAuditableService implement
     @Override
     @Transactional(readOnly = true)
     public PagedResponse<PayrollResultListResponse> getPayrollResults(
+            String payrollRunCode,
             LocalDate createdDate,
             PayrollStatus sourceType,
             String employeeCode,
@@ -114,6 +115,10 @@ public class PayrollResultServiceImpl extends AbstractAuditableService implement
             String sortDir) {
         String companyCode = resolveCompanyCode();
         String companySecretKey = resolveCompanySecretKey(companyCode);
+        String normalizedPayrollRunCode = CustomStringUtils.normalizeCode(payrollRunCode);
+        if (normalizedPayrollRunCode == null) {
+            throw new BadRequestException(Messages.ERROR_PAYROLL_RUN_CODE_INVALID);
+        }
         LocalDate targetDate = createdDate == null ? LocalDate.now() : createdDate;
         LocalDateTime createdAtFrom = targetDate.atStartOfDay();
         LocalDateTime createdAtTo = targetDate.plusDays(1).atStartOfDay();
@@ -125,6 +130,7 @@ public class PayrollResultServiceImpl extends AbstractAuditableService implement
 
         Page<PayrollResultListProjection> payrollResults = payrollResultRepository.searchByConditions(
                 companyCode,
+                normalizedPayrollRunCode,
                 createdAtFrom,
                 createdAtTo,
                 sourceType,
@@ -344,6 +350,7 @@ public class PayrollResultServiceImpl extends AbstractAuditableService implement
         }
 
         return switch (sortBy.trim()) {
+            case "payrollRunCode" -> "payrollRun.code";
             case "salaryName" -> "employeeSalary.salaryTemplate.name";
             case "employeeName" -> "employeeSalary.userProfile.firstName";
             case "expectedAmount" -> "expectedAmount";
@@ -362,6 +369,7 @@ public class PayrollResultServiceImpl extends AbstractAuditableService implement
 
     private PayrollResultListResponse toListResponse(PayrollResultListProjection projection, String companySecretKey) {
         return new PayrollResultListResponse(
+                normalizeText(projection.getPayrollRunCode()),
                 normalizeText(projection.getSalaryName()),
                 decryptExpectedAmount(projection.getExpectedAmount(), companySecretKey),
                 normalizeText(projection.getEmployeeName()),
@@ -372,7 +380,11 @@ public class PayrollResultServiceImpl extends AbstractAuditableService implement
                 normalizeText(projection.getUnitName()),
                 projection.getSourceType(),
                 projection.getIsRetro(),
-                normalizeText(projection.getRetroReason()));
+                normalizeText(projection.getRetroReason()),
+                projection.getPeriod(),
+                projection.getCreatedAt(),
+                projection.getEmployeeCode()
+            );
     }
 
     private String decryptExpectedAmount(String encryptedAmount, String companySecretKey) {

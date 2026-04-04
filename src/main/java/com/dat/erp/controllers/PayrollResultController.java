@@ -32,7 +32,7 @@ public class PayrollResultController {
         this.payrollResultService = payrollResultService;
     }
 
-    @Operation(summary = "Get payroll result list", description = "Returns a paginated list of payroll results filtered by createdDate, sourceType, and employeeCode. If createdDate is omitted, the current request date is used.")
+    @Operation(summary = "Get payroll result list", description = "Returns a paginated list of payroll results filtered by payrollRunCode, createdDate, sourceType, and employeeCode. payrollRunCode is required. If createdDate is omitted, the current request date is used.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Payroll result list retrieved successfully"),
             @ApiResponse(responseCode = "400", description = "Invalid input"),
@@ -41,6 +41,7 @@ public class PayrollResultController {
     @GetMapping("")
     @PreAuthorize("hasRoles({'HUMAN_RESOURCES'})")
     public ResponseEntity<PagedResponse<PayrollResultListResponse>> getPayrollResults(
+            @Parameter(description = "Payroll run code", example = "PRN-1", required = true) @RequestParam String payrollRunCode,
             @Parameter(description = "Created date", example = "2026-04-01") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) @RequestParam(required = false) LocalDate createdDate,
             @Parameter(description = "Payroll source type", example = "RUNNING") @RequestParam(required = false) PayrollStatus sourceType,
             @Parameter(description = "Employee code") @RequestParam(required = false) String employeeCode,
@@ -49,6 +50,7 @@ public class PayrollResultController {
             @Parameter(description = "Field to sort by") @RequestParam(required = false) String sortBy,
             @Parameter(description = "Sort direction (ASC or DESC)", example = "DESC") @RequestParam(defaultValue = "DESC") String sortDir) {
         return ResponseEntity.ok(payrollResultService.getPayrollResults(
+                payrollRunCode,
                 createdDate,
                 sourceType,
                 employeeCode,

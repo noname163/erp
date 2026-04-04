@@ -18,6 +18,7 @@ import com.dat.erp.repositories.projections.PayrollResultListProjection;
 public interface PayrollResultRepository extends JpaRepository<PayrollResult, Long> {
     @Query("""
             select
+                payrollRun.code as payrollRunCode,
                 st.name as salaryName,
                 pr.expectedAmount as expectedAmount,
                 trim(concat(concat(coalesce(up.firstName, ''), ' '), coalesce(up.lastName, ''))) as employeeName,
@@ -28,8 +29,12 @@ public interface PayrollResultRepository extends JpaRepository<PayrollResult, Lo
                 unit.name as unitName,
                 pr.sourceType as sourceType,
                 pr.isRetro as isRetro,
-                pr.retroReason as retroReason
+                pr.retroReason as retroReason,
+                payrollRun.period as period,
+                pr.createdAt as createdAt,
+                up.code as employeeCode
             from PayrollResult pr
+            join pr.payrollRun payrollRun 
             join pr.employeeSalary es
             join es.userProfile up
             left join es.salaryTemplate st
@@ -37,6 +42,7 @@ public interface PayrollResultRepository extends JpaRepository<PayrollResult, Lo
             where pr.companyCode = :companyCode
               and pr.isDeleted = false
               and up.isDeleted = false
+              and payrollRun.code = :payrollRunCode
               and pr.createdAt >= :createdAtFrom
               and pr.createdAt < :createdAtTo
               and pr.sourceType = coalesce(:sourceType, pr.sourceType)
@@ -44,6 +50,7 @@ public interface PayrollResultRepository extends JpaRepository<PayrollResult, Lo
             """)
     Page<PayrollResultListProjection> searchByConditions(
             @Param("companyCode") String companyCode,
+            @Param("payrollRunCode") String payrollRunCode,
             @Param("createdAtFrom") LocalDateTime createdAtFrom,
             @Param("createdAtTo") LocalDateTime createdAtTo,
             @Param("sourceType") PayrollStatus sourceType,

@@ -127,6 +127,11 @@ class PayrollResultServiceImplTest {
         String encryptedAmount = CompanySecretKeyCryptoUtils.encrypt("1500", "secret-key");
         PayrollResultListProjection projection = new PayrollResultListProjection() {
             @Override
+            public String getPayrollRunCode() {
+                return "PRN-1";
+            }
+
+            @Override
             public String getSalaryName() {
                 return "Standard Payroll";
             }
@@ -180,11 +185,27 @@ class PayrollResultServiceImplTest {
             public String getRetroReason() {
                 return null;
             }
+
+            @Override
+            public String getPeriod() {
+                return null;
+            }
+
+            @Override
+            public LocalDateTime getCreatedAt() {
+                return null;
+            }
+
+            @Override
+            public String getEmployeeCode() {
+                return null;
+            }
         };
 
         LocalDate today = LocalDate.now();
         when(payrollResultRepository.searchByConditions(
                 eq("CMP-1"),
+                eq("PRN-1"),
                 eq(today.atStartOfDay()),
                 eq(today.plusDays(1).atStartOfDay()),
                 eq(PayrollStatus.RUNNING),
@@ -193,6 +214,7 @@ class PayrollResultServiceImplTest {
                         .thenReturn(new PageImpl<>(List.of(projection), PageRequest.of(0, 20), 1));
 
         PagedResponse<PayrollResultListResponse> response = payrollResultService.getPayrollResults(
+                " PRN-1 ",
                 null,
                 PayrollStatus.RUNNING,
                 " USR-1 ",
@@ -203,6 +225,7 @@ class PayrollResultServiceImplTest {
 
         assertNotNull(response);
         assertEquals(1, response.getData().size());
+        assertEquals("PRN-1", response.getData().get(0).getPayrollRunCode());
         assertEquals("Standard Payroll", response.getData().get(0).getSalaryName());
         assertEquals("1500", response.getData().get(0).getExpectedAmount());
         assertEquals("Ann Smith", response.getData().get(0).getEmployeeName());
@@ -227,6 +250,7 @@ class PayrollResultServiceImplTest {
         LocalDate createdDate = LocalDate.of(2026, 4, 1);
         when(payrollResultRepository.searchByConditions(
                 eq("CMP-1"),
+                eq("PRN-2"),
                 eq(createdDate.atStartOfDay()),
                 eq(createdDate.plusDays(1).atStartOfDay()),
                 isNull(),
@@ -235,6 +259,7 @@ class PayrollResultServiceImplTest {
                         .thenReturn(new PageImpl<>(List.of(), PageRequest.of(0, 20), 0));
 
         PagedResponse<PayrollResultListResponse> response = payrollResultService.getPayrollResults(
+                "PRN-2",
                 createdDate,
                 null,
                 null,
@@ -246,6 +271,33 @@ class PayrollResultServiceImplTest {
         assertNotNull(response);
         assertEquals(0, response.getData().size());
         assertEquals(Messages.SUCCESS, response.getMessage());
+    }
+
+    @Test
+    void getPayrollResults_blankPayrollRunCode_throwsBadRequest() {
+        Account currentUserAccount = new Account();
+        currentUserAccount.setCode("ACC-1");
+        currentUserAccount.setCompanyCode("CMP-1");
+        when(securityContextService.getCurrentUser()).thenReturn(new CustomUserDetails(currentUserAccount, null));
+
+        Company company = new Company();
+        company.setCode("CMP-1");
+        company.setSecretKey("secret-key");
+        when(companyRepository.findByCode("CMP-1")).thenReturn(java.util.Optional.of(company));
+
+        BadRequestException exception = assertThrows(BadRequestException.class,
+                () -> payrollResultService.getPayrollResults(
+                        "   ",
+                        null,
+                        null,
+                        null,
+                        0,
+                        20,
+                        null,
+                        "DESC"));
+
+        assertEquals(Messages.ERROR_PAYROLL_RUN_CODE_INVALID, exception.getMessage());
+        verify(payrollResultRepository, never()).searchByConditions(any(), any(), any(), any(), any(), any(), any());
     }
 
     @Test
