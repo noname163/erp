@@ -420,6 +420,7 @@ class PayrollResultServiceImplTest {
         ArgumentCaptor<List<String>> employeeCodesCaptor = ArgumentCaptor.forClass(List.class);
         ArgumentCaptor<List<PayrollResult>> payrollResultsForCalculationCaptor = ArgumentCaptor.forClass(List.class);
         verify(employeeSalaryService).employeeSalaryCalculation(
+                eq("CMP-1"),
                 employeeCodesCaptor.capture(),
                 payrollResultsForCalculationCaptor.capture(),
                 eq(runDate));

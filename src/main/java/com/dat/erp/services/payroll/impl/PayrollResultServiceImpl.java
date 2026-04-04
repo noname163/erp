@@ -186,7 +186,7 @@ public class PayrollResultServiceImpl extends AbstractAuditableService implement
 
         if (!payrollResults.isEmpty()) {
             List<PayrollResult> savedPayrollResults = payrollResultRepository.saveAll(payrollResults);
-            scheduleEmployeeSalaryCalculation(activeEmployeeCodes, savedPayrollResults, runDate);
+            scheduleEmployeeSalaryCalculation(companyCode, activeEmployeeCodes, savedPayrollResults, runDate);
         }
 
         finalizePayrollRun(payrollRun);
@@ -199,12 +199,15 @@ public class PayrollResultServiceImpl extends AbstractAuditableService implement
     }
 
     private void scheduleEmployeeSalaryCalculation(
+            String companyCode,
             List<String> employeeCodes,
             List<PayrollResult> payrollResults,
             LocalDate runDate) {
+        String companyCodeSnapshot = companyCode;
         List<String> employeeCodesSnapshot = List.copyOf(employeeCodes);
         List<PayrollResult> payrollResultsSnapshot = List.copyOf(payrollResults);
         Runnable task = () -> employeeSalaryService.employeeSalaryCalculation(
+                companyCodeSnapshot,
                 employeeCodesSnapshot,
                 payrollResultsSnapshot,
                 runDate);

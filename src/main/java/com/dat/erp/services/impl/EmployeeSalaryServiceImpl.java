@@ -98,13 +98,7 @@ public class EmployeeSalaryServiceImpl extends AbstractAuditableService implemen
             throw new BadRequestException(Messages.ERROR_CURRENT_USER_COMPANY_MISSING);
         }
 
-        Company company = companyRepository.findByCode(companyCode)
-                .orElseThrow(() -> new ResourceNotFoundException(
-                        String.format(Messages.ERROR_COMPANY_NOT_FOUND_WITH_CODE, companyCode)));
-        String companySecretKey = company.getSecretKey();
-        if (companySecretKey == null || companySecretKey.isBlank()) {
-            throw new BadRequestException(Messages.ERROR_EMPLOYEE_SALARY_COMPANY_SECRET_KEY_MISSING);
-        }
+        String companySecretKey = resolveCompanySecretKey(companyCode);
 
         UserProfile userProfile = userProfileRepository.findByCode(userProfileCode)
                 .orElseThrow(() -> new ResourceNotFoundException(Messages.ERROR_EMPLOYEE_SALARY_EMPLOYEE_NOT_FOUND));
@@ -158,14 +152,7 @@ public class EmployeeSalaryServiceImpl extends AbstractAuditableService implemen
         }
 
         String companyCode = resolveCurrentUserCompanyCode();
-        Company company = companyRepository.findByCode(companyCode)
-                .orElseThrow(() -> new ResourceNotFoundException(
-                        String.format(Messages.ERROR_COMPANY_NOT_FOUND_WITH_CODE, companyCode)));
-
-        String companySecretKey = company.getSecretKey();
-        if (companySecretKey == null || companySecretKey.isBlank()) {
-            throw new BadRequestException(Messages.ERROR_EMPLOYEE_SALARY_COMPANY_SECRET_KEY_MISSING);
-        }
+        String companySecretKey = resolveCompanySecretKey(companyCode);
 
         List<EmployeeSalary> employeeSalaries = employeeSalaryRepository.searchByConditions(companyCode, employeeName,
                 effectiveFrom, effectiveTo);
@@ -276,7 +263,7 @@ public class EmployeeSalaryServiceImpl extends AbstractAuditableService implemen
     @Override
     @Async("payrollCalculationTaskExecutor")
     @Transactional
-    public void employeeSalaryCalculation(List<String> employeeCodes, List<PayrollResult> payrollResults,
+    public void employeeSalaryCalculation(String companyCode, List<String> employeeCodes, List<PayrollResult> payrollResults,
             LocalDate runDate) {
         if (runDate == null) {
             throw new BadRequestException(Messages.ERROR_PAYROLL_MONTH_INVALID);
@@ -284,10 +271,13 @@ public class EmployeeSalaryServiceImpl extends AbstractAuditableService implemen
         if (employeeCodes == null || employeeCodes.isEmpty() || payrollResults == null || payrollResults.isEmpty()) {
             return;
         }
+        if (companyCode == null || companyCode.isBlank() || "SYSTEM".equals(companyCode)) {
+            throw new BadRequestException(Messages.ERROR_CURRENT_USER_COMPANY_MISSING);
+        }
 
         YearMonth runMonth = YearMonth.from(runDate);
         Map<String, PayrollResult> payrollResultsByEmployeeCode = new LinkedHashMap<>();
-        Company company = companyRepository.findByCode(resolveCurrentUserCompanyCode()).orElseThrow(()-> new BadRequestException(Messages.ERROR_COMPANY_NOT_FOUND_WITH_CODE));
+        String companySecretKey = resolveCompanySecretKey(companyCode);
         for (PayrollResult payrollResult : payrollResults) {
             if (payrollResult == null || payrollResult.getEmployeeSalary() == null
                     || payrollResult.getEmployeeSalary().getUserProfile() == null) {
@@ -316,7 +306,7 @@ public class EmployeeSalaryServiceImpl extends AbstractAuditableService implemen
                     .calculateEmployeeMonthlySalary(employeeCode, runMonth);
 
             payrollResult.setActualAmount(CompanySecretKeyCryptoUtils.encrypt(
-                    calculation.getFinalSalary().toPlainString(), company.getSecretKey()));
+                    calculation.getFinalSalary().toPlainString(), companySecretKey));
             if (calculation.getActualWorkingHourPerMonth() != null) {
                 payrollResult.setActualQuantity(calculation.getActualWorkingHourPerMonth().intValue());
             }
@@ -327,5 +317,17 @@ public class EmployeeSalaryServiceImpl extends AbstractAuditableService implemen
         if (!updatedPayrollResults.isEmpty()) {
             payrollResultRepository.saveAll(updatedPayrollResults);
         }
+    }
+
+    private String resolveCompanySecretKey(String companyCode) {
+        Company company = companyRepository.findByCode(companyCode)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        String.format(Messages.ERROR_COMPANY_NOT_FOUND_WITH_CODE, companyCode)));
+
+        String companySecretKey = company.getSecretKey();
+        if (companySecretKey == null || companySecretKey.isBlank()) {
+            throw new BadRequestException(Messages.ERROR_EMPLOYEE_SALARY_COMPANY_SECRET_KEY_MISSING);
+        }
+        return companySecretKey;
     }
 }
