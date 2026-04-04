@@ -287,7 +287,7 @@ public class EmployeeSalaryServiceImpl extends AbstractAuditableService implemen
 
         YearMonth runMonth = YearMonth.from(runDate);
         Map<String, PayrollResult> payrollResultsByEmployeeCode = new LinkedHashMap<>();
-
+        Company company = companyRepository.findByCode(resolveCurrentUserCompanyCode()).orElseThrow(()-> new BadRequestException(Messages.ERROR_COMPANY_NOT_FOUND_WITH_CODE));
         for (PayrollResult payrollResult : payrollResults) {
             if (payrollResult == null || payrollResult.getEmployeeSalary() == null
                     || payrollResult.getEmployeeSalary().getUserProfile() == null) {
@@ -315,7 +315,8 @@ public class EmployeeSalaryServiceImpl extends AbstractAuditableService implemen
             MonthlySalaryCalculationResponse calculation = monthlySalaryCalculationService
                     .calculateEmployeeMonthlySalary(employeeCode, runMonth);
 
-            payrollResult.setActualAmount(calculation.getFinalSalary().toPlainString());
+            payrollResult.setActualAmount(CompanySecretKeyCryptoUtils.encrypt(
+                    calculation.getFinalSalary().toPlainString(), company.getSecretKey()));
             if (calculation.getActualWorkingHourPerMonth() != null) {
                 payrollResult.setActualQuantity(calculation.getActualWorkingHourPerMonth().intValue());
             }

@@ -301,7 +301,6 @@ public class PayrollResultServiceImpl extends AbstractAuditableService implement
                 ? 0
                 : payrollPolicy.getStandardQuantityPerDay();
         int expectedQuantity = standardQuantityPerDay * totalWorkingDays;
-
         PayrollResult payrollResult = PayrollResult.builder()
                 .payrollRun(payrollRun)
                 .employeeSalary(employeeSalary)
@@ -371,9 +370,9 @@ public class PayrollResultServiceImpl extends AbstractAuditableService implement
         return new PayrollResultListResponse(
                 normalizeText(projection.getPayrollRunCode()),
                 normalizeText(projection.getSalaryName()),
-                decryptExpectedAmount(projection.getExpectedAmount(), companySecretKey),
+                CompanySecretKeyCryptoUtils.decrypt(projection.getExpectedAmount(), companySecretKey),
                 normalizeText(projection.getEmployeeName()),
-                normalizeText(projection.getActualAmount()),
+                CompanySecretKeyCryptoUtils.decrypt(projection.getActualAmount(), companySecretKey),
                 normalizeText(projection.getCurrency()),
                 projection.getExpectedQuantity(),
                 projection.getActualQuantity(),
@@ -385,11 +384,6 @@ public class PayrollResultServiceImpl extends AbstractAuditableService implement
                 projection.getCreatedAt(),
                 projection.getEmployeeCode()
             );
-    }
-
-    private String decryptExpectedAmount(String encryptedAmount, String companySecretKey) {
-        String decrypted = CompanySecretKeyCryptoUtils.decrypt(encryptedAmount, companySecretKey);
-        return normalizeText(decrypted);
     }
 
     private String normalizeText(String value) {
