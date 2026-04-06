@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -217,14 +218,6 @@ class CompanyCalendarServiceImplTest {
         existingCalendar.setCode("CCA-000001");
         existingCalendar.setCompanyCode("CMP-001");
 
-        CompanyCalendar mappedCalendar = CompanyCalendar.builder()
-                .name("2026 Standard Calendar")
-                .effectiveFrom(request.getEffectiveFrom())
-                .effectiveTo(request.getEffectiveTo())
-                .region("APAC")
-                .timeZone("Asia/Bangkok")
-                .note("Main regional calendar")
-                .build();
         CalendarDate savedDate = CalendarDate.builder()
                 .calDate(LocalDate.of(2026, 1, 1))
                 .dayType(DayType.HOLIDAY_WORK)
@@ -243,7 +236,16 @@ class CompanyCalendarServiceImplTest {
 
         when(companyCalendarRepository.findByCodeAndCompanyCodeAndIsDeletedFalse("CCA-000001", "CMP-001"))
                 .thenReturn(Optional.of(existingCalendar));
-        when(companyCalendarMapper.toEntity(request)).thenReturn(mappedCalendar);
+        doAnswer(invocation -> {
+            CompanyCalendar target = invocation.getArgument(1);
+            target.setName("2026 Standard Calendar");
+            target.setEffectiveFrom(request.getEffectiveFrom());
+            target.setEffectiveTo(request.getEffectiveTo());
+            target.setRegion("APAC");
+            target.setTimeZone("Asia/Bangkok");
+            target.setNote("Main regional calendar");
+            return null;
+        }).when(companyCalendarMapper).updateEntity(eq(request), eq(existingCalendar));
         when(companyCalendarRepository.save(existingCalendar)).thenReturn(existingCalendar);
         when(calendarDateService.replaceCalendarDates(request.getDates(), existingCalendar)).thenReturn(List.of(savedDate));
         when(companyCalendarMapper.toResponse(existingCalendar)).thenReturn(mappedResponse);
@@ -262,6 +264,7 @@ class CompanyCalendarServiceImplTest {
         assertEquals("APAC", existingCalendar.getRegion());
         assertEquals("Asia/Bangkok", existingCalendar.getTimeZone());
         assertEquals("Main regional calendar", existingCalendar.getNote());
+        verify(companyCalendarMapper).updateEntity(request, existingCalendar);
     }
 
     @Test

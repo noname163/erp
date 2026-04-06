@@ -8,6 +8,21 @@ on:
     branches:
       - develop
   workflow_dispatch:
+    inputs:
+      enable_remote_debug:
+        description: 'Enable JDWP remote debug on Azure App Service'
+        required: false
+        default: false
+        type: boolean
+      remote_debug_port:
+        description: 'JDWP port inside the Azure App Service container'
+        required: false
+        default: '5005'
+        type: string
+
+env:
+  AZURE_WEBAPP_NAME: erpdatdemo
+  AZURE_SLOT_NAME: Production
 
 jobs:
   build:
@@ -53,11 +68,21 @@ jobs:
           tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_214784E7086241BCA0649209861FFA5D }}
           subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_D20053CE488547C4838B3361181F8575 }}
 
+      - name: Enable remote debug JVM options
+        if: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.enable_remote_debug == 'true' }}
+        uses: azure/cli@v2
+        with:
+          inlineScript: |
+            az webapp config appsettings set \
+              --resource-group "${{ vars.AZURE_RESOURCE_GROUP }}" \
+              --name "${{ env.AZURE_WEBAPP_NAME }}" \
+              --slot "${{ env.AZURE_SLOT_NAME }}" \
+              --settings JAVA_TOOL_OPTIONS="-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:${{ github.event.inputs.remote_debug_port || '5005' }}"
+
       - name: Deploy to Azure Web App
         id: deploy-to-webapp
         uses: azure/webapps-deploy@v3
         with:
-          app-name: 'erpdatdemo'
-          slot-name: 'Production'
+          app-name: '${{ env.AZURE_WEBAPP_NAME }}'
+          slot-name: '${{ env.AZURE_SLOT_NAME }}'
           package: '*.jar'
-          

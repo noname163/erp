@@ -15,6 +15,7 @@ import com.dat.erp.entities.PayrollPolicy;
 import com.dat.erp.entities.SystemUnit;
 import com.dat.erp.exceptions.BadRequestException;
 import com.dat.erp.exceptions.ConflictException;
+import com.dat.erp.mapper.interfaces.PayrollPolicyMapper;
 import com.dat.erp.repositories.customrepositories.PayrollPolicyRepository;
 import com.dat.erp.repositories.customrepositories.SystemUnitRepository;
 import com.dat.erp.services.CodeGenerator;
@@ -28,13 +29,16 @@ public class PayrollPolicyServiceImpl extends AbstractAuditableService implement
 
     private final PayrollPolicyRepository payrollPolicyRepository;
     private final SystemUnitRepository systemUnitRepository;
+    private final PayrollPolicyMapper payrollPolicyMapper;
 
     public PayrollPolicyServiceImpl(PayrollPolicyRepository payrollPolicyRepository,
             SystemUnitRepository systemUnitRepository,
+            PayrollPolicyMapper payrollPolicyMapper,
             CodeGenerator codeGenerator,
             SecurityContextService securityContextService) {
         this.payrollPolicyRepository = payrollPolicyRepository;
         this.systemUnitRepository = systemUnitRepository;
+        this.payrollPolicyMapper = payrollPolicyMapper;
         this.codeGenerator = codeGenerator;
         this.securityContextService = securityContextService;
     }
@@ -47,16 +51,15 @@ public class PayrollPolicyServiceImpl extends AbstractAuditableService implement
             throw new BadRequestException(Messages.ERROR_PAYROLL_POLICY_EFFECTIVE_DATES_INVALID);
         }
 
-        String companyCode = resolveCurrentUserCompanyCode();
-        if (companyCode == null || companyCode.isBlank() || "SYSTEM".equals(companyCode)) {
-            throw new BadRequestException(Messages.ERROR_CURRENT_USER_COMPANY_MISSING);
-        }
+        String companyCode = requireCurrentUserCompanyCode();
 
-        return payrollPolicyRepository.findByFilters(companyCode, normalizeText(name), effectiveFrom, effectiveTo,
-                CustomStringUtils.normalizeCode(unitCode))
-                .stream()
-                .map(this::toResponse)
-                .toList();
+        return payrollPolicyMapper.toResponses(
+                payrollPolicyRepository.findByFilters(
+                        companyCode,
+                        CustomStringUtils.trimToNull(name),
+                        effectiveFrom,
+                        effectiveTo,
+                        CustomStringUtils.normalizeCode(unitCode)));
     }
 
     @Override
@@ -64,10 +67,7 @@ public class PayrollPolicyServiceImpl extends AbstractAuditableService implement
     public PayrollPolicyResponse createPayrollPolicy(PayrollPolicyRequest request) {
         validateRequest(request);
 
-        String companyCode = resolveCurrentUserCompanyCode();
-        if (companyCode == null || companyCode.isBlank() || "SYSTEM".equals(companyCode)) {
-            throw new BadRequestException(Messages.ERROR_CURRENT_USER_COMPANY_MISSING);
-        }
+        String companyCode = requireCurrentUserCompanyCode();
 
         String name = request.getName().trim();
         if (payrollPolicyRepository.existsOverlappingByNameAndCompanyCode(name, companyCode,
@@ -88,14 +88,14 @@ public class PayrollPolicyServiceImpl extends AbstractAuditableService implement
                 .unit(unit)
                 .standardStartTime(request.getStandardStartTime())
                 .standardEndTime(request.getStandardEndTime())
-                .roundingRule(normalizeText(request.getRoundingRule()))
+                .roundingRule(CustomStringUtils.trimToNull(request.getRoundingRule()))
                 .effectiveFrom(request.getEffectiveFrom())
                 .effectiveTo(request.getEffectiveTo())
                 .build();
         generateCodeIfMissing(payrollPolicy, CodePrefixes.PAYROLL_POLICY);
         applyInsertAudit(payrollPolicy);
 
-        return toResponse(payrollPolicyRepository.save(payrollPolicy));
+        return payrollPolicyMapper.toResponse(payrollPolicyRepository.save(payrollPolicy));
     }
 
     private void validateRequest(PayrollPolicyRequest request) {
@@ -132,26 +132,5 @@ public class PayrollPolicyServiceImpl extends AbstractAuditableService implement
         if (request.getRoundingRule() != null && request.getRoundingRule().trim().isEmpty()) {
             throw new BadRequestException(Messages.ERROR_PAYROLL_POLICY_ROUNDING_RULE_INVALID);
         }
-    }
-
-    private PayrollPolicyResponse toResponse(PayrollPolicy payrollPolicy) {
-        return new PayrollPolicyResponse(
-                payrollPolicy.getCode(),
-                payrollPolicy.getName(),
-                payrollPolicy.getStandardQuantityPerDay(),
-                payrollPolicy.getUnit() == null ? null : payrollPolicy.getUnit().getCode(),
-                payrollPolicy.getStandardStartTime(),
-                payrollPolicy.getStandardEndTime(),
-                payrollPolicy.getRoundingRule(),
-                payrollPolicy.getEffectiveFrom(),
-                payrollPolicy.getEffectiveTo());
-    }
-
-    private String normalizeText(String value) {
-        if (value == null) {
-            return null;
-        }
-        String trimmed = value.trim();
-        return trimmed.isBlank() ? null : trimmed;
     }
 }

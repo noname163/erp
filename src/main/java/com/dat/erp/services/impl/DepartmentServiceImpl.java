@@ -5,7 +5,6 @@ import java.util.List;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -21,7 +20,9 @@ import com.dat.erp.entities.Department;
 import com.dat.erp.exceptions.ConflictException;
 import com.dat.erp.mapper.interfaces.DepartmentMapper;
 import com.dat.erp.repositories.customrepositories.DepartmentRepository;
+import com.dat.erp.services.CodeGenerator;
 import com.dat.erp.services.DepartmentService;
+import com.dat.erp.services.SecurityContextService;
 import com.dat.erp.services.base.AbstractAuditableService;
 import com.dat.erp.utils.PageableUtils;
 
@@ -29,10 +30,19 @@ import com.dat.erp.utils.PageableUtils;
 public class DepartmentServiceImpl extends AbstractAuditableService implements DepartmentService {
     private static final Logger log = LoggerFactory.getLogger(DepartmentServiceImpl.class);
 
-    @Autowired
-    private DepartmentRepository departmentRepository;
-    @Autowired
-    private DepartmentMapper departmentMapper;
+    private final DepartmentRepository departmentRepository;
+    private final DepartmentMapper departmentMapper;
+
+    public DepartmentServiceImpl(
+            DepartmentRepository departmentRepository,
+            DepartmentMapper departmentMapper,
+            CodeGenerator codeGenerator,
+            SecurityContextService securityContextService) {
+        this.departmentRepository = departmentRepository;
+        this.departmentMapper = departmentMapper;
+        this.codeGenerator = codeGenerator;
+        this.securityContextService = securityContextService;
+    }
 
     @Override
     public String createDepartment(DepartmentRequest departmentRequest) {
@@ -78,14 +88,7 @@ public class DepartmentServiceImpl extends AbstractAuditableService implements D
         String companyCode = resolveCurrentUserCompanyCode();
         List<Department> departments = departmentRepository
                 .findByNameAndCompanyCodeAndStatusAndIsDeletedFalseOrderByNameAsc(name, companyCode, CommonStatus.ACTIVATE);
-        List<SelectionOptionResponse> options = new ArrayList<>(departments.size());
-        for (Department department : departments) {
-            SelectionOptionResponse option = new SelectionOptionResponse();
-            option.setCode(department.getCode());
-            option.setName(department.getName());
-            options.add(option);
-        }
-        return options;
+        return new ArrayList<>(departments.stream().map(departmentMapper::toOptionResponse).toList());
     }
 
     private Department setAuditDepartmentInfo(DepartmentRequest departmentRequest) {

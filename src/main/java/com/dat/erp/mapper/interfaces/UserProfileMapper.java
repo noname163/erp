@@ -8,6 +8,7 @@ import org.mapstruct.MappingTarget;
 
 import com.dat.erp.dto.request.UserProfileCreateRequest;
 import com.dat.erp.dto.response.EmployeeResponse;
+import com.dat.erp.dto.response.SelectionOptionResponse;
 import com.dat.erp.entities.UserProfile;
 import com.dat.erp.systemconfigs.CentralMapperConfig;
 
@@ -41,6 +42,9 @@ public interface UserProfileMapper {
     @Mapping(target = "role", source = "account.role.name")
     @Mapping(target = "fullName", ignore = true)
     EmployeeResponse toEmployeeResponse(UserProfile profile);
+
+    @Mapping(target = "name", expression = "java(buildFullName(profile.getFirstName(), profile.getLastName()))")
+    SelectionOptionResponse toOptionResponse(UserProfile profile);
 
     @AfterMapping
     default void fillFullName(UserProfile profile, @MappingTarget EmployeeResponse response) {

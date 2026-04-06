@@ -24,6 +24,8 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.mockito.Spy;
+import org.mapstruct.factory.Mappers;
 
 import com.dat.erp.constants.DailyWorkUnit;
 import com.dat.erp.constants.DayType;
@@ -36,6 +38,7 @@ import com.dat.erp.entities.UserProfile;
 import com.dat.erp.exceptions.BadRequestException;
 import com.dat.erp.exceptions.ConflictException;
 import com.dat.erp.exceptions.ResourceNotFoundException;
+import com.dat.erp.mapper.interfaces.EmployeeDailyWorkMapper;
 import com.dat.erp.repositories.customrepositories.DailyWorkRepository;
 import com.dat.erp.repositories.customrepositories.UserProfileRepository;
 import com.dat.erp.services.CodeGenerator;
@@ -55,6 +58,9 @@ class EmployeeDailyWorkServiceImplTest {
 
     @Mock
     private SecurityContextService securityContextService;
+
+    @Spy
+    private EmployeeDailyWorkMapper employeeDailyWorkMapper = Mappers.getMapper(EmployeeDailyWorkMapper.class);
 
     @InjectMocks
     private EmployeeDailyWorkServiceImpl employeeDailyWorkService;

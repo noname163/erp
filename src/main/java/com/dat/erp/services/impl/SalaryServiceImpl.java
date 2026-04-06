@@ -27,6 +27,7 @@ import com.dat.erp.services.CodeGenerator;
 import com.dat.erp.services.SalaryService;
 import com.dat.erp.services.SecurityContextService;
 import com.dat.erp.services.base.AbstractAuditableService;
+import com.dat.erp.utils.CustomStringUtils;
 import com.dat.erp.utils.PageableUtils;
 
 @Service
@@ -73,10 +74,7 @@ public class SalaryServiceImpl extends AbstractAuditableService implements Salar
             }
         }
 
-        String companyCode = securityContextService.getCurrentUser().getAccount().getCompanyCode();
-        if (companyCode == null || companyCode.isBlank()) {
-            throw new BadRequestException(Messages.ERROR_CURRENT_USER_COMPANY_MISSING);
-        }
+        String companyCode = requireCurrentUserCompanyCode();
 
         for (String name : normalizedNames) {
             if (salaryRepository.existsByNameIgnoreCaseAndCompanyCodeAndIsDeletedFalse(name, companyCode)) {
@@ -102,41 +100,23 @@ public class SalaryServiceImpl extends AbstractAuditableService implements Salar
     @Override
     public PagedResponse<SalaryListResponse> getSalaries(String name, Integer page, Integer size, String sortBy,
             String sortDir) {
-        String companyCode = resolveCurrentUserCompanyCode();
-        String normalizedName = normalizeSearchText(name);
+        String companyCode = requireCurrentUserCompanyCode();
+        String normalizedName = CustomStringUtils.trimToNull(name);
         Pageable pageable = PageableUtils.create(page, size, sortBy, sortDir);
         Page<Salary> salaries = salaryRepository.findOptionsByFilters(companyCode, normalizedName, pageable);
 
-        return PageableUtils.mapPage(salaries, salary -> new SalaryListResponse(
-                salary.getName(),
-                salary.getCalculateMethod() == null ? null : salary.getCalculateMethod().name(),
-                salary.getCalculateMethod() == null ? null : salary.getCalculateMethod().name(),
-                Boolean.TRUE.equals(salary.getIsDeduct()) ? "Yes" : "No",
-                salary.getCreatedBy(),
-                salary.getUpdatedAt()), Messages.SUCCESS);
+        return PageableUtils.mapPage(salaries, salaryMapper::toListResponse, Messages.SUCCESS);
     }
 
     @Override
     public PagedResponse<SelectionOptionResponse> getSalaryOptionsByCompanyCode(String name, Integer page, Integer size,
             String sortBy, String sortDir) {
-        String companyCode = resolveCurrentUserCompanyCode();
-        String normalizedName = normalizeSearchText(name);
+        String companyCode = requireCurrentUserCompanyCode();
+        String normalizedName = CustomStringUtils.trimToNull(name);
         Pageable pageable = PageableUtils.create(page, size, sortBy, sortDir);
         Page<Salary> salaries = salaryRepository.findOptionsByFilters(companyCode, normalizedName, pageable);
 
-        return PageableUtils.mapPage(salaries, salary -> {
-            SelectionOptionResponse option = new SelectionOptionResponse();
-            option.setCode(salary.getCode());
-            option.setName(salary.getName());
-            return option;
-        }, Messages.SUCCESS);
-    }
-
-    private String normalizeSearchText(String value) {
-        if (value == null || value.isBlank()) {
-            return null;
-        }
-        return value.trim();
+        return PageableUtils.mapPage(salaries, salaryMapper::toOptionResponse, Messages.SUCCESS);
     }
 
     private SalaryCalculateMethod parseCalculateMethod(String rawValue) {

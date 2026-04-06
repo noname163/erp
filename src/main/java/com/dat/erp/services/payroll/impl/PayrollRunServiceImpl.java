@@ -17,6 +17,7 @@ import com.dat.erp.dto.response.PayrollRunResponse;
 import com.dat.erp.entities.PayrollRun;
 import com.dat.erp.exceptions.BadRequestException;
 import com.dat.erp.exceptions.ConflictException;
+import com.dat.erp.mapper.interfaces.PayrollRunMapper;
 import com.dat.erp.repositories.customrepositories.PayrollRunRepository;
 import com.dat.erp.services.CodeGenerator;
 import com.dat.erp.services.SecurityContextService;
@@ -36,14 +37,17 @@ public class PayrollRunServiceImpl extends AbstractAuditableService implements P
 
     private final PayrollRunRepository payrollRunRepository;
     private final PayrollResultService payrollResultService;
+    private final PayrollRunMapper payrollRunMapper;
 
     public PayrollRunServiceImpl(
             PayrollRunRepository payrollRunRepository,
             PayrollResultService payrollResultService,
+            PayrollRunMapper payrollRunMapper,
             CodeGenerator codeGenerator,
             SecurityContextService securityContextService) {
         this.payrollRunRepository = payrollRunRepository;
         this.payrollResultService = payrollResultService;
+        this.payrollRunMapper = payrollRunMapper;
         this.codeGenerator = codeGenerator;
         this.securityContextService = securityContextService;
     }
@@ -63,7 +67,7 @@ public class PayrollRunServiceImpl extends AbstractAuditableService implements P
         validateDateRange(runAtFrom, runAtTo, Messages.ERROR_PAYROLL_RUN_RUN_AT_RANGE_INVALID);
         validateDateRange(closeAtFrom, closeAtTo, Messages.ERROR_PAYROLL_RUN_CLOSE_AT_RANGE_INVALID);
 
-        String companyCode = resolveCompanyCode();
+        String companyCode = requireCurrentUserCompanyCode();
         LocalDateTime effectiveRunAtFrom = runAtFrom == null ? MIN_FILTER_DATE : runAtFrom;
         LocalDateTime effectiveRunAtTo = runAtTo == null ? MAX_FILTER_DATE : runAtTo;
         LocalDateTime effectiveCloseAtFrom = closeAtFrom == null ? MIN_FILTER_DATE : closeAtFrom;
@@ -84,14 +88,14 @@ public class PayrollRunServiceImpl extends AbstractAuditableService implements P
                 effectiveCloseAtTo,
                 resolveNullValueForRange(closeAtFrom, closeAtTo),
                 pageable);
-        return PageableUtils.mapPage(payrollRuns, this::toResponse, Messages.SUCCESS);
+        return PageableUtils.mapPage(payrollRuns, payrollRunMapper::toResponse, Messages.SUCCESS);
     }
 
     @Override
     @Transactional
     public PayrollRunResponse runPayroll(YearMonth runDate) {
         YearMonth requestedRunMonth = validateAndResolveRunMonth(runDate);
-        String companyCode = resolveCompanyCode();
+        String companyCode = requireCurrentUserCompanyCode();
         String period = requestedRunMonth.toString();
 
         if (payrollRunRepository.findByCompanyCodeAndPeriodAndIsDeletedFalse(companyCode, period).isPresent()) {
@@ -108,7 +112,7 @@ public class PayrollRunServiceImpl extends AbstractAuditableService implements P
         applyInsertAudit(payrollRun);
         PayrollRun savedPayrollRun = payrollRunRepository.save(payrollRun);
         payrollResultService.generatePayrollResult(savedPayrollRun);
-        return toResponse(savedPayrollRun);
+        return payrollRunMapper.toResponse(savedPayrollRun);
     }
 
     private YearMonth validateAndResolveRunMonth(YearMonth runDate) {
@@ -130,14 +134,6 @@ public class PayrollRunServiceImpl extends AbstractAuditableService implements P
         }
     }
 
-    private String resolveCompanyCode() {
-        String companyCode = resolveCurrentUserCompanyCode();
-        if (companyCode == null || companyCode.isBlank() || "SYSTEM".equals(companyCode)) {
-            throw new BadRequestException(Messages.ERROR_CURRENT_USER_COMPANY_MISSING);
-        }
-        return companyCode;
-    }
-
     private String resolveSortBy(String sortBy) {
         if (sortBy == null || sortBy.isBlank()) {
             return DEFAULT_SORT_BY;
@@ -153,25 +149,6 @@ public class PayrollRunServiceImpl extends AbstractAuditableService implements P
             case "updatedBy" -> "updatedBy";
             default -> DEFAULT_SORT_BY;
         };
-    }
-
-    private PayrollRunResponse toResponse(PayrollRun payrollRun) {
-        return new PayrollRunResponse(
-                payrollRun.getCode(),
-                payrollRun.getPeriod(),
-                payrollRun.getStatus(),
-                payrollRun.getRunAt(),
-                payrollRun.getClosedAt(),
-                normalizeAuditValue(payrollRun.getCreatedBy()),
-                normalizeAuditValue(payrollRun.getUpdatedBy()));
-    }
-
-    private String normalizeAuditValue(String value) {
-        if (value == null) {
-            return null;
-        }
-        String trimmed = value.trim();
-        return trimmed.isBlank() ? null : trimmed;
     }
 
     private LocalDateTime resolveNullValueForRange(LocalDateTime from, LocalDateTime to) {

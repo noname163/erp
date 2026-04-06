@@ -21,6 +21,7 @@ import com.dat.erp.entities.UserProfile;
 import com.dat.erp.exceptions.BadRequestException;
 import com.dat.erp.exceptions.ConflictException;
 import com.dat.erp.exceptions.ResourceNotFoundException;
+import com.dat.erp.mapper.interfaces.EmployeePayrollPolicyMapper;
 import com.dat.erp.repositories.customrepositories.EmployeePayrollPolicyRepository;
 import com.dat.erp.repositories.customrepositories.PayrollPolicyRepository;
 import com.dat.erp.repositories.customrepositories.UserProfileRepository;
@@ -36,16 +37,19 @@ public class EmployeePayrollPolicyServiceImpl extends AbstractAuditableService i
     private final EmployeePayrollPolicyRepository employeePayrollPolicyRepository;
     private final UserProfileRepository userProfileRepository;
     private final PayrollPolicyRepository payrollPolicyRepository;
+    private final EmployeePayrollPolicyMapper employeePayrollPolicyMapper;
 
     public EmployeePayrollPolicyServiceImpl(
             EmployeePayrollPolicyRepository employeePayrollPolicyRepository,
             UserProfileRepository userProfileRepository,
             PayrollPolicyRepository payrollPolicyRepository,
+            EmployeePayrollPolicyMapper employeePayrollPolicyMapper,
             CodeGenerator codeGenerator,
             SecurityContextService securityContextService) {
         this.employeePayrollPolicyRepository = employeePayrollPolicyRepository;
         this.userProfileRepository = userProfileRepository;
         this.payrollPolicyRepository = payrollPolicyRepository;
+        this.employeePayrollPolicyMapper = employeePayrollPolicyMapper;
         this.codeGenerator = codeGenerator;
         this.securityContextService = securityContextService;
     }
@@ -104,9 +108,7 @@ public class EmployeePayrollPolicyServiceImpl extends AbstractAuditableService i
                         request.getEffectiveFrom(), request.getEffectiveTo()))
                 .toList();
 
-        return employeePayrollPolicyRepository.saveAll(employeePayrollPolicies).stream()
-                .map(this::toResponse)
-                .toList();
+        return employeePayrollPolicyMapper.toResponses(employeePayrollPolicyRepository.saveAll(employeePayrollPolicies));
     }
 
     @Override
@@ -130,7 +132,7 @@ public class EmployeePayrollPolicyServiceImpl extends AbstractAuditableService i
 
         return employeePayrollPolicyRepository.findByUserProfile_CodeAndIsDeletedFalseOrderByEffectiveFromDesc(userProfileCode)
                 .stream()
-                .map(this::toResponse)
+                .map(employeePayrollPolicyMapper::toResponse)
                 .toList();
     }
 
@@ -144,10 +146,7 @@ public class EmployeePayrollPolicyServiceImpl extends AbstractAuditableService i
             return Map.of();
         }
 
-        String companyCode = resolveCurrentUserCompanyCode();
-        if (companyCode == null || companyCode.isBlank() || "SYSTEM".equals(companyCode)) {
-            throw new BadRequestException(Messages.ERROR_CURRENT_USER_COMPANY_MISSING);
-        }
+        String companyCode = requireCurrentUserCompanyCode();
 
         List<String> normalizedEmployeeCodes = employeeCodes.stream()
                 .map(CustomStringUtils::normalizeCode)
@@ -235,12 +234,6 @@ public class EmployeePayrollPolicyServiceImpl extends AbstractAuditableService i
     }
 
     private EmployeePayrollPolicyResponse toResponse(EmployeePayrollPolicy employeePayrollPolicy) {
-        return new EmployeePayrollPolicyResponse(
-                employeePayrollPolicy.getCode(),
-                employeePayrollPolicy.getUserProfile().getCode(),
-                employeePayrollPolicy.getPayrollPolicy().getCode(),
-                employeePayrollPolicy.getEffectiveFrom(),
-                employeePayrollPolicy.getEffectiveTo(),
-                employeePayrollPolicy.getIsActive());
+        return employeePayrollPolicyMapper.toResponse(employeePayrollPolicy);
     }
 }

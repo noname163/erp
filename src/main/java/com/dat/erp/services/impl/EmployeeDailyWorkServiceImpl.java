@@ -5,7 +5,6 @@ import java.math.RoundingMode;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -30,6 +29,7 @@ import com.dat.erp.entities.UserProfile;
 import com.dat.erp.exceptions.BadRequestException;
 import com.dat.erp.exceptions.ConflictException;
 import com.dat.erp.exceptions.ResourceNotFoundException;
+import com.dat.erp.mapper.interfaces.EmployeeDailyWorkMapper;
 import com.dat.erp.repositories.customrepositories.DailyWorkRepository;
 import com.dat.erp.repositories.customrepositories.UserProfileRepository;
 import com.dat.erp.repositories.projections.EmployeeDailyWorkListProjection;
@@ -47,13 +47,16 @@ public class EmployeeDailyWorkServiceImpl extends AbstractAuditableService imple
 
     private final DailyWorkRepository dailyWorkRepository;
     private final UserProfileRepository userProfileRepository;
+    private final EmployeeDailyWorkMapper employeeDailyWorkMapper;
 
     public EmployeeDailyWorkServiceImpl(DailyWorkRepository dailyWorkRepository,
             UserProfileRepository userProfileRepository,
+            EmployeeDailyWorkMapper employeeDailyWorkMapper,
             CodeGenerator codeGenerator,
             SecurityContextService securityContextService) {
         this.dailyWorkRepository = dailyWorkRepository;
         this.userProfileRepository = userProfileRepository;
+        this.employeeDailyWorkMapper = employeeDailyWorkMapper;
         this.codeGenerator = codeGenerator;
         this.securityContextService = securityContextService;
     }
@@ -65,10 +68,7 @@ public class EmployeeDailyWorkServiceImpl extends AbstractAuditableService imple
             throw new BadRequestException(Messages.ERROR_DAILY_WORK_REQUESTS_INVALID);
         }
 
-        String companyCode = securityContextService.getCurrentUser().getAccount().getCompanyCode();
-        if (companyCode == null || companyCode.isBlank()) {
-            throw new BadRequestException(Messages.ERROR_CURRENT_USER_COMPANY_MISSING);
-        }
+        String companyCode = requireCurrentUserCompanyCode();
 
         List<DailyWork> dailyWorks = new ArrayList<>(requests.size());
         Set<String> dedupeKeys = new HashSet<>();
@@ -154,10 +154,7 @@ public class EmployeeDailyWorkServiceImpl extends AbstractAuditableService imple
             Integer size,
             String sortBy,
             String sortDir) {
-        String companyCode = resolveCurrentUserCompanyCode();
-        if (companyCode == null || companyCode.isBlank() || "SYSTEM".equals(companyCode)) {
-            throw new BadRequestException(Messages.ERROR_CURRENT_USER_COMPANY_MISSING);
-        }
+        String companyCode = requireCurrentUserCompanyCode();
         if (startDate != null && endDate != null && startDate.isAfter(endDate)) {
             throw new BadRequestException(Messages.ERROR_DAILY_WORK_WORKING_DATE_INVALID);
         }
@@ -170,13 +167,13 @@ public class EmployeeDailyWorkServiceImpl extends AbstractAuditableService imple
 
         Page<EmployeeDailyWorkListProjection> dailyWorks = dailyWorkRepository.findEmployeeDailyWorksByFilters(
                 companyCode,
-                normalizeText(employeeCode),
+                CustomStringUtils.trimToNull(employeeCode),
                 startDate,
                 endDate,
                 isPto,
                 pageable);
 
-        return PageableUtils.mapPage(dailyWorks, this::toListResponse, Messages.SUCCESS);
+        return PageableUtils.mapPage(dailyWorks, employeeDailyWorkMapper::toListResponse, Messages.SUCCESS);
     }
 
     private static BigDecimal calculateHoursWorked(LocalDateTime startDateTime, LocalDateTime endDateTime,
@@ -188,40 +185,6 @@ public class EmployeeDailyWorkServiceImpl extends AbstractAuditableService imple
             return baseHours;
         }
         return baseHours.add(BigDecimal.valueOf(otTime));
-    }
-
-    private EmployeeDailyWorkListResponse toListResponse(EmployeeDailyWorkListProjection projection) {
-        return new EmployeeDailyWorkListResponse(
-                projection.getEmployeeCode(),
-                blankToNull(projection.getEmployeeName()),
-                projection.getLogDay(),
-                toLocalTime(projection.getStartTime()),
-                toLocalTime(projection.getEndTime()),
-                blankToNull(projection.getCreatedByName()),
-                blankToNull(projection.getEditedByName()),
-                projection.getOtTime(),
-                projection.getUsedPto(),
-                blankToNull(projection.getWorkType()));
-    }
-
-    private static LocalTime toLocalTime(LocalDateTime dateTime) {
-        return dateTime == null ? null : dateTime.toLocalTime();
-    }
-
-    private static String normalizeText(String value) {
-        if (value == null) {
-            return null;
-        }
-        String trimmed = value.trim();
-        return trimmed.isBlank() ? null : trimmed;
-    }
-
-    private static String blankToNull(String value) {
-        if (value == null) {
-            return null;
-        }
-        String trimmed = value.trim();
-        return trimmed.isBlank() ? null : trimmed;
     }
 
     private static String resolveSortBy(String sortBy) {
@@ -251,10 +214,7 @@ public class EmployeeDailyWorkServiceImpl extends AbstractAuditableService imple
             return Map.of();
         }
 
-        String companyCode = resolveCurrentUserCompanyCode();
-        if (companyCode == null || companyCode.isBlank() || "SYSTEM".equals(companyCode)) {
-            throw new BadRequestException(Messages.ERROR_CURRENT_USER_COMPANY_MISSING);
-        }
+        String companyCode = requireCurrentUserCompanyCode();
 
         List<String> normalizedEmployeeCodes = employeeCodes.stream()
                 .map(CustomStringUtils::normalizeCode)
@@ -292,15 +252,9 @@ public class EmployeeDailyWorkServiceImpl extends AbstractAuditableService imple
         aggregatedHoursByEmployeeCode.forEach((employeeCode, hoursByDayType) -> dailyWorksByEmployeeCode.put(
                 employeeCode,
                 hoursByDayType.entrySet().stream()
-                        .map(entry -> new DailyWorkForSalaryResponse(
-                                entry.getKey(),
-                                toTotalWorkHours(entry.getValue())))
+                        .map(entry -> employeeDailyWorkMapper.toSalaryResponse(entry.getKey(), entry.getValue()))
                         .toList()));
 
         return dailyWorksByEmployeeCode;
-    }
-
-    private static int toTotalWorkHours(BigDecimal hoursWorked) {
-        return hoursWorked == null ? 0 : hoursWorked.intValue();
     }
 }

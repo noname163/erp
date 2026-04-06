@@ -22,6 +22,7 @@ import com.dat.erp.constants.SystemUnitType;
 import com.dat.erp.dto.response.PagedResponse;
 import com.dat.erp.dto.response.SelectionOptionResponse;
 import com.dat.erp.entities.SystemUnit;
+import com.dat.erp.mapper.interfaces.SystemUnitMapper;
 import com.dat.erp.repositories.customrepositories.SystemUnitRepository;
 import com.dat.erp.services.SecurityContextService;
 
@@ -32,6 +33,9 @@ class SystemUnitServiceImplTest {
 
     @Mock
     private SecurityContextService securityContextService;
+
+    @Mock
+    private SystemUnitMapper systemUnitMapper;
 
     @InjectMocks
     private SystemUnitServiceImpl systemUnitService;
@@ -49,6 +53,10 @@ class SystemUnitServiceImplTest {
 
         when(systemUnitRepository.findOptionsByFilters(eq("CMP-1"), eq(SystemUnitType.DURATION), any()))
                 .thenReturn(new PageImpl<>(List.of(unit), PageRequest.of(0, 20), 1));
+        SelectionOptionResponse option = new SelectionOptionResponse();
+        option.setCode("UNT-000001");
+        option.setName("DAY");
+        when(systemUnitMapper.toOptionResponse(unit)).thenReturn(option);
 
         PagedResponse<SelectionOptionResponse> result = systemUnitService.getSystemUnitOptionsByCompanyCode("CMP-1",
                 SystemUnitType.DURATION, 0, 20,

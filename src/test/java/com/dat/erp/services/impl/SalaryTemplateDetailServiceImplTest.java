@@ -29,6 +29,7 @@ import com.dat.erp.entities.SalaryTemplateDetail;
 import com.dat.erp.entities.SystemUnit;
 import com.dat.erp.exceptions.BadRequestException;
 import com.dat.erp.exceptions.ResourceNotFoundException;
+import com.dat.erp.mapper.interfaces.SalaryTemplateDetailMapper;
 import com.dat.erp.repositories.customrepositories.SalaryRepository;
 import com.dat.erp.repositories.customrepositories.SalaryTemplateDetailRepository;
 import com.dat.erp.repositories.customrepositories.SalaryTemplateRepository;
@@ -50,6 +51,9 @@ class SalaryTemplateDetailServiceImplTest {
 
     @Mock
     private SalaryTemplateRepository salaryTemplateRepository;
+
+    @Mock
+    private SalaryTemplateDetailMapper salaryTemplateDetailMapper;
 
     @Mock
     private CodeGenerator codeGenerator;
@@ -174,6 +178,14 @@ class SalaryTemplateDetailServiceImplTest {
 
         when(salaryTemplateDetailRepository.findBySalaryTemplateCodeAndCompanyCode("STP-1", "CMP-1"))
                 .thenReturn(List.of(detail));
+        SalaryTemplateDetailListResponse mappedResponse = new SalaryTemplateDetailListResponse(
+                "SAL-1",
+                "1000",
+                1,
+                "Month",
+                "Base Salary",
+                Boolean.FALSE);
+        when(salaryTemplateDetailMapper.toListResponses(List.of(detail))).thenReturn(List.of(mappedResponse));
 
         List<SalaryTemplateDetailListResponse> result = salaryTemplateDetailService.getSalaryTemplateDetails("STP-1");
 

@@ -9,41 +9,36 @@ import com.dat.erp.constants.Messages;
 import com.dat.erp.dto.response.PagedResponse;
 import com.dat.erp.dto.response.SelectionOptionResponse;
 import com.dat.erp.entities.SystemUnit;
+import com.dat.erp.mapper.interfaces.SystemUnitMapper;
 import com.dat.erp.repositories.customrepositories.SystemUnitRepository;
 import com.dat.erp.services.SecurityContextService;
 import com.dat.erp.services.SystemUnitService;
 import com.dat.erp.services.base.AbstractAuditableService;
+import com.dat.erp.utils.CustomStringUtils;
 import com.dat.erp.utils.PageableUtils;
 
 @Service
 public class SystemUnitServiceImpl extends AbstractAuditableService implements SystemUnitService {
 
     private final SystemUnitRepository systemUnitRepository;
+    private final SystemUnitMapper systemUnitMapper;
 
-    public SystemUnitServiceImpl(SystemUnitRepository systemUnitRepository, SecurityContextService securityContextService) {
+    public SystemUnitServiceImpl(
+            SystemUnitRepository systemUnitRepository,
+            SystemUnitMapper systemUnitMapper,
+            SecurityContextService securityContextService) {
         this.systemUnitRepository = systemUnitRepository;
+        this.systemUnitMapper = systemUnitMapper;
         this.securityContextService = securityContextService;
     }
 
     @Override
     public PagedResponse<SelectionOptionResponse> getSystemUnitOptionsByCompanyCode(String name, SystemUnitType type,
             Integer page, Integer size, String sortBy, String sortDir) {
-        String normalizedName = normalizeSearchText(name);
+        String normalizedName = CustomStringUtils.trimToNull(name);
         Pageable pageable = PageableUtils.create(page, size, sortBy, sortDir);
         Page<SystemUnit> units = systemUnitRepository.findOptionsByFilters(normalizedName, type, pageable);
 
-        return PageableUtils.mapPage(units, unit -> {
-            SelectionOptionResponse option = new SelectionOptionResponse();
-            option.setCode(unit.getCode());
-            option.setName(unit.getName());
-            return option;
-        }, Messages.SUCCESS);
-    }
-
-    private String normalizeSearchText(String value) {
-        if (value == null || value.isBlank()) {
-            return null;
-        }
-        return value.trim();
+        return PageableUtils.mapPage(units, systemUnitMapper::toOptionResponse, Messages.SUCCESS);
     }
 }

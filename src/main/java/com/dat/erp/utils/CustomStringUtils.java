@@ -29,6 +29,11 @@ public class CustomStringUtils {
         return (value == null || value.isBlank()) ? null : value;
     }
 
+    public static String trimToNull(String rawValue) {
+        String value = rawValue == null ? null : rawValue.trim();
+        return (value == null || value.isBlank()) ? null : value;
+    }
+
     public static BigDecimal parsePositiveBigDecimal(String rawValue, String errorMessage) {
         if (rawValue == null || rawValue.isBlank()) {
             throw new BadRequestException(errorMessage);

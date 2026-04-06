@@ -1,7 +1,11 @@
 package com.dat.erp.mapper.interfaces;
 
+import org.mapstruct.BeanMapping;
+import org.mapstruct.InheritConfiguration;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
+import org.mapstruct.MappingTarget;
+import org.mapstruct.NullValuePropertyMappingStrategy;
 
 import com.dat.erp.dto.request.CompanyCalendarRequest;
 import com.dat.erp.dto.response.CompanyCalendarListResponse;
@@ -17,6 +21,11 @@ public interface CompanyCalendarMapper {
     @Mapping(target = "note", expression = "java(trim(request.getNote()))")
     @Mapping(target = "dates", ignore = true)
     CompanyCalendar toEntity(CompanyCalendarRequest request);
+
+    @InheritConfiguration(name = "toEntity")
+    @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
+    @Mapping(target = "dates", ignore = true)
+    void updateEntity(CompanyCalendarRequest request, @MappingTarget CompanyCalendar entity);
 
     CompanyCalendarResponse toResponse(CompanyCalendar entity);
 
