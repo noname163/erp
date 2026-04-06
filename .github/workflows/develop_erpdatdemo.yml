@@ -10,25 +10,25 @@ on:
   workflow_dispatch:
     inputs:
       enable_remote_debug:
-        description: 'Enable JDWP remote debug on Azure App Service'
+        description: "Enable JDWP remote debug on Azure App Service"
         required: false
         default: false
         type: boolean
       remote_debug_port:
-        description: 'JDWP port inside the Azure App Service container'
+        description: "JDWP port inside the Azure App Service container"
         required: false
-        default: '5005'
+        default: "5005"
         type: string
 
 env:
   AZURE_WEBAPP_NAME: erpdatdemo
-  AZURE_SLOT_NAME: Production
+  AZURE_RESOURCE_GROUP: ${{ vars.AZURE_RESOURCE_GROUP }}
 
 jobs:
   build:
     runs-on: ubuntu-latest
     permissions:
-      contents: read #This is required for actions/checkout
+      contents: read
 
     steps:
       - uses: actions/checkout@v4
@@ -36,8 +36,8 @@ jobs:
       - name: Set up Java version
         uses: actions/setup-java@v4
         with:
-          java-version: '17'
-          distribution: 'microsoft'
+          java-version: "17"
+          distribution: "microsoft"
 
       - name: Build with Maven
         run: mvn clean install
@@ -46,21 +46,21 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: java-app
-          path: '${{ github.workspace }}/target/*.jar'
+          path: "${{ github.workspace }}/target/*.jar"
 
   deploy:
     runs-on: ubuntu-latest
     needs: build
     permissions:
-      id-token: write #This is required for requesting the JWT
-      contents: read #This is required for actions/checkout
-  
+      id-token: write
+      contents: read
+
     steps:
       - name: Download artifact from build job
         uses: actions/download-artifact@v4
         with:
           name: java-app
-      
+
       - name: Login to Azure
         uses: azure/login@v2
         with:
@@ -74,15 +74,13 @@ jobs:
         with:
           inlineScript: |
             az webapp config appsettings set \
-              --resource-group "${{ vars.AZURE_RESOURCE_GROUP }}" \
+              --resource-group "${{ env.AZURE_RESOURCE_GROUP }}" \
               --name "${{ env.AZURE_WEBAPP_NAME }}" \
-              --slot "${{ env.AZURE_SLOT_NAME }}" \
-              --settings JAVA_TOOL_OPTIONS="-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:${{ github.event.inputs.remote_debug_port || '5005' }}"
+              --settings JAVA_OPTS="-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:${{ github.event.inputs.remote_debug_port }}"
 
       - name: Deploy to Azure Web App
         id: deploy-to-webapp
         uses: azure/webapps-deploy@v3
         with:
-          app-name: '${{ env.AZURE_WEBAPP_NAME }}'
-          slot-name: '${{ env.AZURE_SLOT_NAME }}'
-          package: '*.jar'
+          app-name: "${{ env.AZURE_WEBAPP_NAME }}"
+          package: "*.jar"
