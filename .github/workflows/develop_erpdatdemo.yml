@@ -77,7 +77,7 @@ jobs:
               --resource-group "${{ vars.AZURE_RESOURCE_GROUP }}" \
               --name "${{ env.AZURE_WEBAPP_NAME }}" \
               --slot "${{ env.AZURE_SLOT_NAME }}" \
-              --settings JAVA_TOOL_OPTIONS="-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:${{ github.event.inputs.remote_debug_port || '5005' }}"
+              --settings JAVA_OPTS="-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:${{ github.event.inputs.remote_debug_port || '5005' }}"
 
       - name: Deploy to Azure Web App
         id: deploy-to-webapp
