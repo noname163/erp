@@ -30,6 +30,7 @@ import com.dat.erp.services.SalaryTemplateDetailService;
 import com.dat.erp.services.SalaryTemplateService;
 import com.dat.erp.services.SecurityContextService;
 import com.dat.erp.services.base.AbstractAuditableService;
+import com.dat.erp.utils.CustomStringUtils;
 import com.dat.erp.utils.PageableUtils;
 
 @Service
@@ -68,7 +69,7 @@ public class SalaryTemplateServiceImpl extends AbstractAuditableService implemen
 
         List<SalaryTemplateDetailRequest> details = request.getDetails();
 
-        BigDecimal requestTotalAmount = parsePositiveBigDecimal(request.getTotalAmount(),
+        BigDecimal requestTotalAmount = CustomStringUtils.parsePositiveBigDecimal(request.getTotalAmount(),
                 Messages.ERROR_SALARY_TEMPLATE_TOTAL_AMOUNT_INVALID);
         BigDecimal calculatedTotalAmount = validateAndCalculateDetails(details);
 
@@ -76,10 +77,7 @@ public class SalaryTemplateServiceImpl extends AbstractAuditableService implemen
             throw new BadRequestException(Messages.ERROR_SALARY_TEMPLATE_TOTAL_AMOUNT_MISMATCH);
         }
 
-        String companyCode = securityContextService.getCurrentUser().getAccount().getCompanyCode();
-        if (companyCode == null || companyCode.isBlank()) {
-            throw new BadRequestException(Messages.ERROR_CURRENT_USER_COMPANY_MISSING);
-        }
+        String companyCode = requireCurrentUserCompanyCode();
         if (salaryTemplateRepository.existsOverlappingByNameAndCompanyCode(name, companyCode, effectiveFrom,
                 effectiveTo)) {
             throw new ConflictException(Messages.ERROR_SALARY_TEMPLATE_NAME_EXISTS);
@@ -106,7 +104,7 @@ public class SalaryTemplateServiceImpl extends AbstractAuditableService implemen
             throw new BadRequestException(Messages.ERROR_SALARY_TEMPLATE_EFFECTIVE_DATES_INVALID);
         }
 
-        String companyCode = resolveCurrentUserCompanyCode();
+        String companyCode = requireCurrentUserCompanyCode();
         Pageable pageable = PageableUtils.create(page, size, sortBy, sortDir);
         Page<SalaryTemplate> data = salaryTemplateRepository.searchByConditions(companyCode, name, currency, effectiveFrom,
                 effectiveTo, pageable);
@@ -116,17 +114,12 @@ public class SalaryTemplateServiceImpl extends AbstractAuditableService implemen
     @Override
     public PagedResponse<SelectionOptionResponse> getSalaryTemplateOptions(String name, Integer page, Integer size,
             String sortBy, String sortDir) {
-        String companyCode = resolveCurrentUserCompanyCode();
-        String normalizedName = name == null || name.isBlank() ? null : name.trim();
+        String companyCode = requireCurrentUserCompanyCode();
+        String normalizedName = CustomStringUtils.trimToNull(name);
         Pageable pageable = PageableUtils.create(page, size, sortBy, sortDir);
 
         Page<SalaryTemplate> data = salaryTemplateRepository.findOptionsByFilters(companyCode, normalizedName, pageable);
-        return PageableUtils.mapPage(data, template -> {
-            SelectionOptionResponse option = new SelectionOptionResponse();
-            option.setCode(template.getCode());
-            option.setName(template.getName());
-            return option;
-        }, Messages.SUCCESS);
+        return PageableUtils.mapPage(data, salaryTemplateMapper::toOptionResponse, Messages.SUCCESS);
     }
 
     @Override
@@ -143,7 +136,7 @@ public class SalaryTemplateServiceImpl extends AbstractAuditableService implemen
                 throw new BadRequestException(Messages.ERROR_SALARY_TEMPLATE_DETAILS_INVALID);
             }
 
-            BigDecimal amount = parsePositiveBigDecimal(detail.getAmount(),
+            BigDecimal amount = CustomStringUtils.parsePositiveBigDecimal(detail.getAmount(),
                     Messages.ERROR_SALARY_TEMPLATE_DETAIL_AMOUNT_INVALID);
             int sequenceOrder = parsePositiveInt(detail.getSequenceOrder(),
                     Messages.ERROR_SALARY_TEMPLATE_DETAIL_SEQUENCE_ORDER_INVALID);
@@ -159,21 +152,6 @@ public class SalaryTemplateServiceImpl extends AbstractAuditableService implemen
             throw new BadRequestException(Messages.ERROR_SALARY_TEMPLATE_TOTAL_AMOUNT_INVALID);
         }
         return total;
-    }
-
-    private BigDecimal parsePositiveBigDecimal(String rawValue, String errorMessage) {
-        if (rawValue == null || rawValue.isBlank()) {
-            throw new BadRequestException(errorMessage);
-        }
-        try {
-            BigDecimal value = new BigDecimal(rawValue.trim());
-            if (value.compareTo(BigDecimal.ZERO) <= 0) {
-                throw new BadRequestException(errorMessage);
-            }
-            return value;
-        } catch (NumberFormatException ex) {
-            throw new BadRequestException(errorMessage);
-        }
     }
 
     private int parsePositiveInt(String rawValue, String errorMessage) {

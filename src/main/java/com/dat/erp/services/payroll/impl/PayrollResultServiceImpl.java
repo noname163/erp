@@ -35,6 +35,7 @@ import com.dat.erp.entities.PayrollRun;
 import com.dat.erp.entities.UserProfile;
 import com.dat.erp.exceptions.BadRequestException;
 import com.dat.erp.exceptions.ResourceNotFoundException;
+import com.dat.erp.mapper.interfaces.PayrollResultMapper;
 import com.dat.erp.repositories.customrepositories.CompanyRepository;
 import com.dat.erp.repositories.customrepositories.DailyWorkRepository;
 import com.dat.erp.repositories.customrepositories.EmployeeSalaryRepository;
@@ -49,7 +50,6 @@ import com.dat.erp.services.SecurityContextService;
 import com.dat.erp.services.UserProfileService;
 import com.dat.erp.services.base.AbstractAuditableService;
 import com.dat.erp.services.payroll.PayrollResultService;
-import com.dat.erp.utils.CompanySecretKeyCryptoUtils;
 import com.dat.erp.utils.CustomStringUtils;
 import com.dat.erp.utils.PageableUtils;
 
@@ -76,6 +76,7 @@ public class PayrollResultServiceImpl extends AbstractAuditableService implement
     private final PayrollResultRepository payrollResultRepository;
     private final CompanyRepository companyRepository;
     private final EmployeeSalaryService employeeSalaryService;
+    private final PayrollResultMapper payrollResultMapper;
 
     public PayrollResultServiceImpl(
             UserProfileService userProfileService,
@@ -87,6 +88,7 @@ public class PayrollResultServiceImpl extends AbstractAuditableService implement
             PayrollResultRepository payrollResultRepository,
             CompanyRepository companyRepository,
             EmployeeSalaryService employeeSalaryService,
+            PayrollResultMapper payrollResultMapper,
             CodeGenerator codeGenerator,
             SecurityContextService securityContextService) {
         this.userProfileService = userProfileService;
@@ -98,6 +100,7 @@ public class PayrollResultServiceImpl extends AbstractAuditableService implement
         this.payrollResultRepository = payrollResultRepository;
         this.companyRepository = companyRepository;
         this.employeeSalaryService = employeeSalaryService;
+        this.payrollResultMapper = payrollResultMapper;
         this.codeGenerator = codeGenerator;
         this.securityContextService = securityContextService;
     }
@@ -113,7 +116,7 @@ public class PayrollResultServiceImpl extends AbstractAuditableService implement
             Integer size,
             String sortBy,
             String sortDir) {
-        String companyCode = resolveCompanyCode();
+        String companyCode = requireCurrentUserCompanyCode();
         String companySecretKey = resolveCompanySecretKey(companyCode);
         String normalizedPayrollRunCode = CustomStringUtils.normalizeCode(payrollRunCode);
         if (normalizedPayrollRunCode == null) {
@@ -136,16 +139,15 @@ public class PayrollResultServiceImpl extends AbstractAuditableService implement
                 sourceType,
                 CustomStringUtils.normalizeCode(employeeCode),
                 pageable);
-        return PageableUtils.mapPage(payrollResults, projection -> toListResponse(projection, companySecretKey), Messages.SUCCESS);
+        return PageableUtils.mapPage(payrollResults,
+                projection -> payrollResultMapper.toListResponse(projection, companySecretKey),
+                Messages.SUCCESS);
     }
 
     @Override
     @Transactional
     public void generatePayrollResult(PayrollRun payrollRun) {
-        String companyCode = resolveCurrentUserCompanyCode();
-        if (companyCode == null || companyCode.isBlank() || "SYSTEM".equals(companyCode)) {
-            throw new BadRequestException(Messages.ERROR_CURRENT_USER_COMPANY_MISSING);
-        }
+        String companyCode = requireCurrentUserCompanyCode();
 
         YearMonth runMonth = resolveRunMonth(payrollRun);
         LocalDate runDate = runMonth.atEndOfMonth();
@@ -327,14 +329,6 @@ public class PayrollResultServiceImpl extends AbstractAuditableService implement
                 .getTotalWorkHours();
     }
 
-    private String resolveCompanyCode() {
-        String companyCode = resolveCurrentUserCompanyCode();
-        if (companyCode == null || companyCode.isBlank() || "SYSTEM".equals(companyCode)) {
-            throw new BadRequestException(Messages.ERROR_CURRENT_USER_COMPANY_MISSING);
-        }
-        return companyCode;
-    }
-
     private String resolveCompanySecretKey(String companyCode) {
         Company company = companyRepository.findByCode(companyCode)
                 .orElseThrow(() -> new ResourceNotFoundException(
@@ -369,31 +363,4 @@ public class PayrollResultServiceImpl extends AbstractAuditableService implement
         };
     }
 
-    private PayrollResultListResponse toListResponse(PayrollResultListProjection projection, String companySecretKey) {
-        return new PayrollResultListResponse(
-                normalizeText(projection.getPayrollRunCode()),
-                normalizeText(projection.getSalaryName()),
-                CompanySecretKeyCryptoUtils.decrypt(projection.getExpectedAmount(), companySecretKey),
-                normalizeText(projection.getEmployeeName()),
-                CompanySecretKeyCryptoUtils.decrypt(projection.getActualAmount(), companySecretKey),
-                normalizeText(projection.getCurrency()),
-                projection.getExpectedQuantity(),
-                projection.getActualQuantity(),
-                normalizeText(projection.getUnitName()),
-                projection.getSourceType(),
-                projection.getIsRetro(),
-                normalizeText(projection.getRetroReason()),
-                projection.getPeriod(),
-                projection.getCreatedAt(),
-                projection.getEmployeeCode()
-            );
-    }
-
-    private String normalizeText(String value) {
-        if (value == null) {
-            return null;
-        }
-        String trimmed = value.trim();
-        return trimmed.isBlank() ? null : trimmed;
-    }
 }

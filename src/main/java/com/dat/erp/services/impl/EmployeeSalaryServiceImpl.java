@@ -89,14 +89,11 @@ public class EmployeeSalaryServiceImpl extends AbstractAuditableService implemen
             throw new BadRequestException(Messages.ERROR_EMPLOYEE_SALARY_EFFECTIVE_DATES_INVALID);
         }
 
-        BigDecimal totalAmount = parsePositiveBigDecimal(request.getTotalAmount(),
+        BigDecimal totalAmount = CustomStringUtils.parsePositiveBigDecimal(request.getTotalAmount(),
                 Messages.ERROR_EMPLOYEE_SALARY_TOTAL_AMOUNT_INVALID);
         String currency = request.getCurrency().trim().toUpperCase();
 
-        String companyCode = securityContextService.getCurrentUser().getAccount().getCompanyCode();
-        if (companyCode == null || companyCode.isBlank()) {
-            throw new BadRequestException(Messages.ERROR_CURRENT_USER_COMPANY_MISSING);
-        }
+        String companyCode = requireCurrentUserCompanyCode();
 
         String companySecretKey = resolveCompanySecretKey(companyCode);
 
@@ -151,7 +148,7 @@ public class EmployeeSalaryServiceImpl extends AbstractAuditableService implemen
             throw new BadRequestException(Messages.ERROR_EMPLOYEE_SALARY_AMOUNT_RANGE_INVALID);
         }
 
-        String companyCode = resolveCurrentUserCompanyCode();
+        String companyCode = requireCurrentUserCompanyCode();
         String companySecretKey = resolveCompanySecretKey(companyCode);
 
         List<EmployeeSalary> employeeSalaries = employeeSalaryRepository.searchByConditions(companyCode, employeeName,
@@ -175,21 +172,6 @@ public class EmployeeSalaryServiceImpl extends AbstractAuditableService implemen
                         org.springframework.data.domain.PageRequest.of(pageNumber, pageSize),
                         totalElements),
                 Messages.SUCCESS);
-    }
-
-    private BigDecimal parsePositiveBigDecimal(String rawValue, String errorMessage) {
-        if (rawValue == null || rawValue.isBlank()) {
-            throw new BadRequestException(errorMessage);
-        }
-        try {
-            BigDecimal value = new BigDecimal(rawValue.trim());
-            if (value.compareTo(BigDecimal.ZERO) <= 0) {
-                throw new BadRequestException(errorMessage);
-            }
-            return value;
-        } catch (NumberFormatException ex) {
-            throw new BadRequestException(errorMessage);
-        }
     }
 
     private BigDecimal validateNonNegativeAmount(BigDecimal amount) {

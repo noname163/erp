@@ -20,6 +20,7 @@ import com.dat.erp.entities.SalaryTemplateDetail;
 import com.dat.erp.entities.SystemUnit;
 import com.dat.erp.exceptions.BadRequestException;
 import com.dat.erp.exceptions.ResourceNotFoundException;
+import com.dat.erp.mapper.interfaces.SalaryTemplateDetailMapper;
 import com.dat.erp.repositories.customrepositories.SalaryRepository;
 import com.dat.erp.repositories.customrepositories.SalaryTemplateRepository;
 import com.dat.erp.repositories.customrepositories.SalaryTemplateDetailRepository;
@@ -36,17 +37,20 @@ public class SalaryTemplateDetailServiceImpl extends AbstractAuditableService im
     private final SalaryRepository salaryRepository;
     private final SystemUnitRepository systemUnitRepository;
     private final SalaryTemplateRepository salaryTemplateRepository;
+    private final SalaryTemplateDetailMapper salaryTemplateDetailMapper;
 
     public SalaryTemplateDetailServiceImpl(SalaryTemplateDetailRepository salaryTemplateDetailRepository,
             SalaryRepository salaryRepository,
             SystemUnitRepository systemUnitRepository,
             SalaryTemplateRepository salaryTemplateRepository,
+            SalaryTemplateDetailMapper salaryTemplateDetailMapper,
             CodeGenerator codeGenerator,
             SecurityContextService securityContextService) {
         this.salaryTemplateDetailRepository = salaryTemplateDetailRepository;
         this.salaryRepository = salaryRepository;
         this.systemUnitRepository = systemUnitRepository;
         this.salaryTemplateRepository = salaryTemplateRepository;
+        this.salaryTemplateDetailMapper = salaryTemplateDetailMapper;
         this.codeGenerator = codeGenerator;
         this.securityContextService = securityContextService;
     }
@@ -146,14 +150,7 @@ public class SalaryTemplateDetailServiceImpl extends AbstractAuditableService im
                 .orElseThrow(() -> new ResourceNotFoundException(
                         String.format(Messages.ERROR_SALARY_TEMPLATE_NOT_FOUND_WITH_CODE, normalizedCode)));
 
-        return salaryTemplateDetailRepository.findBySalaryTemplateCodeAndCompanyCode(normalizedCode, companyCode).stream()
-                .map(detail -> new SalaryTemplateDetailListResponse(
-                        detail.getSalary() == null ? null : detail.getSalary().getCode(),
-                        detail.getAmount(),
-                        detail.getQuantity(),
-                        detail.getUnit() == null ? null : detail.getUnit().getName(),
-                        detail.getSalary() == null ? null : detail.getSalary().getName(),
-                        Boolean.TRUE.equals(detail.getIsFixed())))
-                .toList();
+        return salaryTemplateDetailMapper.toListResponses(
+                salaryTemplateDetailRepository.findBySalaryTemplateCodeAndCompanyCode(normalizedCode, companyCode));
     }
 }

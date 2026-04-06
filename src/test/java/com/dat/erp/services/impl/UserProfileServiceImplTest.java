@@ -73,6 +73,10 @@ class UserProfileServiceImplTest {
 
         when(userProfileRepository.findOptionsByFilters(eq("CMP-1"), isNull(), any()))
                 .thenReturn(new PageImpl<>(List.of(profile), PageRequest.of(0, 20), 1));
+        SelectionOptionResponse option = new SelectionOptionResponse();
+        option.setCode("USR-1");
+        option.setName("John Smith");
+        when(userProfileMapper.toOptionResponse(profile)).thenReturn(option);
 
         PagedResponse<SelectionOptionResponse> result = userProfileService.getUserProfileOptionsByFirstName(null, 0, 20,
                 null, "ASC");

@@ -21,6 +21,8 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.mockito.Spy;
+import org.mapstruct.factory.Mappers;
 
 import com.dat.erp.constants.Messages;
 import com.dat.erp.dto.request.EmployeePayrollPolicyBatchRequest;
@@ -31,6 +33,7 @@ import com.dat.erp.entities.EmployeePayrollPolicy;
 import com.dat.erp.entities.PayrollPolicy;
 import com.dat.erp.entities.UserProfile;
 import com.dat.erp.exceptions.ConflictException;
+import com.dat.erp.mapper.interfaces.EmployeePayrollPolicyMapper;
 import com.dat.erp.repositories.customrepositories.EmployeePayrollPolicyRepository;
 import com.dat.erp.repositories.customrepositories.PayrollPolicyRepository;
 import com.dat.erp.repositories.customrepositories.UserProfileRepository;
@@ -54,6 +57,9 @@ class EmployeePayrollPolicyServiceImplTest {
 
     @Mock
     private SecurityContextService securityContextService;
+
+    @Spy
+    private EmployeePayrollPolicyMapper employeePayrollPolicyMapper = Mappers.getMapper(EmployeePayrollPolicyMapper.class);
 
     @InjectMocks
     private EmployeePayrollPolicyServiceImpl employeePayrollPolicyService;

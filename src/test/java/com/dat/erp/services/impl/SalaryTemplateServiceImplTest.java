@@ -216,6 +216,10 @@ class SalaryTemplateServiceImplTest {
 
         when(salaryTemplateRepository.findOptionsByFilters(eq("CMP-1"), isNull(), any()))
                 .thenReturn(new PageImpl<>(List.of(template), PageRequest.of(0, 20), 1));
+        SelectionOptionResponse option = new SelectionOptionResponse();
+        option.setCode("STP-1");
+        option.setName("Template A");
+        when(salaryTemplateMapper.toOptionResponse(template)).thenReturn(option);
 
         PagedResponse<SelectionOptionResponse> result = salaryTemplateService.getSalaryTemplateOptions(null, 0, 20, null,
                 "ASC");

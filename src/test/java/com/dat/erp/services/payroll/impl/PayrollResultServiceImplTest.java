@@ -24,6 +24,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.mapstruct.factory.Mappers;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 
@@ -43,6 +44,7 @@ import com.dat.erp.entities.PayrollRun;
 import com.dat.erp.entities.SystemUnit;
 import com.dat.erp.entities.UserProfile;
 import com.dat.erp.exceptions.BadRequestException;
+import com.dat.erp.mapper.interfaces.PayrollResultMapper;
 import com.dat.erp.repositories.customrepositories.CompanyRepository;
 import com.dat.erp.repositories.customrepositories.DailyWorkRepository;
 import com.dat.erp.repositories.customrepositories.EmployeeSalaryRepository;
@@ -93,6 +95,8 @@ class PayrollResultServiceImplTest {
     @Mock
     private SecurityContextService securityContextService;
 
+    private final PayrollResultMapper payrollResultMapper = Mappers.getMapper(PayrollResultMapper.class);
+
     private PayrollResultServiceImpl payrollResultService;
 
     @BeforeEach
@@ -108,6 +112,7 @@ class PayrollResultServiceImplTest {
                 payrollResultRepository,
                 companyRepository,
                 employeeSalaryService,
+                payrollResultMapper,
                 codeGenerator,
                 securityContextService);
     }

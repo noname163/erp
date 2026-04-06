@@ -23,6 +23,7 @@ import com.dat.erp.repositories.customrepositories.DepartmentRepository;
 import com.dat.erp.repositories.customrepositories.UserProfileRepository;
 import com.dat.erp.services.UserProfileService;
 import com.dat.erp.services.base.AbstractAuditableService;
+import com.dat.erp.utils.CustomStringUtils;
 import com.dat.erp.utils.PageableUtils;
 
 @Service
@@ -77,36 +78,16 @@ public class UserProfileServiceImpl extends AbstractAuditableService implements 
     @Override
     public PagedResponse<SelectionOptionResponse> getUserProfileOptionsByFirstName(String firstName, Integer page,
             Integer size, String sortBy, String sortDir) {
-        String companyCode = resolveCurrentUserCompanyCode();
-        String normalizedFirstName = firstName == null || firstName.isBlank() ? null : firstName.trim();
+        String companyCode = requireCurrentUserCompanyCode();
+        String normalizedFirstName = CustomStringUtils.trimToNull(firstName);
         Pageable pageable = PageableUtils.create(page, size, sortBy, sortDir);
         Page<UserProfile> profiles = userProfileRepository.findOptionsByFilters(companyCode, normalizedFirstName, pageable);
 
-        return PageableUtils.mapPage(profiles, profile -> {
-            SelectionOptionResponse option = new SelectionOptionResponse();
-            option.setCode(profile.getCode());
-            option.setName(buildFullName(profile.getFirstName(), profile.getLastName()));
-            return option;
-        }, Messages.SUCCESS);
-    }
-
-    private String buildFullName(String firstName, String lastName) {
-        String fn = firstName == null ? "" : firstName.trim();
-        String ln = lastName == null ? "" : lastName.trim();
-        String full = (fn + " " + ln).trim();
-        return full.isBlank() ? null : full;
+        return PageableUtils.mapPage(profiles, userProfileMapper::toOptionResponse, Messages.SUCCESS);
     }
 
     @Override
     public List<String> getActiveUserProfileCodesOfCurrentCompany() {
-        var currentUser = securityContextService.getCurrentUser();
-        String companyCode = currentUser == null
-                || currentUser.getAccount() == null
-                        ? null
-                        : currentUser.getAccount().getCompanyCode();
-        if (companyCode == null || companyCode.isBlank()) {
-            throw new BadRequestException(Messages.ERROR_CURRENT_USER_COMPANY_MISSING);
-        }
-        return userProfileRepository.findActiveCodesByCompanyCode(companyCode.trim());
+        return userProfileRepository.findActiveCodesByCompanyCode(requireCurrentUserCompanyCode());
     }
 }

@@ -22,6 +22,8 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.mockito.Spy;
+import org.mapstruct.factory.Mappers;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 
@@ -33,6 +35,7 @@ import com.dat.erp.entities.Account;
 import com.dat.erp.entities.PayrollRun;
 import com.dat.erp.exceptions.BadRequestException;
 import com.dat.erp.exceptions.ConflictException;
+import com.dat.erp.mapper.interfaces.PayrollRunMapper;
 import com.dat.erp.repositories.customrepositories.PayrollRunRepository;
 import com.dat.erp.services.CodeGenerator;
 import com.dat.erp.services.SecurityContextService;
@@ -52,6 +55,9 @@ class PayrollRunServiceImplTest {
 
     @Mock
     private SecurityContextService securityContextService;
+
+    @Spy
+    private PayrollRunMapper payrollRunMapper = Mappers.getMapper(PayrollRunMapper.class);
 
     @InjectMocks
     private PayrollRunServiceImpl payrollRunService;

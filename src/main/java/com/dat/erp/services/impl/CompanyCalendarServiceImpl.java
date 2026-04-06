@@ -29,6 +29,7 @@ import com.dat.erp.services.CodeGenerator;
 import com.dat.erp.services.CompanyCalendarService;
 import com.dat.erp.services.SecurityContextService;
 import com.dat.erp.services.base.AbstractAuditableService;
+import com.dat.erp.utils.CustomStringUtils;
 import com.dat.erp.utils.PageableUtils;
 
 @Service
@@ -66,10 +67,7 @@ public class CompanyCalendarServiceImpl extends AbstractAuditableService impleme
         LocalDate effectiveTo = request.getEffectiveTo();
         validateEffectiveDates(effectiveFrom, effectiveTo);
 
-        String companyCode = securityContextService.getCurrentUser().getAccount().getCompanyCode();
-        if (companyCode == null || companyCode.isBlank()) {
-            throw new BadRequestException(Messages.ERROR_CURRENT_USER_COMPANY_MISSING);
-        }
+        requireCurrentUserCompanyCode();
 
         CompanyCalendar calendar = companyCalendarMapper.toEntity(request);
         validateCalendar(calendar);
@@ -101,12 +99,11 @@ public class CompanyCalendarServiceImpl extends AbstractAuditableService impleme
 
         CompanyCalendar calendar = companyCalendarRepository.findByCodeAndCompanyCodeAndIsDeletedFalse(
                 code.trim(),
-                resolveCurrentCompanyCode())
+                requireCurrentUserCompanyCode())
                 .orElseThrow(() -> new ResourceNotFoundException(Messages.ERROR_COMPANY_CALENDAR_NOT_FOUND));
 
-        CompanyCalendar mappedCalendar = companyCalendarMapper.toEntity(request);
-        validateCalendar(mappedCalendar);
-        applyCalendarUpdates(calendar, mappedCalendar);
+        companyCalendarMapper.updateEntity(request, calendar);
+        validateCalendar(calendar);
         applyUpdateAudit(calendar);
 
         CompanyCalendar savedCalendar = companyCalendarRepository.save(calendar);
@@ -127,13 +124,13 @@ public class CompanyCalendarServiceImpl extends AbstractAuditableService impleme
             Integer size,
             String sortBy,
             String sortDir) {
-        String companyCode = resolveCurrentCompanyCode();
+        String companyCode = requireCurrentUserCompanyCode();
         String normalizedTimeZone = normalizeOptionalTimeZone(timeZone);
         Pageable pageable = PageableUtils.create(page, size, sortBy, sortDir);
         Page<CompanyCalendar> calendars = companyCalendarRepository.searchByConditions(
                 companyCode,
-                normalizeOptionalValue(name),
-                normalizeOptionalValue(region),
+                CustomStringUtils.trimToNull(name),
+                CustomStringUtils.trimToNull(region),
                 normalizedTimeZone,
                 pageable);
         return PageableUtils.mapPage(calendars, companyCalendarMapper::toListResponse, Messages.SUCCESS);
@@ -148,7 +145,7 @@ public class CompanyCalendarServiceImpl extends AbstractAuditableService impleme
 
         CompanyCalendar calendar = companyCalendarRepository.findByCodeAndCompanyCodeAndIsDeletedFalse(
                 code.trim(),
-                resolveCurrentCompanyCode())
+                requireCurrentUserCompanyCode())
                 .orElseThrow(() -> new ResourceNotFoundException(Messages.ERROR_COMPANY_CALENDAR_NOT_FOUND));
 
         return calendarDateService.getCompanyCalendarDates(calendar);
@@ -181,27 +178,6 @@ public class CompanyCalendarServiceImpl extends AbstractAuditableService impleme
         } catch (DateTimeException ex) {
             throw new BadRequestException(Messages.ERROR_COMPANY_CALENDAR_TIME_ZONE_INVALID);
         }
-    }
-
-    private void applyCalendarUpdates(CompanyCalendar target, CompanyCalendar source) {
-        target.setName(source.getName());
-        target.setEffectiveFrom(source.getEffectiveFrom());
-        target.setEffectiveTo(source.getEffectiveTo());
-        target.setRegion(source.getRegion());
-        target.setTimeZone(source.getTimeZone());
-        target.setNote(source.getNote());
-    }
-
-    private String resolveCurrentCompanyCode() {
-        String companyCode = securityContextService.getCurrentUser().getAccount().getCompanyCode();
-        if (companyCode == null || companyCode.isBlank()) {
-            throw new BadRequestException(Messages.ERROR_CURRENT_USER_COMPANY_MISSING);
-        }
-        return companyCode;
-    }
-
-    private String normalizeOptionalValue(String value) {
-        return value == null || value.isBlank() ? null : value.trim();
     }
 
     private String normalizeOptionalTimeZone(String timeZone) {

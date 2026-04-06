@@ -162,6 +162,10 @@ class SalaryServiceImplTest {
 
         when(salaryRepository.findOptionsByFilters(eq("CMP-1"), isNull(), any()))
                 .thenReturn(new PageImpl<>(List.of(salary), PageRequest.of(0, 20), 1));
+        SelectionOptionResponse option = new SelectionOptionResponse();
+        option.setCode("SAL-000001");
+        option.setName("BASE");
+        when(salaryMapper.toOptionResponse(salary)).thenReturn(option);
 
         PagedResponse<SelectionOptionResponse> result = salaryService.getSalaryOptionsByCompanyCode(null, 0, 20, null,
                 "ASC");

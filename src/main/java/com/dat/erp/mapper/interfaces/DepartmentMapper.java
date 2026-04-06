@@ -3,6 +3,7 @@ package com.dat.erp.mapper.interfaces;
 import org.mapstruct.Mapper;
 
 import com.dat.erp.dto.request.DepartmentRequest;
+import com.dat.erp.dto.response.SelectionOptionResponse;
 import com.dat.erp.dto.response.department.DepartmentResponse;
 import com.dat.erp.entities.Department;
 import com.dat.erp.systemconfigs.CentralMapperConfig;
@@ -12,4 +13,6 @@ public interface DepartmentMapper {
     Department toEntity(DepartmentRequest request);
 
     DepartmentResponse toResponse(Department entity);
+
+    SelectionOptionResponse toOptionResponse(Department entity);
 }

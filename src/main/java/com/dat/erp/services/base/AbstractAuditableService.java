@@ -5,7 +5,9 @@ import java.time.ZoneOffset;
 
 import org.springframework.beans.factory.annotation.Autowired;
 
+import com.dat.erp.constants.Messages;
 import com.dat.erp.entities.BaseAuditableEntity;
+import com.dat.erp.exceptions.BadRequestException;
 import com.dat.erp.exceptions.UnauthorizedException;
 import com.dat.erp.services.CodeGenerator;
 import com.dat.erp.services.SecurityContextService;
@@ -77,5 +79,13 @@ public abstract class AbstractAuditableService {
         } catch (UnauthorizedException ex) {
             return SYSTEM_USER;
         }
+    }
+
+    protected String requireCurrentUserCompanyCode() {
+        String companyCode = resolveCurrentUserCompanyCode();
+        if (companyCode == null || companyCode.isBlank() || SYSTEM_USER.equals(companyCode)) {
+            throw new BadRequestException(Messages.ERROR_CURRENT_USER_COMPANY_MISSING);
+        }
+        return companyCode;
     }
 }
