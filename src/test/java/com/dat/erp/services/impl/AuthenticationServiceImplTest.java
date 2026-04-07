@@ -35,7 +35,6 @@ import com.dat.erp.utils.CookieUtils;
 import com.dat.erp.utils.CryptoUtils;
 import com.dat.erp.utils.JwtUtils;
 
-import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletResponse;
 
 class AuthenticationServiceImplTest {
@@ -116,20 +115,12 @@ class AuthenticationServiceImplTest {
     void logout_addsExpiredCookieAndReturnsMessage() {
         HttpServletResponse response = Mockito.mock(HttpServletResponse.class);
 
-        String result = authenticationService.logout(response);
+        try (MockedStatic<CookieUtils> cookies = Mockito.mockStatic(CookieUtils.class)) {
+            String result = authenticationService.logout(response);
 
-        assertEquals(Messages.LOGOUT_SUCCESS, result);
-        verify(response).addCookie(Mockito.argThat(cookie -> matchesLogoutCookie(cookie)));
-    }
-
-    private static boolean matchesLogoutCookie(Cookie cookie) {
-        return cookie != null
-                && "AUTH_TOKEN".equals(cookie.getName())
-                && cookie.getValue() == null
-                && cookie.isHttpOnly()
-                && cookie.getSecure()
-                && "/".equals(cookie.getPath())
-                && cookie.getMaxAge() == 0;
+            assertEquals(Messages.LOGOUT_SUCCESS, result);
+            cookies.verify(() -> CookieUtils.clearTokenCookie(eq(response)));
+        }
     }
 
     @Test

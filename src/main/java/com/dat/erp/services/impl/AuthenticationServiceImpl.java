@@ -22,7 +22,6 @@ import com.dat.erp.utils.CookieUtils;
 import com.dat.erp.utils.CryptoUtils;
 import com.dat.erp.utils.JwtUtils;
 
-import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletResponse;
 
 @Service
@@ -64,12 +63,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 
     @Override
     public String logout(HttpServletResponse response) {
-        Cookie cookie = new Cookie("AUTH_TOKEN", null);
-        cookie.setHttpOnly(true);
-        cookie.setSecure(true);
-        cookie.setPath("/");
-        cookie.setMaxAge(0); // delete immediately
-        response.addCookie(cookie);
+        CookieUtils.clearTokenCookie(response);
         return Messages.LOGOUT_SUCCESS;
     }
 
