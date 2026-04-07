@@ -7,6 +7,9 @@ on:
   push:
     branches:
       - develop
+  pull_request:
+    branches:
+      - develop
   workflow_dispatch:
     inputs:
       enable_remote_debug:
@@ -51,6 +54,7 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     needs: build
+    if: ${{ github.event_name != 'pull_request' }}
     permissions:
       id-token: write
       contents: read
