@@ -71,7 +71,7 @@ class AuthenticationServiceImplTest {
 
     @Test
     void login_success_setsCookieAndReturnsMessage() {
-        when(accountRepository.findByEmail("user@example.com")).thenReturn(Optional.of(account));
+        when(accountRepository.findByEmailWithRoleAndUserProfile("user@example.com")).thenReturn(Optional.of(account));
         when(jwtUtils.generateToken("user@example.com", "ACC-1")).thenReturn("token");
 
         HttpServletResponse response = Mockito.mock(HttpServletResponse.class);
@@ -89,7 +89,7 @@ class AuthenticationServiceImplTest {
 
     @Test
     void login_accountNotFound_throwsUnauthorized() {
-        when(accountRepository.findByEmail("user@example.com")).thenReturn(Optional.empty());
+        when(accountRepository.findByEmailWithRoleAndUserProfile("user@example.com")).thenReturn(Optional.empty());
 
         HttpServletResponse response = Mockito.mock(HttpServletResponse.class);
         assertThrows(UnauthorizedException.class, () -> authenticationService.login(request, response));
@@ -99,7 +99,7 @@ class AuthenticationServiceImplTest {
 
     @Test
     void login_passwordMismatch_throwsUnauthorized() {
-        when(accountRepository.findByEmail("user@example.com")).thenReturn(Optional.of(account));
+        when(accountRepository.findByEmailWithRoleAndUserProfile("user@example.com")).thenReturn(Optional.of(account));
 
         HttpServletResponse response = Mockito.mock(HttpServletResponse.class);
         try (MockedStatic<CryptoUtils> crypto = Mockito.mockStatic(CryptoUtils.class)) {

@@ -77,10 +77,8 @@ class SalaryServiceImplTest {
         account.setCompanyCode("CMP-1");
         when(securityContextService.getCurrentUser()).thenReturn(new CustomUserDetails(account, null));
 
-        when(salaryRepository.existsByNameIgnoreCaseAndCompanyCodeAndIsDeletedFalse(eq("BASE"), eq("CMP-1")))
-                .thenReturn(false);
-        when(salaryRepository.existsByNameIgnoreCaseAndCompanyCodeAndIsDeletedFalse(eq("LATE_DEDUCTION"), eq("CMP-1")))
-                .thenReturn(false);
+        when(salaryRepository.findExistingUpperCaseNamesByCompanyCodeAndIsDeletedFalse("CMP-1",
+                List.of("BASE", "LATE_DEDUCTION"))).thenReturn(List.of());
 
         Salary baseEntity = new Salary();
         Salary deductEntity = new Salary();
@@ -118,8 +116,8 @@ class SalaryServiceImplTest {
         account.setCompanyCode("CMP-1");
         when(securityContextService.getCurrentUser()).thenReturn(new CustomUserDetails(account, null));
 
-        when(salaryRepository.existsByNameIgnoreCaseAndCompanyCodeAndIsDeletedFalse(eq("BASE"), eq("CMP-1")))
-                .thenReturn(true);
+        when(salaryRepository.findExistingUpperCaseNamesByCompanyCodeAndIsDeletedFalse("CMP-1",
+                List.of("BASE"))).thenReturn(List.of("BASE"));
 
         ConflictException ex = assertThrows(ConflictException.class,
                 () -> salaryService.createSalaries(List.of(base)));

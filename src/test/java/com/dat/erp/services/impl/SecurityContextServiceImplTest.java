@@ -19,7 +19,6 @@ import com.dat.erp.entities.UserProfile;
 import com.dat.erp.exceptions.ResourceNotFoundException;
 import com.dat.erp.exceptions.UnauthorizedException;
 import com.dat.erp.repositories.customrepositories.AccountRepository;
-import com.dat.erp.repositories.customrepositories.UserProfileRepository;
 import com.dat.erp.systemconfigs.CustomUserDetails;
 
 class SecurityContextServiceImplTest {
@@ -27,15 +26,12 @@ class SecurityContextServiceImplTest {
     @Mock
     private AccountRepository accountRepository;
 
-    @Mock
-    private UserProfileRepository userProfileRepository;
-
     private SecurityContextServiceImpl service;
 
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
-        service = new SecurityContextServiceImpl(accountRepository, userProfileRepository);
+        service = new SecurityContextServiceImpl(accountRepository);
         SecurityContextHolder.clearContext();
     }
 
@@ -51,9 +47,9 @@ class SecurityContextServiceImplTest {
 
         UserProfile profile = new UserProfile();
         profile.setCode("USR-1");
+        account.setUserProfile(profile);
 
-        when(accountRepository.findByCode("ACC-1")).thenReturn(Optional.of(account));
-        when(userProfileRepository.findByAccount_Code("ACC-1")).thenReturn(Optional.of(profile));
+        when(accountRepository.findByCodeWithRoleAndUserProfileAndDepartment("ACC-1")).thenReturn(Optional.of(account));
 
         CustomUserDetails details = service.setCurrentUser("ACC-1");
 
@@ -65,7 +61,7 @@ class SecurityContextServiceImplTest {
 
     @Test
     void setCurrentUser_accountNotFound_throwsResourceNotFound() {
-        when(accountRepository.findByCode("ACC-404")).thenReturn(Optional.empty());
+        when(accountRepository.findByCodeWithRoleAndUserProfileAndDepartment("ACC-404")).thenReturn(Optional.empty());
 
         assertThrows(ResourceNotFoundException.class, () -> service.setCurrentUser("ACC-404"));
     }
@@ -75,4 +71,3 @@ class SecurityContextServiceImplTest {
         assertThrows(UnauthorizedException.class, () -> service.getCurrentUser());
     }
 }
-

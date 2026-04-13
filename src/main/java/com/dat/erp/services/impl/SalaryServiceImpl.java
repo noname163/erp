@@ -76,10 +76,9 @@ public class SalaryServiceImpl extends AbstractAuditableService implements Salar
 
         String companyCode = requireCurrentUserCompanyCode();
 
-        for (String name : normalizedNames) {
-            if (salaryRepository.existsByNameIgnoreCaseAndCompanyCodeAndIsDeletedFalse(name, companyCode)) {
-                throw new ConflictException(Messages.ERROR_SALARY_NAME_EXISTS);
-            }
+        if (!salaryRepository.findExistingUpperCaseNamesByCompanyCodeAndIsDeletedFalse(companyCode, normalizedNames)
+                .isEmpty()) {
+            throw new ConflictException(Messages.ERROR_SALARY_NAME_EXISTS);
         }
 
         List<Salary> entities = salaryMapper.toEntities(requests);

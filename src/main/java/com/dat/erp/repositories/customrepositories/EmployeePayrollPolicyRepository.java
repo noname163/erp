@@ -15,7 +15,17 @@ import com.dat.erp.entities.EmployeePayrollPolicy;
 public interface EmployeePayrollPolicyRepository extends JpaRepository<EmployeePayrollPolicy, Long> {
     Optional<EmployeePayrollPolicy> findByCodeAndIsDeletedFalse(String code);
 
-    List<EmployeePayrollPolicy> findByUserProfile_CodeAndIsDeletedFalseOrderByEffectiveFromDesc(String userProfileCode);
+    @Query("""
+            select epp
+            from EmployeePayrollPolicy epp
+            join fetch epp.userProfile up
+            join fetch epp.payrollPolicy pp
+            where up.code = :userProfileCode
+              and epp.isDeleted = false
+            order by epp.effectiveFrom desc
+            """)
+    List<EmployeePayrollPolicy> findByUserProfileCodeAndIsDeletedFalseOrderByEffectiveFromDesc(
+            @Param("userProfileCode") String userProfileCode);
 
     @Query("""
             select case when count(epp) > 0 then true else false end

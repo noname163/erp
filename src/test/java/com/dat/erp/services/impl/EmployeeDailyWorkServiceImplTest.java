@@ -3,20 +3,18 @@ package com.dat.erp.services.impl;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyCollection;
 import static org.mockito.ArgumentMatchers.anyList;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
-import java.math.BigDecimal;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -98,10 +96,13 @@ class EmployeeDailyWorkServiceImplTest {
         employee.setCode("EMP001");
         employee.setAccount(employeeAccount);
         employee.setIsActive(true);
-        when(userProfileRepository.findByCode("EMP001")).thenReturn(Optional.of(employee));
+        when(userProfileRepository.findAllByCodeInAndIsDeletedFalseWithAccount(anyCollection()))
+                .thenReturn(List.of(employee));
 
-        when(dailyWorkRepository.existsByUserProfile_CodeAndWorkingDateAndIsDeletedFalse(eq("EMP001"), any()))
-                .thenReturn(false);
+        when(dailyWorkRepository.findExistingByUserProfileCodesAndWorkingDates(
+                anyCollection(),
+                anyCollection()))
+                .thenReturn(List.of());
         when(codeGenerator.nextCode("DWK-")).thenReturn("DWK-000001");
         when(dailyWorkRepository.saveAll(anyList())).thenAnswer(invocation -> invocation.getArgument(0));
 
@@ -143,10 +144,8 @@ class EmployeeDailyWorkServiceImplTest {
         employee.setCode("EMP001");
         employee.setAccount(employeeAccount);
         employee.setIsActive(true);
-        when(userProfileRepository.findByCode("EMP001")).thenReturn(Optional.of(employee));
-
-        when(dailyWorkRepository.existsByUserProfile_CodeAndWorkingDateAndIsDeletedFalse(eq("EMP001"), any()))
-                .thenReturn(false);
+        when(userProfileRepository.findAllByCodeInAndIsDeletedFalseWithAccount(anyCollection()))
+                .thenReturn(List.of(employee));
         when(codeGenerator.nextCode("DWK-")).thenReturn("DWK-000001");
 
         ConflictException ex = assertThrows(ConflictException.class,
@@ -168,10 +167,15 @@ class EmployeeDailyWorkServiceImplTest {
         employee.setCode("EMP001");
         employee.setAccount(employeeAccount);
         employee.setIsActive(true);
-        when(userProfileRepository.findByCode("EMP001")).thenReturn(Optional.of(employee));
-
-        when(dailyWorkRepository.existsByUserProfile_CodeAndWorkingDateAndIsDeletedFalse(eq("EMP001"), any()))
-                .thenReturn(true);
+        when(userProfileRepository.findAllByCodeInAndIsDeletedFalseWithAccount(anyCollection()))
+                .thenReturn(List.of(employee));
+        when(dailyWorkRepository.findExistingByUserProfileCodesAndWorkingDates(
+                anyCollection(),
+                anyCollection()))
+                .thenReturn(List.of(DailyWork.builder()
+                        .userProfile(employee)
+                        .workingDate(LocalDate.of(2026, 1, 25))
+                        .build()));
 
         ConflictException ex = assertThrows(ConflictException.class,
                 () -> employeeDailyWorkService.createEmployeeDailyWorks(requests));
@@ -186,7 +190,8 @@ class EmployeeDailyWorkServiceImplTest {
         currentUserAccount.setCompanyCode("CMP-1");
         when(securityContextService.getCurrentUser()).thenReturn(new CustomUserDetails(currentUserAccount, null));
 
-        when(userProfileRepository.findByCode("EMP001")).thenReturn(Optional.empty());
+        when(userProfileRepository.findAllByCodeInAndIsDeletedFalseWithAccount(anyCollection()))
+                .thenReturn(List.of());
 
         ResourceNotFoundException ex = assertThrows(ResourceNotFoundException.class,
                 () -> employeeDailyWorkService.createEmployeeDailyWorks(requests));
@@ -210,10 +215,13 @@ class EmployeeDailyWorkServiceImplTest {
         employee.setCode("EMP001");
         employee.setAccount(employeeAccount);
         employee.setIsActive(true);
-        when(userProfileRepository.findByCode("EMP001")).thenReturn(Optional.of(employee));
+        when(userProfileRepository.findAllByCodeInAndIsDeletedFalseWithAccount(anyCollection()))
+                .thenReturn(List.of(employee));
 
-        when(dailyWorkRepository.existsByUserProfile_CodeAndWorkingDateAndIsDeletedFalse(eq("EMP001"), any()))
-                .thenReturn(false);
+        when(dailyWorkRepository.findExistingByUserProfileCodesAndWorkingDates(
+                anyCollection(),
+                anyCollection()))
+                .thenReturn(List.of());
 
         BadRequestException ex = assertThrows(BadRequestException.class,
                 () -> employeeDailyWorkService.createEmployeeDailyWorks(requests));

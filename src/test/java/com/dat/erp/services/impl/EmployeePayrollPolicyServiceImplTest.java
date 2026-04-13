@@ -168,7 +168,7 @@ class EmployeePayrollPolicyServiceImplTest {
                 .build();
 
         when(userProfileRepository.findByCodeAndIsDeletedFalse("USR-001")).thenReturn(Optional.of(userProfile));
-        when(employeePayrollPolicyRepository.findByUserProfile_CodeAndIsDeletedFalseOrderByEffectiveFromDesc("USR-001"))
+        when(employeePayrollPolicyRepository.findByUserProfileCodeAndIsDeletedFalseOrderByEffectiveFromDesc("USR-001"))
                 .thenReturn(List.of(employeePayrollPolicy));
 
         List<EmployeePayrollPolicyResponse> responses = employeePayrollPolicyService.getEmployeePayrollPolicies("USR-001");

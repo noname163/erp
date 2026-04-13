@@ -26,6 +26,15 @@ public interface UserProfileRepository extends JpaRepository<UserProfile, Long>,
 
     Optional<UserProfile> findByCodeAndIsDeletedFalse(String code);
 
+    @Query("""
+            select distinct up
+            from UserProfile up
+            left join fetch up.account acc
+            where up.code in :codes
+              and up.isDeleted = false
+            """)
+    List<UserProfile> findAllByCodeInAndIsDeletedFalseWithAccount(@Param("codes") Collection<String> codes);
+
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("""
             select up

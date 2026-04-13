@@ -11,7 +11,6 @@ import com.dat.erp.entities.UserProfile;
 import com.dat.erp.exceptions.ResourceNotFoundException;
 import com.dat.erp.exceptions.UnauthorizedException;
 import com.dat.erp.repositories.customrepositories.AccountRepository;
-import com.dat.erp.repositories.customrepositories.UserProfileRepository;
 import com.dat.erp.services.SecurityContextService;
 import com.dat.erp.systemconfigs.CustomUserDetails;
 
@@ -19,19 +18,17 @@ import com.dat.erp.systemconfigs.CustomUserDetails;
 public class SecurityContextServiceImpl implements SecurityContextService {
 
     private final AccountRepository accountRepository;
-    private final UserProfileRepository userProfileRepository;
 
-    public SecurityContextServiceImpl(AccountRepository accountRepository, UserProfileRepository userProfileRepository) {
+    public SecurityContextServiceImpl(AccountRepository accountRepository) {
         this.accountRepository = accountRepository;
-        this.userProfileRepository = userProfileRepository;
     }
 
     @Override
     public CustomUserDetails setCurrentUser(String accountCode) {
-        Account account = accountRepository.findByCode(accountCode)
+        Account account = accountRepository.findByCodeWithRoleAndUserProfileAndDepartment(accountCode)
                 .orElseThrow(() -> new ResourceNotFoundException(
                         String.format(Messages.ERROR_ACCOUNT_NOT_FOUND_WITH_CODE, accountCode)));
-        UserProfile profile = userProfileRepository.findByAccount_Code(accountCode).orElse(null);
+        UserProfile profile = account.getUserProfile();
         CustomUserDetails customUserDetails = new CustomUserDetails(account, profile);
         UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
                 customUserDetails, null, customUserDetails.getAuthorities());

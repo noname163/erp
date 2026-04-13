@@ -130,7 +130,7 @@ public class EmployeePayrollPolicyServiceImpl extends AbstractAuditableService i
                 .orElseThrow(() -> new ResourceNotFoundException(Messages.ERROR_EMPLOYEE_PAYROLL_POLICY_USER_PROFILE_CODE_INVALID));
         ensureCurrentCompanyOwns(userProfile.getCompanyCode());
 
-        return employeePayrollPolicyRepository.findByUserProfile_CodeAndIsDeletedFalseOrderByEffectiveFromDesc(userProfileCode)
+        return employeePayrollPolicyRepository.findByUserProfileCodeAndIsDeletedFalseOrderByEffectiveFromDesc(userProfileCode)
                 .stream()
                 .map(employeePayrollPolicyMapper::toResponse)
                 .toList();
