@@ -70,6 +70,9 @@ public class EmployeeDailyWorkServiceImpl extends AbstractAuditableService imple
 
         String companyCode = requireCurrentUserCompanyCode();
 
+        Map<EmployeeDailyWorkRequest, String> userProfileCodeByRequest = new LinkedHashMap<>();
+        Set<String> requestedUserProfileCodes = new HashSet<>();
+        Set<LocalDate> requestedWorkingDates = new HashSet<>();
         List<DailyWork> dailyWorks = new ArrayList<>(requests.size());
         Set<String> dedupeKeys = new HashSet<>();
         for (EmployeeDailyWorkRequest request : requests) {
@@ -88,9 +91,40 @@ public class EmployeeDailyWorkServiceImpl extends AbstractAuditableService imple
             if (!dedupeKeys.add(key)) {
                 throw new ConflictException(Messages.ERROR_DAILY_WORK_ALREADY_EXISTS);
             }
+            userProfileCodeByRequest.put(request, userProfileCode);
+            requestedUserProfileCodes.add(userProfileCode);
+            if (workingDate != null) {
+                requestedWorkingDates.add(workingDate);
+            }
+        }
 
-            UserProfile userProfile = userProfileRepository.findByCode(userProfileCode)
-                    .orElseThrow(() -> new ResourceNotFoundException(Messages.ERROR_DAILY_WORK_EMPLOYEE_NOT_FOUND));
+        Map<String, UserProfile> userProfileByCode = userProfileRepository
+                .findAllByCodeInAndIsDeletedFalseWithAccount(requestedUserProfileCodes)
+                .stream()
+                .collect(java.util.stream.Collectors.toMap(UserProfile::getCode, profile -> profile));
+        if (userProfileByCode.size() != requestedUserProfileCodes.size()) {
+            throw new ResourceNotFoundException(Messages.ERROR_DAILY_WORK_EMPLOYEE_NOT_FOUND);
+        }
+
+        Set<String> existingDailyWorkKeys = new HashSet<>();
+        if (!requestedWorkingDates.isEmpty()) {
+            dailyWorkRepository.findExistingByUserProfileCodesAndWorkingDates(requestedUserProfileCodes, requestedWorkingDates)
+                    .forEach(existingDailyWork -> {
+                        UserProfile userProfile = existingDailyWork.getUserProfile();
+                        if (userProfile != null
+                                && userProfile.getCode() != null
+                                && existingDailyWork.getWorkingDate() != null) {
+                            existingDailyWorkKeys.add(userProfile.getCode() + "|" + existingDailyWork.getWorkingDate());
+                        }
+                    });
+        }
+
+        for (EmployeeDailyWorkRequest request : requests) {
+            String userProfileCode = userProfileCodeByRequest.get(request);
+            UserProfile userProfile = userProfileByCode.get(userProfileCode);
+            if (userProfile == null) {
+                throw new ResourceNotFoundException(Messages.ERROR_DAILY_WORK_EMPLOYEE_NOT_FOUND);
+            }
 
             String employeeCompanyCode = userProfile.getAccount() == null ? null
                     : userProfile.getAccount().getCompanyCode();
@@ -102,8 +136,8 @@ public class EmployeeDailyWorkServiceImpl extends AbstractAuditableService imple
                 throw new BadRequestException(Messages.ERROR_DAILY_WORK_EMPLOYEE_INACTIVE);
             }
 
-            if (dailyWorkRepository.existsByUserProfile_CodeAndWorkingDateAndIsDeletedFalse(userProfileCode,
-                    workingDate)) {
+            LocalDate workingDate = request.getWorkingDate();
+            if (existingDailyWorkKeys.contains(userProfileCode + "|" + workingDate)) {
                 throw new ConflictException(Messages.ERROR_DAILY_WORK_ALREADY_EXISTS);
             }
 

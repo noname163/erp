@@ -68,28 +68,34 @@ public class CalendarDateServiceImpl extends AbstractAuditableService implements
         calendarDateRepository.findByCalendarCodeAndCompanyCode(calendar.getCode(), calendar.getCompanyCode())
                 .forEach(calendarDate -> existingByDate.put(calendarDate.getCalDate(), calendarDate));
 
-        List<CalendarDate> calendarDatesToSave = new ArrayList<>();
+        List<CalendarDate> calendarDatesToCreate = new ArrayList<>();
+        List<CalendarDate> orderedCalendarDates = new ArrayList<>();
         for (CalendarDate requestedCalendarDate : requestedCalendarDates) {
             CalendarDate existingCalendarDate = existingByDate.remove(requestedCalendarDate.getCalDate());
             if (existingCalendarDate != null) {
                 existingCalendarDate.setDayType(requestedCalendarDate.getDayType());
                 existingCalendarDate.setNote(requestedCalendarDate.getNote());
                 applyUpdateAudit(existingCalendarDate);
-                calendarDatesToSave.add(existingCalendarDate);
+                orderedCalendarDates.add(existingCalendarDate);
                 continue;
             }
 
             requestedCalendarDate.setCalendar(calendar);
             generateCodeIfMissing(requestedCalendarDate, CodePrefixes.CALENDAR_DATE);
             applyInsertAudit(requestedCalendarDate);
-            calendarDatesToSave.add(requestedCalendarDate);
+            calendarDatesToCreate.add(requestedCalendarDate);
+            orderedCalendarDates.add(requestedCalendarDate);
         }
 
         if (!existingByDate.isEmpty()) {
             calendarDateRepository.deleteAll(existingByDate.values());
         }
 
-        return calendarDateRepository.saveAll(calendarDatesToSave);
+        if (!calendarDatesToCreate.isEmpty()) {
+            calendarDateRepository.saveAll(calendarDatesToCreate);
+        }
+
+        return orderedCalendarDates;
     }
 
     @Override

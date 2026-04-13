@@ -34,7 +34,7 @@ import lombok.Setter;
 public abstract class BaseAuditableEntity {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.SEQUENCE)
     @EqualsAndHashCode.Include
     private Long id;
 

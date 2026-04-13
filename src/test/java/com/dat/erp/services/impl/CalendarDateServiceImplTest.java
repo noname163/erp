@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -219,7 +220,8 @@ class CalendarDateServiceImplTest {
         assertEquals(1, deletedDates.size());
         assertEquals(existingDateToDelete, deletedDates.get(0));
         verify(calendarDateRepository).saveAll(captor.capture());
-        assertEquals(2, captor.getValue().size());
+        assertEquals(1, captor.getValue().size());
+        assertEquals(LocalDate.of(2026, 1, 5), captor.getValue().get(0).getCalDate());
     }
 
     @Test

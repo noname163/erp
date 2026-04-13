@@ -19,6 +19,17 @@ public interface SalaryRepository extends JpaRepository<Salary, Long> {
 
     List<Salary> findAllByCodeIn(Collection<String> codes);
 
+    @Query("""
+            select upper(s.name)
+            from Salary s
+            where s.companyCode = :companyCode
+              and s.isDeleted = false
+              and upper(s.name) in :names
+            """)
+    List<String> findExistingUpperCaseNamesByCompanyCodeAndIsDeletedFalse(
+            @Param("companyCode") String companyCode,
+            @Param("names") Collection<String> names);
+
     boolean existsByNameIgnoreCaseAndCompanyCodeAndIsDeletedFalse(String name, String companyCode);
 
     @Query("""

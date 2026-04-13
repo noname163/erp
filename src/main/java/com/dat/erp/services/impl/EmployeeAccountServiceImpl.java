@@ -484,7 +484,7 @@ public class EmployeeAccountServiceImpl extends AbstractAuditableService impleme
             return Map.of();
         }
 
-        List<Account> accounts = accountRepository.findAllByCodeIn(creatorCodes);
+        List<Account> accounts = accountRepository.findAllByCodeInWithUserProfile(creatorCodes);
         return accounts.stream().collect(Collectors.toMap(Account::getCode, account -> {
             UserProfile userProfile = account.getUserProfile();
             return userProfile == null ? null : userProfile.getFirstName() + " " + userProfile.getLastName();

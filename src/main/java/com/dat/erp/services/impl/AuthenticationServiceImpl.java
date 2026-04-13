@@ -36,7 +36,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     @Override
     public LoginResponse login(LoginRequest request, HttpServletResponse response) {
         Account account = accountRepository
-                .findByEmail(request.getEmail())
+                .findByEmailWithRoleAndUserProfile(request.getEmail())
                 .orElseThrow(() -> new UnauthorizedException(Messages.ERROR_INVALID_CREDENTIALS));
         if (!CryptoUtils.verifyHash(request.getPassword(), account.getPasswordHash())) {
             throw new UnauthorizedException(Messages.ERROR_INVALID_CREDENTIALS);
