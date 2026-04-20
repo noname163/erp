@@ -24,7 +24,6 @@ import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-import org.mapstruct.factory.Mappers;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 
@@ -41,9 +40,11 @@ import com.dat.erp.entities.EmployeeSalary;
 import com.dat.erp.entities.PayrollPolicy;
 import com.dat.erp.entities.PayrollResult;
 import com.dat.erp.entities.PayrollRun;
+import com.dat.erp.entities.Role;
 import com.dat.erp.entities.SystemUnit;
 import com.dat.erp.entities.UserProfile;
 import com.dat.erp.exceptions.BadRequestException;
+import com.dat.erp.exceptions.ForbiddenException;
 import com.dat.erp.mapper.interfaces.PayrollResultMapper;
 import com.dat.erp.repositories.customrepositories.CompanyRepository;
 import com.dat.erp.repositories.customrepositories.DailyWorkRepository;
@@ -95,7 +96,8 @@ class PayrollResultServiceImplTest {
     @Mock
     private SecurityContextService securityContextService;
 
-    private final PayrollResultMapper payrollResultMapper = Mappers.getMapper(PayrollResultMapper.class);
+    @Mock
+    private PayrollResultMapper payrollResultMapper;
 
     private PayrollResultServiceImpl payrollResultService;
 
@@ -218,6 +220,18 @@ class PayrollResultServiceImplTest {
                 eq("USR-1"),
                 any()))
                         .thenReturn(new PageImpl<>(List.of(projection), PageRequest.of(0, 20), 1));
+        PayrollResultListResponse mappedResponse = new PayrollResultListResponse();
+        mappedResponse.setPayrollRunCode("PRN-1");
+        mappedResponse.setSalaryName("Standard Payroll");
+        mappedResponse.setExpectedAmount("1500");
+        mappedResponse.setEmployeeName("Ann Smith");
+        mappedResponse.setActualAmount("1450");
+        mappedResponse.setCurrency("USD");
+        mappedResponse.setExpectedQuantity(168);
+        mappedResponse.setActualQuantity(160);
+        mappedResponse.setUnitName("Hour");
+        mappedResponse.setSourceType(PayrollStatus.RUNNING);
+        when(payrollResultMapper.toListResponse(projection, "secret-key")).thenReturn(mappedResponse);
 
         PagedResponse<PayrollResultListResponse> response = payrollResultService.getPayrollResults(
                 " PRN-1 ",
@@ -304,6 +318,75 @@ class PayrollResultServiceImplTest {
                         "DESC"));
 
         assertEquals(Messages.ERROR_PAYROLL_RUN_CODE_INVALID, exception.getMessage());
+        verify(payrollResultRepository, never()).searchByConditions(any(), any(), any(), any(), any(), any(), any());
+    }
+
+    @Test
+    void getPayrollResults_employeeWithoutFilterUsesOwnEmployeeCode() {
+        Account currentUserAccount = new Account();
+        currentUserAccount.setCode("ACC-EMP");
+        currentUserAccount.setCompanyCode("CMP-1");
+        Role employeeRole = new Role();
+        employeeRole.setName("EMPLOYEE");
+        currentUserAccount.setRole(employeeRole);
+
+        UserProfile currentProfile = new UserProfile();
+        currentProfile.setCode("USR-EMP");
+        when(securityContextService.getCurrentUser()).thenReturn(new CustomUserDetails(currentUserAccount, currentProfile));
+
+        Company company = new Company();
+        company.setCode("CMP-1");
+        company.setSecretKey("secret-key");
+        when(companyRepository.findByCode("CMP-1")).thenReturn(java.util.Optional.of(company));
+
+        LocalDate createdDate = LocalDate.of(2026, 4, 1);
+        when(payrollResultRepository.searchByConditions(
+                eq("CMP-1"),
+                eq("PRN-2"),
+                eq(createdDate.atStartOfDay()),
+                eq(createdDate.plusDays(1).atStartOfDay()),
+                isNull(),
+                eq("USR-EMP"),
+                any()))
+                        .thenReturn(new PageImpl<>(List.of(), PageRequest.of(0, 20), 0));
+
+        PagedResponse<PayrollResultListResponse> response = payrollResultService.getPayrollResults(
+                "PRN-2",
+                createdDate,
+                null,
+                null,
+                0,
+                20,
+                "employeeName",
+                "ASC");
+
+        assertNotNull(response);
+        assertEquals(Messages.SUCCESS, response.getMessage());
+    }
+
+    @Test
+    void getPayrollResults_forbiddenWhenEmployeeRequestsAnotherEmployee() {
+        Account currentUserAccount = new Account();
+        currentUserAccount.setCode("ACC-EMP");
+        currentUserAccount.setCompanyCode("CMP-1");
+        Role employeeRole = new Role();
+        employeeRole.setName("EMPLOYEE");
+        currentUserAccount.setRole(employeeRole);
+
+        UserProfile currentProfile = new UserProfile();
+        currentProfile.setCode("USR-EMP");
+        when(securityContextService.getCurrentUser()).thenReturn(new CustomUserDetails(currentUserAccount, currentProfile));
+
+        Company company = new Company();
+        company.setCode("CMP-1");
+        company.setSecretKey("secret-key");
+        when(companyRepository.findByCode("CMP-1")).thenReturn(java.util.Optional.of(company));
+
+        ForbiddenException exception = assertThrows(ForbiddenException.class,
+                () -> payrollResultService.getPayrollResults("PRN-2", LocalDate.of(2026, 4, 1), null, "USR-OTHER", 0, 20,
+                        "employeeName", "ASC"));
+
+        assertEquals("AUTH_403_001: Forbidden", exception.getMessage());
         verify(payrollResultRepository, never()).searchByConditions(any(), any(), any(), any(), any(), any(), any());
     }
 

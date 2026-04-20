@@ -19,6 +19,7 @@ import com.dat.erp.entities.SalaryTemplate;
 import com.dat.erp.entities.SalaryTemplateDetail;
 import com.dat.erp.entities.SystemUnit;
 import com.dat.erp.exceptions.BadRequestException;
+import com.dat.erp.exceptions.ConflictException;
 import com.dat.erp.exceptions.ResourceNotFoundException;
 import com.dat.erp.mapper.interfaces.SalaryTemplateDetailMapper;
 import com.dat.erp.repositories.customrepositories.SalaryRepository;
@@ -67,6 +68,8 @@ public class SalaryTemplateDetailServiceImpl extends AbstractAuditableService im
 
         Map<SalaryTemplateDetailRequest, String> normalizedSalaryCodes = new HashMap<>(requests.size());
         Map<SalaryTemplateDetailRequest, String> normalizedUnitCodes = new HashMap<>(requests.size());
+        Map<SalaryTemplateDetailRequest, String> normalizedDependenceCodes = new HashMap<>(requests.size());
+        Set<String> salaryCodesInRequest = new HashSet<>();
         Set<String> salaryCodesToLoad = new HashSet<>();
         Set<String> unitCodesToLoad = new HashSet<>();
         List<SalaryTemplateDetail> details = new ArrayList<>(requests.size());
@@ -79,8 +82,23 @@ public class SalaryTemplateDetailServiceImpl extends AbstractAuditableService im
             if (salaryCode == null || salaryCode.isBlank()) {
                 throw new BadRequestException(Messages.ERROR_SALARY_TEMPLATE_DETAIL_SALARY_CODE_INVALID);
             }
+            if (!salaryCodesInRequest.add(salaryCode)) {
+                throw new ConflictException(Messages.ERROR_SALARY_TEMPLATE_DETAILS_INVALID);
+            }
             normalizedSalaryCodes.put(request, salaryCode);
             salaryCodesToLoad.add(salaryCode);
+
+            String dependenceCode = request.getDependenceCode() == null ? null : request.getDependenceCode().trim();
+            if (request.getDependenceCode() != null && (dependenceCode == null || dependenceCode.isBlank())) {
+                throw new BadRequestException(Messages.ERROR_EMPLOYEE_SALARY_DETAIL_DEPENDENCE_CODE_INVALID);
+            }
+            if (dependenceCode != null && !salaryCodesInRequest.contains(dependenceCode)) {
+                throw new BadRequestException(Messages.ERROR_EMPLOYEE_SALARY_DETAIL_DEPENDENCE_CODE_MUST_EXIST_IN_REQUEST);
+            }
+            normalizedDependenceCodes.put(request, dependenceCode);
+            if (dependenceCode != null) {
+                salaryCodesToLoad.add(dependenceCode);
+            }
 
             String unitCode = request.getUnitCode() == null ? null : request.getUnitCode().trim();
             if (unitCode == null || unitCode.isBlank()) {
@@ -99,6 +117,15 @@ public class SalaryTemplateDetailServiceImpl extends AbstractAuditableService im
             Salary salary = salaryByCode.get(normalizedSalaryCodes.get(request));
             if (salary == null) {
                 throw new BadRequestException(Messages.ERROR_SALARY_TEMPLATE_DETAIL_SALARY_CODE_INVALID);
+            }
+
+            Salary dependenceSalary = null;
+            String dependenceCode = normalizedDependenceCodes.get(request);
+            if (dependenceCode != null) {
+                dependenceSalary = salaryByCode.get(dependenceCode);
+                if (dependenceSalary == null) {
+                    throw new BadRequestException(Messages.ERROR_EMPLOYEE_SALARY_DETAIL_DEPENDENCE_CODE_INVALID);
+                }
             }
 
             SystemUnit unit = unitByCode.get(normalizedUnitCodes.get(request));
@@ -122,6 +149,7 @@ public class SalaryTemplateDetailServiceImpl extends AbstractAuditableService im
             SalaryTemplateDetail detail = SalaryTemplateDetail.builder()
                     .salaryTemplate(salaryTemplate)
                     .salary(salary)
+                    .dependenceCode(dependenceSalary)
                     .unit(unit)
                     .amount(request.getAmount() == null ? null : request.getAmount().trim())
                     .quantity(quantity)

@@ -82,6 +82,7 @@ class SalaryTemplateDetailServiceImplTest {
         SalaryTemplateDetailRequest allowance = new SalaryTemplateDetailRequest();
         allowance.setSalaryCode("ALLOWANCE");
         allowance.setAmount("50");
+        allowance.setDependenceCode("BASE");
         allowance.setQuantity("1");
         allowance.setUnitCode("MONTH");
         allowance.setSequenceOrder("2");
@@ -115,6 +116,7 @@ class SalaryTemplateDetailServiceImplTest {
         assertEquals("MONTH", result.get(0).getUnit().getCode());
         assertEquals(1, result.get(0).getQuantity());
         assertEquals(2, result.get(1).getSequenceOrder());
+        assertEquals("BASE", result.get(1).getDependenceCode().getCode());
         assertEquals(Boolean.TRUE, result.get(0).getIsFixed());
         verify(salaryRepository).findAllByCodeIn(anyCollection());
         verify(systemUnitRepository).findAllByCodeIn(anyCollection());
@@ -154,6 +156,17 @@ class SalaryTemplateDetailServiceImplTest {
     }
 
     @Test
+    void createSalaryTemplateDetails_badRequestWhenDependenceCodeMissingFromRequest() {
+        requests.get(1).setDependenceCode("UNKNOWN");
+
+        BadRequestException ex = assertThrows(BadRequestException.class,
+                () -> salaryTemplateDetailService.createSalaryTemplateDetails(requests, salaryTemplate));
+
+        assertEquals(Messages.ERROR_EMPLOYEE_SALARY_DETAIL_DEPENDENCE_CODE_MUST_EXIST_IN_REQUEST, ex.getMessage());
+        verify(salaryTemplateDetailRepository, never()).saveAll(any());
+    }
+
+    @Test
     void getSalaryTemplateDetails_success() {
         Account account = new Account();
         account.setCompanyCode("CMP-1");
@@ -180,10 +193,13 @@ class SalaryTemplateDetailServiceImplTest {
                 .thenReturn(List.of(detail));
         SalaryTemplateDetailListResponse mappedResponse = new SalaryTemplateDetailListResponse(
                 "SAL-1",
+                null,
                 "1000",
                 1,
                 "Month",
                 "Base Salary",
+                null,
+                null,
                 Boolean.FALSE);
         when(salaryTemplateDetailMapper.toListResponses(List.of(detail))).thenReturn(List.of(mappedResponse));
 

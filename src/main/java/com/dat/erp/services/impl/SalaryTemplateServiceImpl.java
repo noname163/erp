@@ -1,9 +1,13 @@
 package com.dat.erp.services.impl;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDate;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import org.springframework.data.domain.Page;
@@ -13,6 +17,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.dat.erp.constants.CodePrefixes;
 import com.dat.erp.constants.Messages;
+import com.dat.erp.constants.SalaryCalculateMethod;
 import com.dat.erp.dto.request.SalaryTemplateDetailRequest;
 import com.dat.erp.dto.request.SalaryTemplateRequest;
 import com.dat.erp.dto.response.PagedResponse;
@@ -21,6 +26,7 @@ import com.dat.erp.dto.response.SalaryTemplateListResponse;
 import com.dat.erp.dto.response.SalaryTemplateResponse;
 import com.dat.erp.dto.response.SelectionOptionResponse;
 import com.dat.erp.entities.SalaryTemplate;
+import com.dat.erp.entities.SalaryTemplateDetail;
 import com.dat.erp.exceptions.BadRequestException;
 import com.dat.erp.exceptions.ConflictException;
 import com.dat.erp.mapper.interfaces.SalaryTemplateMapper;
@@ -35,6 +41,7 @@ import com.dat.erp.utils.PageableUtils;
 
 @Service
 public class SalaryTemplateServiceImpl extends AbstractAuditableService implements SalaryTemplateService {
+    private static final BigDecimal ONE_HUNDRED = BigDecimal.valueOf(100);
 
     private final SalaryTemplateRepository salaryTemplateRepository;
     private final SalaryTemplateMapper salaryTemplateMapper;
@@ -66,16 +73,11 @@ public class SalaryTemplateServiceImpl extends AbstractAuditableService implemen
         }
 
         String name = request.getName().trim();
-
         List<SalaryTemplateDetailRequest> details = request.getDetails();
 
-        BigDecimal requestTotalAmount = CustomStringUtils.parsePositiveBigDecimal(request.getTotalAmount(),
+        CustomStringUtils.parsePositiveBigDecimal(request.getTotalAmount(),
                 Messages.ERROR_SALARY_TEMPLATE_TOTAL_AMOUNT_INVALID);
-        BigDecimal calculatedTotalAmount = validateAndCalculateDetails(details);
-
-        if (requestTotalAmount.compareTo(calculatedTotalAmount) != 0) {
-            throw new BadRequestException(Messages.ERROR_SALARY_TEMPLATE_TOTAL_AMOUNT_MISMATCH);
-        }
+        validateDetails(details);
 
         String companyCode = requireCurrentUserCompanyCode();
         if (salaryTemplateRepository.existsOverlappingByNameAndCompanyCode(name, companyCode, effectiveFrom,
@@ -84,17 +86,19 @@ public class SalaryTemplateServiceImpl extends AbstractAuditableService implemen
         }
 
         SalaryTemplate template = salaryTemplateMapper.toEntity(request);
-
         template.setName(name);
         template.setCurrency(request.getCurrency() == null ? null : request.getCurrency().trim().toUpperCase());
-        template.setTotalAmount(calculatedTotalAmount);
+        template.setTotalAmount(BigDecimal.ZERO);
 
         generateCodeIfMissing(template, CodePrefixes.SALARY_TEMPLATE);
         applyInsertAudit(template);
 
         SalaryTemplate saved = salaryTemplateRepository.save(template);
-        salaryTemplateDetailService.createSalaryTemplateDetails(details, saved);
-        return salaryTemplateMapper.toResponse(saved);
+        List<SalaryTemplateDetail> createdDetails = salaryTemplateDetailService.createSalaryTemplateDetails(details, saved);
+        saved.setTotalAmount(calculateTemplateTotal(createdDetails));
+
+        SalaryTemplate updated = salaryTemplateRepository.save(saved);
+        return salaryTemplateMapper.toResponse(updated);
     }
 
     @Override
@@ -127,16 +131,15 @@ public class SalaryTemplateServiceImpl extends AbstractAuditableService implemen
         return salaryTemplateDetailService.getSalaryTemplateDetails(salaryTemplateCode);
     }
 
-    private BigDecimal validateAndCalculateDetails(List<SalaryTemplateDetailRequest> details) {
+    private void validateDetails(List<SalaryTemplateDetailRequest> details) {
         Set<Integer> sequenceOrders = new HashSet<>();
 
-        BigDecimal total = BigDecimal.ZERO;
         for (SalaryTemplateDetailRequest detail : details) {
             if (detail == null) {
                 throw new BadRequestException(Messages.ERROR_SALARY_TEMPLATE_DETAILS_INVALID);
             }
 
-            BigDecimal amount = CustomStringUtils.parsePositiveBigDecimal(detail.getAmount(),
+            CustomStringUtils.parsePositiveBigDecimal(detail.getAmount(),
                     Messages.ERROR_SALARY_TEMPLATE_DETAIL_AMOUNT_INVALID);
             int sequenceOrder = parsePositiveInt(detail.getSequenceOrder(),
                     Messages.ERROR_SALARY_TEMPLATE_DETAIL_SEQUENCE_ORDER_INVALID);
@@ -144,14 +147,7 @@ public class SalaryTemplateServiceImpl extends AbstractAuditableService implemen
             if (!sequenceOrders.add(sequenceOrder)) {
                 throw new BadRequestException(Messages.ERROR_SALARY_TEMPLATE_DETAILS_INVALID);
             }
-
-            total = total.add(amount);
         }
-
-        if (total.compareTo(BigDecimal.ZERO) <= 0) {
-            throw new BadRequestException(Messages.ERROR_SALARY_TEMPLATE_TOTAL_AMOUNT_INVALID);
-        }
-        return total;
     }
 
     private int parsePositiveInt(String rawValue, String errorMessage) {
@@ -167,5 +163,88 @@ public class SalaryTemplateServiceImpl extends AbstractAuditableService implemen
         } catch (NumberFormatException ex) {
             throw new BadRequestException(errorMessage);
         }
+    }
+
+    private BigDecimal calculateTemplateTotal(List<SalaryTemplateDetail> details) {
+        if (details == null || details.isEmpty()) {
+            throw new BadRequestException(Messages.ERROR_SALARY_TEMPLATE_TOTAL_AMOUNT_INVALID);
+        }
+
+        Map<String, SalaryTemplateDetail> detailsBySalaryCode = new LinkedHashMap<>();
+        for (SalaryTemplateDetail detail : details) {
+            if (detail == null || detail.getSalary() == null || detail.getSalary().getCode() == null) {
+                continue;
+            }
+            detailsBySalaryCode.put(detail.getSalary().getCode(), detail);
+        }
+
+        Map<String, BigDecimal> rawAmountsBySalaryCode = new HashMap<>();
+        BigDecimal total = BigDecimal.ZERO;
+        for (SalaryTemplateDetail detail : details) {
+            if (detail == null) {
+                continue;
+            }
+            BigDecimal rawAmount = resolveRawAmount(detail, detailsBySalaryCode, rawAmountsBySalaryCode, new HashSet<>());
+            boolean isDeduct = detail.getSalary() != null && Boolean.TRUE.equals(detail.getSalary().getIsDeduct());
+            total = total.add(isDeduct ? rawAmount.negate() : rawAmount);
+        }
+
+        if (total.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new BadRequestException(Messages.ERROR_SALARY_TEMPLATE_TOTAL_AMOUNT_INVALID);
+        }
+        return total.stripTrailingZeros();
+    }
+
+    private BigDecimal resolveRawAmount(
+            SalaryTemplateDetail detail,
+            Map<String, SalaryTemplateDetail> detailsBySalaryCode,
+            Map<String, BigDecimal> rawAmountsBySalaryCode,
+            Set<String> activePath) {
+        String salaryCode = detail.getSalary() == null ? null : detail.getSalary().getCode();
+        if (salaryCode != null && rawAmountsBySalaryCode.containsKey(salaryCode)) {
+            return rawAmountsBySalaryCode.get(salaryCode);
+        }
+        if (salaryCode != null && !activePath.add(salaryCode)) {
+            throw new BadRequestException(Messages.ERROR_SALARY_TEMPLATE_DETAILS_INVALID);
+        }
+
+        BigDecimal configuredAmount = CustomStringUtils.parsePositiveBigDecimal(detail.getAmount(),
+                Messages.ERROR_SALARY_TEMPLATE_DETAIL_AMOUNT_INVALID);
+        BigDecimal dependencyAmount = null;
+        if (detail.getDependenceCode() != null && detail.getDependenceCode().getCode() != null) {
+            SalaryTemplateDetail dependencyDetail = detailsBySalaryCode.get(detail.getDependenceCode().getCode());
+            if (dependencyDetail == null) {
+                throw new BadRequestException(Messages.ERROR_EMPLOYEE_SALARY_DETAIL_DEPENDENCE_CODE_INVALID);
+            }
+            dependencyAmount = resolveRawAmount(dependencyDetail, detailsBySalaryCode, rawAmountsBySalaryCode, activePath);
+        }
+
+        SalaryCalculateMethod calculateMethod = detail.getSalary() == null ? SalaryCalculateMethod.FIXED
+                : detail.getSalary().getCalculateMethod();
+        BigDecimal rawAmount = switch (calculateMethod) {
+            case PERCENT -> calculatePercentAmount(configuredAmount, dependencyAmount);
+            case DIVIDE -> calculateDivideAmount(configuredAmount, dependencyAmount);
+            default -> configuredAmount;
+        };
+
+        if (salaryCode != null) {
+            rawAmountsBySalaryCode.put(salaryCode, rawAmount);
+            activePath.remove(salaryCode);
+        }
+        return rawAmount;
+    }
+
+    private BigDecimal calculatePercentAmount(BigDecimal configuredAmount, BigDecimal dependencyAmount) {
+        if (dependencyAmount == null) {
+            return configuredAmount;
+        }
+        return dependencyAmount.multiply(configuredAmount).divide(ONE_HUNDRED, 12, RoundingMode.HALF_UP);
+    }
+
+    private BigDecimal calculateDivideAmount(BigDecimal configuredAmount, BigDecimal dependencyAmount) {
+        if (dependencyAmount == null) {
+            return configuredAmount;
+        }
+        return dependencyAmount.divide(configuredAmount, 12, RoundingMode.HALF_UP);
     }
 }

@@ -19,22 +19,25 @@ import java.util.Map;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-import org.mockito.Spy;
-import org.mapstruct.factory.Mappers;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
 
 import com.dat.erp.constants.DailyWorkUnit;
 import com.dat.erp.constants.DayType;
 import com.dat.erp.constants.Messages;
 import com.dat.erp.dto.request.EmployeeDailyWorkRequest;
+import com.dat.erp.dto.response.EmployeeDailyWorkListResponse;
+import com.dat.erp.dto.response.PagedResponse;
 import com.dat.erp.dto.response.salary.DailyWorkForSalaryResponse;
 import com.dat.erp.entities.Account;
 import com.dat.erp.entities.DailyWork;
+import com.dat.erp.entities.Role;
 import com.dat.erp.entities.UserProfile;
 import com.dat.erp.exceptions.BadRequestException;
 import com.dat.erp.exceptions.ConflictException;
+import com.dat.erp.exceptions.ForbiddenException;
 import com.dat.erp.exceptions.ResourceNotFoundException;
 import com.dat.erp.mapper.interfaces.EmployeeDailyWorkMapper;
 import com.dat.erp.repositories.customrepositories.DailyWorkRepository;
@@ -57,10 +60,6 @@ class EmployeeDailyWorkServiceImplTest {
     @Mock
     private SecurityContextService securityContextService;
 
-    @Spy
-    private EmployeeDailyWorkMapper employeeDailyWorkMapper = Mappers.getMapper(EmployeeDailyWorkMapper.class);
-
-    @InjectMocks
     private EmployeeDailyWorkServiceImpl employeeDailyWorkService;
 
     private List<EmployeeDailyWorkRequest> requests;
@@ -68,6 +67,28 @@ class EmployeeDailyWorkServiceImplTest {
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
+        EmployeeDailyWorkMapper employeeDailyWorkMapper = new EmployeeDailyWorkMapper() {
+            @Override
+            public EmployeeDailyWorkListResponse toListResponse(com.dat.erp.repositories.projections.EmployeeDailyWorkListProjection projection) {
+                return new EmployeeDailyWorkListResponse(
+                        projection.getEmployeeCode(),
+                        trimToNull(projection.getEmployeeName()),
+                        projection.getLogDay(),
+                        toLocalTime(projection.getStartTime()),
+                        toLocalTime(projection.getEndTime()),
+                        trimToNull(projection.getCreatedByName()),
+                        trimToNull(projection.getEditedByName()),
+                        projection.getOtTime(),
+                        projection.getUsedPto(),
+                        trimToNull(projection.getWorkType()));
+            }
+        };
+        employeeDailyWorkService = new EmployeeDailyWorkServiceImpl(
+                dailyWorkRepository,
+                userProfileRepository,
+                employeeDailyWorkMapper,
+                codeGenerator,
+                securityContextService);
 
         EmployeeDailyWorkRequest request = new EmployeeDailyWorkRequest();
         request.setUserProfileCode("EMP001");
@@ -273,5 +294,83 @@ class EmployeeDailyWorkServiceImplTest {
                 new DailyWorkForSalaryResponse(DayType.NORMAL, 4),
                 new DailyWorkForSalaryResponse(DayType.WEEKEND_WORK, 4)), result.get("EMP001"));
         assertEquals(List.of(new DailyWorkForSalaryResponse(DayType.HOLIDAY_WORK, 10)), result.get("EMP002"));
+    }
+
+    @Test
+    void createEmployeeDailyWorks_forbiddenWhenEmployeeCreatesForAnotherEmployee() {
+        Account currentUserAccount = new Account();
+        currentUserAccount.setCode("ACC-EMP");
+        currentUserAccount.setCompanyCode("CMP-1");
+        Role employeeRole = new Role();
+        employeeRole.setName("EMPLOYEE");
+        currentUserAccount.setRole(employeeRole);
+
+        UserProfile currentProfile = new UserProfile();
+        currentProfile.setCode("EMP999");
+
+        when(securityContextService.getCurrentUser()).thenReturn(new CustomUserDetails(currentUserAccount, currentProfile));
+
+        ForbiddenException ex = assertThrows(ForbiddenException.class,
+                () -> employeeDailyWorkService.createEmployeeDailyWorks(requests));
+
+        assertEquals("AUTH_403_001: Forbidden", ex.getMessage());
+        verify(userProfileRepository, never()).findAllByCodeInAndIsDeletedFalseWithAccount(anyCollection());
+        verify(dailyWorkRepository, never()).saveAll(anyList());
+    }
+
+    @Test
+    void getEmployeeDailyWorks_employeeWithoutFilterUsesOwnEmployeeCode() {
+        Account currentUserAccount = new Account();
+        currentUserAccount.setCode("ACC-EMP");
+        currentUserAccount.setCompanyCode("CMP-1");
+        Role employeeRole = new Role();
+        employeeRole.setName("EMPLOYEE");
+        currentUserAccount.setRole(employeeRole);
+
+        UserProfile currentProfile = new UserProfile();
+        currentProfile.setCode("EMP001");
+
+        when(securityContextService.getCurrentUser()).thenReturn(new CustomUserDetails(currentUserAccount, currentProfile));
+        when(dailyWorkRepository.findEmployeeDailyWorksByFilters(
+                "CMP-1",
+                "EMP001",
+                null,
+                null,
+                null,
+                PageRequest.of(0, 20, org.springframework.data.domain.Sort.by(org.springframework.data.domain.Sort.Direction.DESC, "workingDate"))))
+                        .thenReturn(new PageImpl<>(List.of(), PageRequest.of(0, 20), 0));
+
+        PagedResponse<EmployeeDailyWorkListResponse> response = employeeDailyWorkService.getEmployeeDailyWorks(
+                null,
+                null,
+                null,
+                null,
+                0,
+                20,
+                null,
+                "DESC");
+
+        assertNotNull(response);
+        assertEquals(Messages.SUCCESS, response.getMessage());
+    }
+
+    @Test
+    void getEmployeeDailyWorks_forbiddenWhenEmployeeFiltersAnotherEmployee() {
+        Account currentUserAccount = new Account();
+        currentUserAccount.setCode("ACC-EMP");
+        currentUserAccount.setCompanyCode("CMP-1");
+        Role employeeRole = new Role();
+        employeeRole.setName("EMPLOYEE");
+        currentUserAccount.setRole(employeeRole);
+
+        UserProfile currentProfile = new UserProfile();
+        currentProfile.setCode("EMP001");
+
+        when(securityContextService.getCurrentUser()).thenReturn(new CustomUserDetails(currentUserAccount, currentProfile));
+
+        ForbiddenException ex = assertThrows(ForbiddenException.class,
+                () -> employeeDailyWorkService.getEmployeeDailyWorks("EMP002", null, null, null, 0, 20, null, "DESC"));
+
+        assertEquals("AUTH_403_001: Forbidden", ex.getMessage());
     }
 }

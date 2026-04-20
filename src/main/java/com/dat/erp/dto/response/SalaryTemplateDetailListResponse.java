@@ -9,9 +9,12 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class SalaryTemplateDetailListResponse {
     private String salaryCode;
+    private String dependenceCode;
     private String amount;
     private Integer quantity;
     private String unitName;
     private String salaryName;
+    private String calculateMethod;
+    private Boolean isDeduct;
     private Boolean isFixed;
 }
