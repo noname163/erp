@@ -41,20 +41,20 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         if (!CryptoUtils.verifyHash(request.getPassword(), account.getPasswordHash())) {
             throw new UnauthorizedException(Messages.ERROR_INVALID_CREDENTIALS);
         }
+        UserProfile userProfile = account.getUserProfile();
         String token = jwtUtils.generateToken(account.getEmail(), account.getCode());
         CookieUtils.addTokenCookie(response, token);
         LoginResponse loginResponse = LoginResponse.builder()
                 .email(account.getEmail())
                 .role(account.getRole().getType())
-                .code(account.getUserProfile().getCode())
+                .code(userProfile == null ? null : userProfile.getCode())
                 .build();
         if (account.getLastLogin() == null) {
             loginResponse.setFirstLogin(true);
         } else {
             loginResponse.setFirstLogin(false);
         }
-        if (account.getUserProfile() != null) {
-            UserProfile userProfile = account.getUserProfile();
+        if (userProfile != null) {
             loginResponse.setFullName(userProfile.getLastName() + userProfile.getFirstName());
         }
         account.setLastLogin(LocalDateTime.now());

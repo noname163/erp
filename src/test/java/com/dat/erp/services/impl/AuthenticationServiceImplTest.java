@@ -1,6 +1,7 @@
 package com.dat.erp.services.impl;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
@@ -82,6 +83,8 @@ class AuthenticationServiceImplTest {
             LoginResponse result = authenticationService.login(request, response);
 
             assertEquals("user@example.com", result.getEmail());
+            assertNull(result.getCode());
+            assertNull(result.getFullName());
             assertTrue(result.isFirstLogin());
             cookies.verify(() -> CookieUtils.addTokenCookie(eq(response), eq("token")));
         }
