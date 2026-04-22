@@ -46,6 +46,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         LoginResponse loginResponse = LoginResponse.builder()
                 .email(account.getEmail())
                 .role(account.getRole().getType())
+                .code(account.getUserProfile().getCode())
                 .build();
         if (account.getLastLogin() == null) {
             loginResponse.setFirstLogin(true);
