@@ -34,6 +34,7 @@ import com.dat.erp.entities.PayrollResult;
 import com.dat.erp.entities.PayrollRun;
 import com.dat.erp.entities.UserProfile;
 import com.dat.erp.exceptions.BadRequestException;
+import com.dat.erp.exceptions.ForbiddenException;
 import com.dat.erp.exceptions.ResourceNotFoundException;
 import com.dat.erp.mapper.interfaces.PayrollResultMapper;
 import com.dat.erp.repositories.customrepositories.CompanyRepository;
@@ -50,6 +51,7 @@ import com.dat.erp.services.SecurityContextService;
 import com.dat.erp.services.UserProfileService;
 import com.dat.erp.services.base.AbstractAuditableService;
 import com.dat.erp.services.payroll.PayrollResultService;
+import com.dat.erp.systemconfigs.CustomUserDetails;
 import com.dat.erp.utils.CustomStringUtils;
 import com.dat.erp.utils.PageableUtils;
 
@@ -125,6 +127,7 @@ public class PayrollResultServiceImpl extends AbstractAuditableService implement
         LocalDate targetDate = createdDate == null ? LocalDate.now() : createdDate;
         LocalDateTime createdAtFrom = targetDate.atStartOfDay();
         LocalDateTime createdAtTo = targetDate.plusDays(1).atStartOfDay();
+        String scopedEmployeeCode = resolveScopedEmployeeCode(employeeCode);
         Pageable pageable = PageableUtils.create(
                 page,
                 size,
@@ -137,11 +140,39 @@ public class PayrollResultServiceImpl extends AbstractAuditableService implement
                 createdAtFrom,
                 createdAtTo,
                 sourceType,
-                CustomStringUtils.normalizeCode(employeeCode),
+                scopedEmployeeCode,
                 pageable);
         return PageableUtils.mapPage(payrollResults,
                 projection -> payrollResultMapper.toListResponse(projection, companySecretKey),
                 Messages.SUCCESS);
+    }
+
+    private String resolveScopedEmployeeCode(String requestedEmployeeCode) {
+        CustomUserDetails currentUser = securityContextService.getCurrentUser();
+        if (!isEmployee(currentUser)) {
+            return CustomStringUtils.normalizeCode(requestedEmployeeCode);
+        }
+
+        UserProfile currentProfile = currentUser.getUserProfile();
+        String currentEmployeeCode = currentProfile == null ? null : CustomStringUtils.normalizeCode(currentProfile.getCode());
+        if (currentEmployeeCode == null) {
+            throw new ForbiddenException("AUTH_403_001: Forbidden");
+        }
+
+        String normalizedRequestedEmployeeCode = CustomStringUtils.normalizeCode(requestedEmployeeCode);
+        if (normalizedRequestedEmployeeCode != null && !currentEmployeeCode.equals(normalizedRequestedEmployeeCode)) {
+            throw new ForbiddenException("AUTH_403_001: Forbidden");
+        }
+
+        return currentEmployeeCode;
+    }
+
+    private boolean isEmployee(CustomUserDetails currentUser) {
+        if (currentUser == null || currentUser.getAccount() == null || currentUser.getAccount().getRole() == null) {
+            return false;
+        }
+        String roleName = currentUser.getAccount().getRole().getName();
+        return roleName != null && "EMPLOYEE".equalsIgnoreCase(roleName.trim());
     }
 
     @Override

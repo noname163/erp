@@ -4,6 +4,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 
 import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
 
 import com.dat.erp.dto.request.SalaryTemplateRequest;
 import com.dat.erp.dto.response.SalaryTemplateListResponse;
@@ -14,6 +15,8 @@ import com.dat.erp.systemconfigs.CentralMapperConfig;
 
 @Mapper(config = CentralMapperConfig.class)
 public interface SalaryTemplateMapper {
+    @Mapping(target = "details", ignore = true)
+    @Mapping(target = "employeeSalaries", ignore = true)
     SalaryTemplate toEntity(SalaryTemplateRequest request);
 
     SalaryTemplateResponse toResponse(SalaryTemplate entity);

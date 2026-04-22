@@ -31,7 +31,9 @@ import com.dat.erp.dto.response.SalaryTemplateListResponse;
 import com.dat.erp.dto.response.SalaryTemplateResponse;
 import com.dat.erp.dto.response.SelectionOptionResponse;
 import com.dat.erp.entities.Account;
+import com.dat.erp.entities.Salary;
 import com.dat.erp.entities.SalaryTemplate;
+import com.dat.erp.entities.SalaryTemplateDetail;
 import com.dat.erp.exceptions.BadRequestException;
 import com.dat.erp.exceptions.ConflictException;
 import com.dat.erp.mapper.interfaces.SalaryTemplateMapper;
@@ -74,21 +76,22 @@ class SalaryTemplateServiceImplTest {
         base.setUnitCode("MONTH");
         base.setSequenceOrder("1");
 
-        SalaryTemplateDetailRequest allowance = new SalaryTemplateDetailRequest();
-        allowance.setSalaryCode("ALLOWANCE");
-        allowance.setAmount("50");
-        allowance.setQuantity("1");
-        allowance.setUnitCode("MONTH");
-        allowance.setSequenceOrder("2");
+        SalaryTemplateDetailRequest tax = new SalaryTemplateDetailRequest();
+        tax.setSalaryCode("TAX");
+        tax.setAmount("10");
+        tax.setDependenceCode("BASE");
+        tax.setQuantity("1");
+        tax.setUnitCode("MONTH");
+        tax.setSequenceOrder("2");
 
         request = new SalaryTemplateRequest();
         request.setName("Standard HR Package");
-        request.setDescription("Base salary + allowance");
-        request.setTotalAmount("150");
+        request.setDescription("Base salary - tax");
+        request.setTotalAmount("110");
         request.setEffectiveFrom(LocalDate.of(2025, 1, 1));
         request.setEffectiveTo(LocalDate.of(2025, 12, 31));
         request.setCurrency("vnd");
-        request.setDetails(List.of(base, allowance));
+        request.setDetails(List.of(base, tax));
     }
 
     @Test
@@ -100,29 +103,51 @@ class SalaryTemplateServiceImplTest {
                 any(LocalDate.class), any(LocalDate.class))).thenReturn(false);
 
         SalaryTemplate entity = new SalaryTemplate();
-        entity.setTotalAmount(new BigDecimal("150"));
         when(salaryTemplateMapper.toEntity(request)).thenReturn(entity);
 
         when(codeGenerator.nextCode("STP-")).thenReturn("STP-000001");
         SalaryTemplate saved = new SalaryTemplate();
         saved.setCode("STP-000001");
         saved.setName("Standard HR Package");
-        saved.setTotalAmount(new BigDecimal("150"));
         saved.setEffectiveFrom(request.getEffectiveFrom());
         saved.setEffectiveTo(request.getEffectiveTo());
         saved.setCurrency("VND");
 
-        when(salaryTemplateRepository.save(any(SalaryTemplate.class))).thenReturn(saved);
+        Salary baseSalary = new Salary();
+        baseSalary.setCode("BASE");
+        baseSalary.setCalculateMethod(com.dat.erp.constants.SalaryCalculateMethod.FIXED);
+        baseSalary.setIsDeduct(false);
+
+        Salary taxSalary = new Salary();
+        taxSalary.setCode("TAX");
+        taxSalary.setCalculateMethod(com.dat.erp.constants.SalaryCalculateMethod.PERCENT);
+        taxSalary.setIsDeduct(true);
+
+        SalaryTemplateDetail baseDetail = SalaryTemplateDetail.builder()
+                .salary(baseSalary)
+                .amount("100")
+                .build();
+        SalaryTemplateDetail taxDetail = SalaryTemplateDetail.builder()
+                .salary(taxSalary)
+                .dependenceCode(baseSalary)
+                .amount("10")
+                .build();
+
+        when(salaryTemplateRepository.save(any(SalaryTemplate.class))).thenReturn(saved, saved);
+        when(salaryTemplateDetailService.createSalaryTemplateDetails(eq(request.getDetails()), eq(saved)))
+                .thenReturn(List.of(baseDetail, taxDetail));
 
         SalaryTemplateResponse response = new SalaryTemplateResponse();
         response.setCode("STP-000001");
+        response.setTotalAmount("90");
         when(salaryTemplateMapper.toResponse(saved)).thenReturn(response);
 
         SalaryTemplateResponse result = salaryTemplateService.createSalaryTemplate(request);
 
         assertNotNull(result);
         assertEquals("STP-000001", result.getCode());
-        verify(salaryTemplateRepository).save(any(SalaryTemplate.class));
+        assertEquals("90", result.getTotalAmount());
+        verify(salaryTemplateRepository, org.mockito.Mockito.times(2)).save(any(SalaryTemplate.class));
         verify(salaryTemplateDetailService).createSalaryTemplateDetails(eq(request.getDetails()), eq(saved));
     }
 
@@ -153,19 +178,43 @@ class SalaryTemplateServiceImplTest {
     }
 
     @Test
-    void createSalaryTemplate_badRequestWhenTotalAmountMismatch() {
-        request.setTotalAmount("999");
-
+    void createSalaryTemplate_ignoresClientTotalAndPersistsCalculatedTotal() {
         Account account = new Account();
         account.setCompanyCode("CMP-1");
         when(securityContextService.getCurrentUser()).thenReturn(new CustomUserDetails(account, null));
         when(salaryTemplateRepository.existsOverlappingByNameAndCompanyCode(any(), any(), any(), any()))
                 .thenReturn(false);
 
-        BadRequestException ex = assertThrows(BadRequestException.class,
-                () -> salaryTemplateService.createSalaryTemplate(request));
-        assertEquals(Messages.ERROR_SALARY_TEMPLATE_TOTAL_AMOUNT_MISMATCH, ex.getMessage());
-        verify(salaryTemplateRepository, never()).save(any());
+        SalaryTemplate entity = new SalaryTemplate();
+        when(salaryTemplateMapper.toEntity(request)).thenReturn(entity);
+
+        SalaryTemplate saved = new SalaryTemplate();
+        saved.setCode("STP-000002");
+        when(salaryTemplateRepository.save(any(SalaryTemplate.class))).thenReturn(saved, saved);
+
+        Salary baseSalary = new Salary();
+        baseSalary.setCode("BASE");
+        baseSalary.setCalculateMethod(com.dat.erp.constants.SalaryCalculateMethod.FIXED);
+        baseSalary.setIsDeduct(false);
+        Salary taxSalary = new Salary();
+        taxSalary.setCode("TAX");
+        taxSalary.setCalculateMethod(com.dat.erp.constants.SalaryCalculateMethod.PERCENT);
+        taxSalary.setIsDeduct(true);
+
+        when(salaryTemplateDetailService.createSalaryTemplateDetails(eq(request.getDetails()), eq(saved)))
+                .thenReturn(List.of(
+                        SalaryTemplateDetail.builder().salary(baseSalary).amount("100").build(),
+                        SalaryTemplateDetail.builder().salary(taxSalary).dependenceCode(baseSalary).amount("10").build()));
+
+        SalaryTemplateResponse response = new SalaryTemplateResponse();
+        response.setCode("STP-000002");
+        response.setTotalAmount("90");
+        when(salaryTemplateMapper.toResponse(saved)).thenReturn(response);
+
+        SalaryTemplateResponse result = salaryTemplateService.createSalaryTemplate(request);
+
+        assertNotNull(result);
+        assertEquals("90", result.getTotalAmount());
     }
 
     @Test
@@ -234,8 +283,8 @@ class SalaryTemplateServiceImplTest {
 
     @Test
     void getSalaryTemplateDetails_success() {
-        SalaryTemplateDetailListResponse detail = new SalaryTemplateDetailListResponse("SAL-1", "100", 1, "Month", "Base",
-                Boolean.FALSE);
+        SalaryTemplateDetailListResponse detail = new SalaryTemplateDetailListResponse("SAL-1", null, "100", 1, "Month",
+                "Base", null, null, Boolean.FALSE);
         when(salaryTemplateDetailService.getSalaryTemplateDetails("STP-1")).thenReturn(List.of(detail));
 
         List<SalaryTemplateDetailListResponse> result = salaryTemplateService.getSalaryTemplateDetails("STP-1");

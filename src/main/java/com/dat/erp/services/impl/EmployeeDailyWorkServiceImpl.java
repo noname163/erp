@@ -28,6 +28,7 @@ import com.dat.erp.entities.DailyWork;
 import com.dat.erp.entities.UserProfile;
 import com.dat.erp.exceptions.BadRequestException;
 import com.dat.erp.exceptions.ConflictException;
+import com.dat.erp.exceptions.ForbiddenException;
 import com.dat.erp.exceptions.ResourceNotFoundException;
 import com.dat.erp.mapper.interfaces.EmployeeDailyWorkMapper;
 import com.dat.erp.repositories.customrepositories.DailyWorkRepository;
@@ -37,6 +38,7 @@ import com.dat.erp.services.CodeGenerator;
 import com.dat.erp.services.EmployeeDailyWorkService;
 import com.dat.erp.services.SecurityContextService;
 import com.dat.erp.services.base.AbstractAuditableService;
+import com.dat.erp.systemconfigs.CustomUserDetails;
 import com.dat.erp.utils.CustomStringUtils;
 import com.dat.erp.utils.PageableUtils;
 
@@ -69,6 +71,8 @@ public class EmployeeDailyWorkServiceImpl extends AbstractAuditableService imple
         }
 
         String companyCode = requireCurrentUserCompanyCode();
+        CustomUserDetails currentUser = securityContextService.getCurrentUser();
+        String scopedEmployeeCode = resolveScopedEmployeeCode(currentUser, null);
 
         Map<EmployeeDailyWorkRequest, String> userProfileCodeByRequest = new LinkedHashMap<>();
         Set<String> requestedUserProfileCodes = new HashSet<>();
@@ -83,6 +87,9 @@ public class EmployeeDailyWorkServiceImpl extends AbstractAuditableService imple
             String userProfileCode = CustomStringUtils.normalizeCode(request.getUserProfileCode());
             if (userProfileCode == null) {
                 throw new BadRequestException(Messages.ERROR_DAILY_WORK_USER_PROFILE_CODE_INVALID);
+            }
+            if (scopedEmployeeCode != null && !scopedEmployeeCode.equals(userProfileCode)) {
+                throw new ForbiddenException("AUTH_403_001: Forbidden");
             }
 
             LocalDate workingDate = request.getWorkingDate();
@@ -192,6 +199,7 @@ public class EmployeeDailyWorkServiceImpl extends AbstractAuditableService imple
         if (startDate != null && endDate != null && startDate.isAfter(endDate)) {
             throw new BadRequestException(Messages.ERROR_DAILY_WORK_WORKING_DATE_INVALID);
         }
+        String scopedEmployeeCode = resolveScopedEmployeeCode(securityContextService.getCurrentUser(), employeeCode);
 
         Pageable pageable = PageableUtils.create(
                 page,
@@ -201,7 +209,7 @@ public class EmployeeDailyWorkServiceImpl extends AbstractAuditableService imple
 
         Page<EmployeeDailyWorkListProjection> dailyWorks = dailyWorkRepository.findEmployeeDailyWorksByFilters(
                 companyCode,
-                CustomStringUtils.trimToNull(employeeCode),
+                scopedEmployeeCode,
                 startDate,
                 endDate,
                 isPto,
@@ -238,6 +246,33 @@ public class EmployeeDailyWorkServiceImpl extends AbstractAuditableService imple
             case "usedPto", "isPto" -> "usedPto";
             default -> DEFAULT_SORT_BY;
         };
+    }
+
+    private String resolveScopedEmployeeCode(CustomUserDetails currentUser, String requestedEmployeeCode) {
+        if (!isEmployee(currentUser)) {
+            return CustomStringUtils.trimToNull(CustomStringUtils.normalizeCode(requestedEmployeeCode));
+        }
+
+        UserProfile currentProfile = currentUser.getUserProfile();
+        String currentEmployeeCode = currentProfile == null ? null : CustomStringUtils.normalizeCode(currentProfile.getCode());
+        if (currentEmployeeCode == null) {
+            throw new ForbiddenException("AUTH_403_001: Forbidden");
+        }
+
+        String normalizedRequestedEmployeeCode = CustomStringUtils.normalizeCode(requestedEmployeeCode);
+        if (normalizedRequestedEmployeeCode != null && !currentEmployeeCode.equals(normalizedRequestedEmployeeCode)) {
+            throw new ForbiddenException("AUTH_403_001: Forbidden");
+        }
+
+        return currentEmployeeCode;
+    }
+
+    private boolean isEmployee(CustomUserDetails currentUser) {
+        if (currentUser == null || currentUser.getAccount() == null || currentUser.getAccount().getRole() == null) {
+            return false;
+        }
+        String roleName = currentUser.getAccount().getRole().getName();
+        return roleName != null && "EMPLOYEE".equalsIgnoreCase(roleName.trim());
     }
 
     @Override

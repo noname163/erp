@@ -4,21 +4,25 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.lang.reflect.Method;
 import java.util.Optional;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-import org.mapstruct.factory.Mappers;
+import org.springframework.data.jpa.domain.Specification;
 
 import com.dat.erp.constants.CodePrefixes;
 import com.dat.erp.dto.request.CreateEmployeeRequest;
 import com.dat.erp.dto.request.EmailRequest;
+import com.dat.erp.dto.request.EmployeeListRequest;
+import com.dat.erp.dto.request.enums.SortType;
 import com.dat.erp.dto.request.UserProfileCreateRequest;
 import com.dat.erp.dto.response.EmployeeResponse;
 import com.dat.erp.entities.Account;
@@ -41,6 +45,14 @@ import com.dat.erp.services.SecurityContextService;
 import com.dat.erp.services.UserProfileService;
 import com.dat.erp.systemconfigs.CustomUserDetails;
 
+import jakarta.persistence.criteria.CriteriaBuilder;
+import jakarta.persistence.criteria.CriteriaQuery;
+import jakarta.persistence.criteria.Join;
+import jakarta.persistence.criteria.Path;
+import jakarta.persistence.criteria.Predicate;
+import jakarta.persistence.criteria.Root;
+import jakarta.persistence.criteria.JoinType;
+
 class EmployeeAccountServiceImplTest {
     @Mock
     private AccountRepository accountRepository;
@@ -62,6 +74,10 @@ class EmployeeAccountServiceImplTest {
     private UserProfileRepository userProfileRepository;
     @Mock
     private UserSkillRepository userSkillRepository;
+    @Mock
+    private EmployeeAccountMapper employeeAccountMapper;
+    @Mock
+    private UserProfileMapper userProfileMapper;
 
     private EmployeeAccountServiceImpl service;
 
@@ -70,8 +86,6 @@ class EmployeeAccountServiceImplTest {
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
-        EmployeeAccountMapper mapper = Mappers.getMapper(EmployeeAccountMapper.class);
-        UserProfileMapper userProfileMapper = Mappers.getMapper(UserProfileMapper.class);
         service = new EmployeeAccountServiceImpl(
                 accountRepository,
                 roleRepository,
@@ -80,7 +94,7 @@ class EmployeeAccountServiceImplTest {
                 passwordGenerator,
                 codeGenerator,
                 securityContextService,
-                mapper,
+                employeeAccountMapper,
                 userProfileMapper,
                 userProfileRepository,
                 userSkillRepository);
@@ -120,6 +134,11 @@ class EmployeeAccountServiceImplTest {
         when(passwordGenerator.generate()).thenReturn("P@ssw0rd!");
         when(codeGenerator.nextCode(CodePrefixes.ACCOUNT)).thenReturn("ACC-000001");
 
+        Account mappedAccount = new Account();
+        mappedAccount.setEmail("employee@company.com");
+        when(employeeAccountMapper.toAccount(request)).thenReturn(mappedAccount);
+        when(employeeAccountMapper.toUserProfileCreateRequest(request, "ACC-000001")).thenReturn(new UserProfileCreateRequest());
+
         when(accountRepository.save(any(Account.class))).thenAnswer(inv -> inv.getArgument(0));
         UserProfile savedProfile = new UserProfile();
         savedProfile.setCode("USR-000001");
@@ -130,6 +149,13 @@ class EmployeeAccountServiceImplTest {
         savedProfile.getAccount().setRole(employeeRole);
         savedProfile.setDepartment(department);
         when(userProfileService.createUserProfile(any(UserProfileCreateRequest.class))).thenReturn(savedProfile);
+        EmployeeResponse mappedResponse = new EmployeeResponse();
+        mappedResponse.setCode("USR-000001");
+        mappedResponse.setEmail("employee@company.com");
+        mappedResponse.setFullName("Nguyen Van A");
+        mappedResponse.setDepartment("IT");
+        mappedResponse.setRole("EMPLOYEE");
+        when(userProfileMapper.toEmployeeResponse(savedProfile)).thenReturn(mappedResponse);
 
         EmployeeResponse resp = service.createEmployee(request);
 
@@ -190,5 +216,78 @@ class EmployeeAccountServiceImplTest {
 
         assertThrows(BadRequestException.class, () -> service.createEmployee(request));
         verify(accountRepository, never()).save(any());
+    }
+
+    @SuppressWarnings({ "unchecked", "rawtypes" })
+    @Test
+    void buildSpecification_humanResourcesScopeIncludesOwnProfile() throws Exception {
+        Account hrAccount = new Account();
+        hrAccount.setCode("ACC-HR");
+        hrAccount.setCompanyCode("CMP-1");
+        Role hrRole = new Role();
+        hrRole.setName("HUMAN_RESOURCES");
+        hrAccount.setRole(hrRole);
+
+        UserProfile currentProfile = new UserProfile();
+        currentProfile.setId(99L);
+        currentProfile.setCode("USR-99");
+
+        CustomUserDetails currentUser = new CustomUserDetails(hrAccount, currentProfile);
+        EmployeeListRequest listRequest = EmployeeListRequest.builder()
+                .pageNo(0)
+                .pageSize(20)
+                .orderBy("name")
+                .sortType(SortType.ASC)
+                .build();
+
+        Method buildSpecification = EmployeeAccountServiceImpl.class.getDeclaredMethod(
+                "buildSpecification",
+                String.class,
+                CustomUserDetails.class,
+                String.class,
+                EmployeeListRequest.class);
+        buildSpecification.setAccessible(true);
+
+        Specification<UserProfile> specification = (Specification<UserProfile>) buildSpecification.invoke(
+                service,
+                "CMP-1",
+                currentUser,
+                "HUMAN_RESOURCES",
+                listRequest);
+
+        CriteriaBuilder criteriaBuilder = org.mockito.Mockito.mock(CriteriaBuilder.class);
+        CriteriaQuery criteriaQuery = org.mockito.Mockito.mock(CriteriaQuery.class);
+        Root<UserProfile> root = org.mockito.Mockito.mock(Root.class);
+        Join accountJoin = org.mockito.Mockito.mock(Join.class);
+        Join departmentJoin = org.mockito.Mockito.mock(Join.class);
+        Path isDeletedPath = org.mockito.Mockito.mock(Path.class);
+        Path companyCodePath = org.mockito.Mockito.mock(Path.class);
+        Path createdByPath = org.mockito.Mockito.mock(Path.class);
+        Path idPath = org.mockito.Mockito.mock(Path.class);
+        Predicate basePredicate = org.mockito.Mockito.mock(Predicate.class);
+        Predicate filterPredicate = org.mockito.Mockito.mock(Predicate.class);
+        Predicate createdByPredicate = org.mockito.Mockito.mock(Predicate.class);
+        Predicate selfPredicate = org.mockito.Mockito.mock(Predicate.class);
+        Predicate rolePredicate = org.mockito.Mockito.mock(Predicate.class);
+        Predicate finalPredicate = org.mockito.Mockito.mock(Predicate.class);
+
+        when(root.join("account", JoinType.LEFT)).thenReturn(accountJoin);
+        when(root.join("department", JoinType.LEFT)).thenReturn(departmentJoin);
+        when(root.get("isDeleted")).thenReturn(isDeletedPath);
+        when(root.get("createdBy")).thenReturn(createdByPath);
+        when(root.get("id")).thenReturn(idPath);
+        when(accountJoin.get("companyCode")).thenReturn(companyCodePath);
+
+        when(criteriaBuilder.conjunction()).thenReturn(filterPredicate);
+        when(criteriaBuilder.isFalse(isDeletedPath)).thenReturn(org.mockito.Mockito.mock(Predicate.class));
+        when(criteriaBuilder.equal(companyCodePath, "CMP-1")).thenReturn(org.mockito.Mockito.mock(Predicate.class));
+        when(criteriaBuilder.equal(createdByPath, "ACC-HR")).thenReturn(createdByPredicate);
+        when(criteriaBuilder.equal(idPath, 99L)).thenReturn(selfPredicate);
+        when(criteriaBuilder.or(createdByPredicate, selfPredicate)).thenReturn(rolePredicate);
+        when(criteriaBuilder.and(any(Predicate[].class))).thenReturn(basePredicate, finalPredicate);
+
+        specification.toPredicate(root, criteriaQuery, criteriaBuilder);
+
+        verify(criteriaBuilder, times(1)).or(createdByPredicate, selfPredicate);
     }
 }

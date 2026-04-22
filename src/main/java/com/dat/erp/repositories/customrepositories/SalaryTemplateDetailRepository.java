@@ -15,6 +15,7 @@ public interface SalaryTemplateDetailRepository extends JpaRepository<SalaryTemp
             select std
             from SalaryTemplateDetail std
             join fetch std.salary s
+            left join fetch std.dependenceCode dc
             left join fetch std.unit u
             where std.companyCode = :companyCode
               and std.isDeleted = false

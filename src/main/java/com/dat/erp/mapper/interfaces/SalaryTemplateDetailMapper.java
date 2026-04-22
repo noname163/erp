@@ -12,8 +12,11 @@ import com.dat.erp.systemconfigs.CentralMapperConfig;
 @Mapper(config = CentralMapperConfig.class)
 public interface SalaryTemplateDetailMapper {
     @Mapping(target = "salaryCode", source = "salary.code")
+    @Mapping(target = "dependenceCode", source = "dependenceCode.code")
     @Mapping(target = "unitName", source = "unit.name")
     @Mapping(target = "salaryName", source = "salary.name")
+    @Mapping(target = "calculateMethod", source = "salary.calculateMethod")
+    @Mapping(target = "isDeduct", source = "salary.isDeduct")
     SalaryTemplateDetailListResponse toListResponse(SalaryTemplateDetail detail);
 
     List<SalaryTemplateDetailListResponse> toListResponses(List<SalaryTemplateDetail> details);

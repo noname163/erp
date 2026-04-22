@@ -345,7 +345,12 @@ public class EmployeeAccountServiceImpl extends AbstractAuditableService impleme
         }
 
         if (isHumanResources(requesterRole)) {
-            return cb.equal(root.get("createdBy"), currentUser.getCode());
+            Predicate createdByCurrentUser = cb.equal(root.get("createdBy"), currentUser.getCode());
+            UserProfile self = currentUser.getUserProfile();
+            if (self == null || self.getId() == null) {
+                return createdByCurrentUser;
+            }
+            return cb.or(createdByCurrentUser, cb.equal(root.get("id"), self.getId()));
         }
 
         if (isStaff(requesterRole)) {
