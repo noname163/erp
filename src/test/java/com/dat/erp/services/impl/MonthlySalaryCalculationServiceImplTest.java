@@ -14,7 +14,6 @@ import java.util.Optional;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
@@ -36,6 +35,12 @@ import com.dat.erp.repositories.customrepositories.EmployeeSalaryRepository;
 import com.dat.erp.services.CalendarDateService;
 import com.dat.erp.services.EmployeePayrollPolicyService;
 import com.dat.erp.services.SecurityContextService;
+import com.dat.erp.services.salary.calculation.CalculateSalaryDetailsStep;
+import com.dat.erp.services.salary.calculation.CalculateStandardMoneyPerHourStep;
+import com.dat.erp.services.salary.calculation.FinalizeMonthlySalaryResponseStep;
+import com.dat.erp.services.salary.calculation.LoadPayrollDataStep;
+import com.dat.erp.services.salary.calculation.ResolveActualWorkingHoursStep;
+import com.dat.erp.services.salary.calculation.ResolveExpectedWorkingHoursStep;
 import com.dat.erp.systemconfigs.CustomUserDetails;
 
 class MonthlySalaryCalculationServiceImplTest {
@@ -53,12 +58,18 @@ class MonthlySalaryCalculationServiceImplTest {
     @Mock
     private CalendarDateService calendarDateService;
 
-    @InjectMocks
     private MonthlySalaryCalculationServiceImpl service;
 
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
+        service = new MonthlySalaryCalculationServiceImpl(securityContextService, List.of(
+                new FinalizeMonthlySalaryResponseStep(),
+                new CalculateSalaryDetailsStep(),
+                new CalculateStandardMoneyPerHourStep(),
+                new ResolveActualWorkingHoursStep(dailyWorkRepository),
+                new ResolveExpectedWorkingHoursStep(calendarDateService),
+                new LoadPayrollDataStep(employeeSalaryRepository, employeeSalaryDetailRepository, employeePayrollPolicyService)));
         Account account = new Account();
         account.setCompanyCode("CMP-1");
         when(securityContextService.getCurrentUser()).thenReturn(new CustomUserDetails(account, null));
