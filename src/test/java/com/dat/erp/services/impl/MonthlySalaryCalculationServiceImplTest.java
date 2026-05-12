@@ -20,6 +20,7 @@ import org.mockito.MockitoAnnotations;
 import com.dat.erp.constants.DayType;
 import com.dat.erp.constants.Messages;
 import com.dat.erp.constants.SalaryCalculateMethod;
+import com.dat.erp.constants.SalaryBasisType;
 import com.dat.erp.dto.response.salary.MonthlySalaryCalculationResponse;
 import com.dat.erp.entities.Account;
 import com.dat.erp.entities.DailyWork;
@@ -41,6 +42,25 @@ import com.dat.erp.services.salary.calculation.FinalizeMonthlySalaryResponseStep
 import com.dat.erp.services.salary.calculation.LoadPayrollDataStep;
 import com.dat.erp.services.salary.calculation.ResolveActualWorkingHoursStep;
 import com.dat.erp.services.salary.calculation.ResolveExpectedWorkingHoursStep;
+import com.dat.erp.services.salary.calculation.ResolveSalaryBasisStep;
+import com.dat.erp.services.salary.calculation.amount.DivideSalaryAmountCalculationStrategy;
+import com.dat.erp.services.salary.calculation.amount.FixedSalaryAmountCalculationStrategy;
+import com.dat.erp.services.salary.calculation.amount.FormulaSalaryAmountCalculationStrategy;
+import com.dat.erp.services.salary.calculation.amount.MinusSalaryAmountCalculationStrategy;
+import com.dat.erp.services.salary.calculation.amount.PercentSalaryAmountCalculationStrategy;
+import com.dat.erp.services.salary.calculation.amount.PlusSalaryAmountCalculationStrategy;
+import com.dat.erp.services.salary.calculation.amount.SalaryAmountCalculationStrategyFactory;
+import com.dat.erp.services.salary.calculation.basis.KpiSalaryBasisCalculationStrategy;
+import com.dat.erp.services.salary.calculation.basis.QuantitySalaryBasisCalculationStrategy;
+import com.dat.erp.services.salary.calculation.basis.SalaryBasisCalculationStrategyFactory;
+import com.dat.erp.services.salary.calculation.basis.WorkingHourSalaryBasisCalculationStrategy;
+import com.dat.erp.services.salary.calculation.detail.SalaryDetailDependencyEvaluator;
+import com.dat.erp.services.salary.calculation.hour.ActualWorkingHourStrategyFactory;
+import com.dat.erp.services.salary.calculation.hour.ExpectedWorkingHourStrategyFactory;
+import com.dat.erp.services.salary.calculation.hour.HolidayWorkActualWorkingHourStrategy;
+import com.dat.erp.services.salary.calculation.hour.NormalActualWorkingHourStrategy;
+import com.dat.erp.services.salary.calculation.hour.NormalExpectedWorkingHourStrategy;
+import com.dat.erp.services.salary.calculation.hour.WeekendWorkActualWorkingHourStrategy;
 import com.dat.erp.systemconfigs.CustomUserDetails;
 
 class MonthlySalaryCalculationServiceImplTest {
@@ -63,12 +83,32 @@ class MonthlySalaryCalculationServiceImplTest {
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
+        SalaryAmountCalculationStrategyFactory amountStrategyFactory = new SalaryAmountCalculationStrategyFactory(List.of(
+                new PlusSalaryAmountCalculationStrategy(),
+                new MinusSalaryAmountCalculationStrategy(),
+                new FixedSalaryAmountCalculationStrategy(),
+                new FormulaSalaryAmountCalculationStrategy(),
+                new PercentSalaryAmountCalculationStrategy(),
+                new DivideSalaryAmountCalculationStrategy()));
+        SalaryDetailDependencyEvaluator dependencyEvaluator = new SalaryDetailDependencyEvaluator(amountStrategyFactory);
+        ExpectedWorkingHourStrategyFactory expectedHourStrategyFactory = new ExpectedWorkingHourStrategyFactory(List.of(
+                new NormalExpectedWorkingHourStrategy()));
+        ActualWorkingHourStrategyFactory actualHourStrategyFactory = new ActualWorkingHourStrategyFactory(List.of(
+                new NormalActualWorkingHourStrategy(),
+                new WeekendWorkActualWorkingHourStrategy(),
+                new HolidayWorkActualWorkingHourStrategy()));
+        SalaryBasisCalculationStrategyFactory basisStrategyFactory = new SalaryBasisCalculationStrategyFactory(List.of(
+                new WorkingHourSalaryBasisCalculationStrategy(),
+                new QuantitySalaryBasisCalculationStrategy(),
+                new KpiSalaryBasisCalculationStrategy()));
+
         service = new MonthlySalaryCalculationServiceImpl(securityContextService, List.of(
                 new FinalizeMonthlySalaryResponseStep(),
-                new CalculateSalaryDetailsStep(),
+                new CalculateSalaryDetailsStep(dependencyEvaluator),
+                new ResolveSalaryBasisStep(basisStrategyFactory),
                 new CalculateStandardMoneyPerHourStep(),
-                new ResolveActualWorkingHoursStep(dailyWorkRepository),
-                new ResolveExpectedWorkingHoursStep(calendarDateService),
+                new ResolveActualWorkingHoursStep(dailyWorkRepository, actualHourStrategyFactory),
+                new ResolveExpectedWorkingHoursStep(calendarDateService, expectedHourStrategyFactory),
                 new LoadPayrollDataStep(employeeSalaryRepository, employeeSalaryDetailRepository, employeePayrollPolicyService)));
         Account account = new Account();
         account.setCompanyCode("CMP-1");
@@ -106,6 +146,9 @@ class MonthlySalaryCalculationServiceImplTest {
 
         assertEquals(new BigDecimal("1100.0000"), response.getFinalSalary());
         assertEquals(new BigDecimal("160"), response.getActualWorkingHourPerMonth());
+        assertEquals(SalaryBasisType.WORKING_HOUR, response.getSalaryBasisType());
+        assertEquals("HOUR", response.getBasisUnit());
+        assertEquals(new BigDecimal("160"), response.getActualBasisValue());
         assertEquals("MMK", response.getAuditTrail().get(0).getUnit());
         assertEquals(new BigDecimal("1100.0000"), response.getAuditTrail().get(0).getTotalAmount());
     }

@@ -1,6 +1,7 @@
 package com.dat.erp.dto.request;
 
 import com.dat.erp.constants.DayType;
+import com.dat.erp.constants.SalaryUnitType;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
@@ -24,4 +25,6 @@ public class EmployeeSalaryDetailRequest {
     private DayType dayType;
 
     private Boolean isFixed;
+
+    private SalaryUnitType unitType = SalaryUnitType.HOUR;
 }

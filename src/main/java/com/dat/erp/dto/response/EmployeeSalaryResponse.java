@@ -2,6 +2,8 @@ package com.dat.erp.dto.response;
 
 import java.time.LocalDate;
 
+import com.dat.erp.constants.SalaryBasisType;
+
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -16,5 +18,5 @@ public class EmployeeSalaryResponse {
     private LocalDate effectiveTo;
     private String totalAmount;
     private String currency;
+    private SalaryBasisType salaryBasisType;
 }
-

@@ -1,9 +1,12 @@
 package com.dat.erp.entities;
 
 import com.dat.erp.constants.DayType;
+import com.dat.erp.constants.SalaryUnitType;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
@@ -47,5 +50,10 @@ public class EmployeeSalaryDetail extends BaseAuditableEntity {
     @Column(name = "is_fixed")
     @Builder.Default
     private Boolean isFixed = Boolean.FALSE;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "salary_unit_type")
+    @Builder.Default
+    private SalaryUnitType unitType = SalaryUnitType.HOUR;
 
 }

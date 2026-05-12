@@ -15,6 +15,7 @@ import com.dat.erp.services.MonthlySalaryCalculationService;
 import com.dat.erp.services.SecurityContextService;
 import com.dat.erp.services.salary.calculation.MonthlySalaryCalculationContext;
 import com.dat.erp.services.salary.calculation.MonthlySalaryCalculationStep;
+import com.dat.erp.services.salary.calculation.basis.SalaryBasisCalculationResult;
 import com.dat.erp.utils.CustomStringUtils;
 
 @Service
@@ -46,10 +47,14 @@ public class MonthlySalaryCalculationServiceImpl implements MonthlySalaryCalcula
         MonthlySalaryCalculationContext context = new MonthlySalaryCalculationContext(
                 normalizedEmployeeCode, companyCode, month);
         calculationSteps.forEach(step -> step.execute(context));
+        SalaryBasisCalculationResult basisResult = context.getSalaryBasisCalculationResult();
 
         return new MonthlySalaryCalculationResponse(context.getEmployeeCode(), context.getMonth(),
                 context.getExpectedWorkingHourPerMonth(), context.getActualWorkingHourPerMonth(),
                 context.getStandardMoneyPerHour(), context.getFinalSalary(),
-                Collections.unmodifiableMap(context.getActualHoursByDayType()), List.copyOf(context.getAuditTrail()));
+                Collections.unmodifiableMap(context.getActualHoursByDayType()), List.copyOf(context.getAuditTrail()),
+                basisResult.salaryBasisType(), basisResult.basisUnit(), basisResult.expectedBasisValue(),
+                basisResult.actualBasisValue(), basisResult.standardMoneyPerUnit(),
+                Collections.unmodifiableMap(basisResult.actualBasisValuesByType()));
     }
 }

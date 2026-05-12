@@ -5,6 +5,8 @@ import java.util.List;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
@@ -17,6 +19,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
+
+import com.dat.erp.constants.SalaryBasisType;
 
 @Getter
 @Setter
@@ -47,6 +51,11 @@ public class EmployeeSalary extends BaseAuditableEntity {
 
     @Column(name = "currency")
     private String currency;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "salary_basis_type")
+    @Builder.Default
+    private SalaryBasisType salaryBasisType = SalaryBasisType.WORKING_HOUR;
 
     @OneToMany(mappedBy = "employeeSalary", fetch = FetchType.LAZY)
     private List<EmployeeSalaryDetail> details;

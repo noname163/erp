@@ -10,27 +10,31 @@ import com.dat.erp.constants.DayType;
 import com.dat.erp.constants.Messages;
 import com.dat.erp.exceptions.BadRequestException;
 import com.dat.erp.services.CalendarDateService;
+import com.dat.erp.services.salary.calculation.hour.ExpectedWorkingHourContext;
+import com.dat.erp.services.salary.calculation.hour.ExpectedWorkingHourStrategyFactory;
 
 @Component
 @Order(20)
 public class ResolveExpectedWorkingHoursStep implements MonthlySalaryCalculationStep {
 
     private final CalendarDateService calendarDateService;
+    private final ExpectedWorkingHourStrategyFactory expectedWorkingHourStrategyFactory;
 
-    public ResolveExpectedWorkingHoursStep(CalendarDateService calendarDateService) {
+    public ResolveExpectedWorkingHoursStep(CalendarDateService calendarDateService,
+            ExpectedWorkingHourStrategyFactory expectedWorkingHourStrategyFactory) {
         this.calendarDateService = calendarDateService;
+        this.expectedWorkingHourStrategyFactory = expectedWorkingHourStrategyFactory;
     }
 
     @Override
     public void execute(MonthlySalaryCalculationContext context) {
-        Integer standardHoursPerDay = context.getPayrollPolicy().getStandardQuantityPerDay();
-        BigDecimal expectedWorkingHourPerMonth = BigDecimal.ZERO;
-        if (standardHoursPerDay != null && standardHoursPerDay > 0) {
-            Map<DayType, Integer> dayTypeCounts = calendarDateService
-                    .getCalendarDateTotalsByCompanyCodeAndMonth(context.getCompanyCode(), context.getMonth());
-            int normalWorkingDays = dayTypeCounts.getOrDefault(DayType.NORMAL, 0);
-            expectedWorkingHourPerMonth = BigDecimal.valueOf((long) standardHoursPerDay * normalWorkingDays);
-        }
+        Map<DayType, Integer> dayTypeCounts = calendarDateService
+                .getCalendarDateTotalsByCompanyCodeAndMonth(context.getCompanyCode(), context.getMonth());
+        ExpectedWorkingHourContext hourContext = new ExpectedWorkingHourContext(context.getPayrollPolicy(),
+                context.getMonth(), dayTypeCounts);
+        BigDecimal expectedWorkingHourPerMonth = dayTypeCounts.keySet().stream()
+                .map(dayType -> expectedWorkingHourStrategyFactory.calculate(dayType, hourContext))
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
 
         if (expectedWorkingHourPerMonth.compareTo(BigDecimal.ZERO) <= 0) {
             throw new BadRequestException(Messages.ERROR_PAYROLL_EXPECTED_WORKING_HOURS_INVALID);
