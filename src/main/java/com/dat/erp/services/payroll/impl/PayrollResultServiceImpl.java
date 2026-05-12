@@ -184,7 +184,7 @@ public class PayrollResultServiceImpl extends AbstractAuditableService implement
         LocalDate runDate = runMonth.atEndOfMonth();
         List<String> activeEmployeeCodes = userProfileService.getActiveUserProfileCodesOfCurrentCompany();
         if (activeEmployeeCodes == null || activeEmployeeCodes.isEmpty()) {
-            finalizePayrollRun(payrollRun);
+            finalizePayrollRun(payrollRun, PayrollRunStatus.FAILED);
             return;
         }
 
@@ -216,17 +216,18 @@ public class PayrollResultServiceImpl extends AbstractAuditableService implement
                     totalWorkingDays,
                     leaveQuantitiesByEmployeeCode.getOrDefault(employeeCode, 0)));
         }
-
+        PayrollRunStatus finalStatus = PayrollRunStatus.FAILED;
         if (!payrollResults.isEmpty()) {
             List<PayrollResult> savedPayrollResults = payrollResultRepository.saveAll(payrollResults);
             scheduleEmployeeSalaryCalculation(companyCode, activeEmployeeCodes, savedPayrollResults, runDate);
+            finalStatus = PayrollRunStatus.CALCULATED;
         }
 
-        finalizePayrollRun(payrollRun);
+        finalizePayrollRun(payrollRun, finalStatus);
     }
 
-    private void finalizePayrollRun(PayrollRun payrollRun) {
-        payrollRun.setStatus(PayrollRunStatus.CALCULATED);
+    private void finalizePayrollRun(PayrollRun payrollRun, PayrollRunStatus finalStatus) {
+        payrollRun.setStatus(finalStatus);
         applyUpdateAudit(payrollRun);
         payrollRunRepository.save(payrollRun);
     }
