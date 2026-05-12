@@ -14,7 +14,6 @@ import java.util.Optional;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
@@ -36,6 +35,8 @@ import com.dat.erp.repositories.customrepositories.EmployeeSalaryRepository;
 import com.dat.erp.services.CalendarDateService;
 import com.dat.erp.services.EmployeePayrollPolicyService;
 import com.dat.erp.services.SecurityContextService;
+import com.dat.erp.services.salary.calculation.hour.ExpectedWorkingHourStrategyFactory;
+import com.dat.erp.services.salary.calculation.hour.NormalExpectedWorkingHourStrategy;
 import com.dat.erp.systemconfigs.CustomUserDetails;
 
 class MonthlySalaryCalculationServiceImplTest {
@@ -53,12 +54,17 @@ class MonthlySalaryCalculationServiceImplTest {
     @Mock
     private CalendarDateService calendarDateService;
 
-    @InjectMocks
     private MonthlySalaryCalculationServiceImpl service;
 
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
+        ExpectedWorkingHourStrategyFactory expectedWorkingHourStrategyFactory = new ExpectedWorkingHourStrategyFactory(
+                List.of(new NormalExpectedWorkingHourStrategy()));
+        service = new MonthlySalaryCalculationServiceImpl(securityContextService, employeeSalaryRepository,
+                employeeSalaryDetailRepository, dailyWorkRepository, employeePayrollPolicyService, calendarDateService,
+                expectedWorkingHourStrategyFactory);
+
         Account account = new Account();
         account.setCompanyCode("CMP-1");
         when(securityContextService.getCurrentUser()).thenReturn(new CustomUserDetails(account, null));
@@ -121,7 +127,7 @@ class MonthlySalaryCalculationServiceImplTest {
     @Test
     void calculateEmployeeMonthlySalary_throwsWhenExpectedHoursZero() {
         when(calendarDateService.getCalendarDateTotalsByCompanyCodeAndMonth("CMP-1", YearMonth.of(2026, 3)))
-                .thenReturn(Map.of());
+                .thenReturn(Map.of(DayType.WEEKEND_WORK, 5));
 
         BadRequestException ex = assertThrows(BadRequestException.class,
                 () -> service.calculateEmployeeMonthlySalary("EMP001", YearMonth.of(2026, 3)));

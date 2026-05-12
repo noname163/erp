@@ -37,6 +37,8 @@ import com.dat.erp.services.CalendarDateService;
 import com.dat.erp.services.EmployeePayrollPolicyService;
 import com.dat.erp.services.MonthlySalaryCalculationService;
 import com.dat.erp.services.SecurityContextService;
+import com.dat.erp.services.salary.calculation.hour.ExpectedWorkingHourContext;
+import com.dat.erp.services.salary.calculation.hour.ExpectedWorkingHourStrategyFactory;
 import com.dat.erp.utils.CustomStringUtils;
 
 @Service
@@ -51,19 +53,22 @@ public class MonthlySalaryCalculationServiceImpl implements MonthlySalaryCalcula
     private final DailyWorkRepository dailyWorkRepository;
     private final EmployeePayrollPolicyService employeePayrollPolicyService;
     private final CalendarDateService calendarDateService;
+    private final ExpectedWorkingHourStrategyFactory expectedWorkingHourStrategyFactory;
 
     public MonthlySalaryCalculationServiceImpl(SecurityContextService securityContextService,
             EmployeeSalaryRepository employeeSalaryRepository,
             EmployeeSalaryDetailRepository employeeSalaryDetailRepository,
             DailyWorkRepository dailyWorkRepository,
             EmployeePayrollPolicyService employeePayrollPolicyService,
-            CalendarDateService calendarDateService) {
+            CalendarDateService calendarDateService,
+            ExpectedWorkingHourStrategyFactory expectedWorkingHourStrategyFactory) {
         this.securityContextService = securityContextService;
         this.employeeSalaryRepository = employeeSalaryRepository;
         this.employeeSalaryDetailRepository = employeeSalaryDetailRepository;
         this.dailyWorkRepository = dailyWorkRepository;
         this.employeePayrollPolicyService = employeePayrollPolicyService;
         this.calendarDateService = calendarDateService;
+        this.expectedWorkingHourStrategyFactory = expectedWorkingHourStrategyFactory;
     }
 
     @Override
@@ -253,14 +258,12 @@ public class MonthlySalaryCalculationServiceImpl implements MonthlySalaryCalcula
     }
 
     private BigDecimal resolveExpectedWorkingHours(String companyCode, PayrollPolicy payrollPolicy, YearMonth month) {
-        Integer standardHoursPerDay = payrollPolicy.getStandardQuantityPerDay();
-        if (standardHoursPerDay == null || standardHoursPerDay <= 0) {
-            return BigDecimal.ZERO;
-        }
-
         Map<DayType, Integer> dayTypeCounts = calendarDateService.getCalendarDateTotalsByCompanyCodeAndMonth(companyCode, month);
-        int normalWorkingDays = dayTypeCounts.getOrDefault(DayType.NORMAL, 0);
-        return BigDecimal.valueOf((long) standardHoursPerDay * normalWorkingDays);
+        ExpectedWorkingHourContext context = new ExpectedWorkingHourContext(payrollPolicy, month, dayTypeCounts);
+
+        return dayTypeCounts.keySet().stream()
+                .map(dayType -> expectedWorkingHourStrategyFactory.getStrategy(dayType).calculate(context))
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
     }
 
     private Map<DayType, BigDecimal> aggregateHoursByDayType(String companyCode, String employeeCode, YearMonth month) {
