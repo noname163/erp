@@ -198,7 +198,8 @@ public class EmployeeSalaryServiceImpl extends AbstractAuditableService implemen
                 salary.getEffectiveFrom(),
                 salary.getEffectiveTo(),
                 totalAmount.stripTrailingZeros().toPlainString(),
-                salary.getCurrency());
+                salary.getCurrency(),
+                salary.getSalaryBasisType());
     }
 
     private String buildFullName(String firstName, String lastName) {

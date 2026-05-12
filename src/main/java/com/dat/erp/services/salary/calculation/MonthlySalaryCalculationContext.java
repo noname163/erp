@@ -6,7 +6,9 @@ import java.util.List;
 import java.util.Map;
 
 import com.dat.erp.constants.DayType;
+import com.dat.erp.constants.SalaryBasisType;
 import com.dat.erp.dto.response.salary.MonthlySalaryDetailAuditResponse;
+import com.dat.erp.services.salary.calculation.basis.SalaryBasisCalculationResult;
 import com.dat.erp.entities.EmployeeSalary;
 import com.dat.erp.entities.EmployeeSalaryDetail;
 import com.dat.erp.entities.PayrollPolicy;
@@ -29,10 +31,18 @@ public class MonthlySalaryCalculationContext {
     private BigDecimal standardMoneyPerHour;
     private BigDecimal finalSalary;
     private List<MonthlySalaryDetailAuditResponse> auditTrail;
+    private SalaryBasisCalculationResult salaryBasisCalculationResult;
 
     public MonthlySalaryCalculationContext(String employeeCode, String companyCode, YearMonth month) {
         this.employeeCode = employeeCode;
         this.companyCode = companyCode;
         this.month = month;
+    }
+
+    public SalaryBasisType getSalaryBasisType() {
+        if (employeeSalary == null || employeeSalary.getSalaryBasisType() == null) {
+            return SalaryBasisType.WORKING_HOUR;
+        }
+        return employeeSalary.getSalaryBasisType();
     }
 }

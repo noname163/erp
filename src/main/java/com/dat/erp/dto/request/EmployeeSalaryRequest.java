@@ -3,6 +3,8 @@ package com.dat.erp.dto.request;
 import java.time.LocalDate;
 import java.util.List;
 
+import com.dat.erp.constants.SalaryBasisType;
+
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
@@ -28,6 +30,8 @@ public class EmployeeSalaryRequest {
     @NotBlank(message = "currency is required")
     @Size(max = 10, message = "currency must be at most 10 characters")
     private String currency;
+
+    private SalaryBasisType salaryBasisType = SalaryBasisType.WORKING_HOUR;
 
     private List<EmployeeSalaryDetailRequest> salaryDetails;
 }

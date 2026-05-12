@@ -5,12 +5,12 @@ import java.math.BigDecimal;
 import com.dat.erp.constants.Messages;
 import com.dat.erp.utils.CustomStringUtils;
 
-final class SalaryCalculationAmounts {
+public final class SalaryCalculationAmounts {
 
     private SalaryCalculationAmounts() {
     }
 
-    static BigDecimal toAmount(String value) {
+    public static BigDecimal toAmount(String value) {
         return CustomStringUtils.parsePositiveBigDecimal(value, Messages.ERROR_EMPLOYEE_SALARY_DETAIL_AMOUNT_INVALID);
     }
 }
