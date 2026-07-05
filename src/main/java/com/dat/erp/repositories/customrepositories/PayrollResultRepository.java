@@ -61,4 +61,34 @@ public interface PayrollResultRepository extends JpaRepository<PayrollResult, Lo
     List<PayrollResult> findByPayrollRun_CodeAndIsDeletedFalse(String payrollRunCode);
 
     Optional<PayrollResult> findByCodeAndCompanyCodeAndIsDeletedFalse(String code, String companyCode);
+
+    @Query("""
+            select pr
+            from PayrollResult pr
+            join fetch pr.employeeSalary es
+            join fetch es.userProfile up
+            left join fetch pr.unit unit
+            where pr.payrollRun.code = :payrollRunCode
+              and pr.companyCode = :companyCode
+              and pr.isDeleted = false
+              and up.code in :employeeCodes
+            """)
+    List<PayrollResult> findActiveByRunAndCompanyAndEmployeeCodes(
+            @Param("payrollRunCode") String payrollRunCode,
+            @Param("companyCode") String companyCode,
+            @Param("employeeCodes") List<String> employeeCodes);
+
+    @Query("""
+            select pr
+            from PayrollResult pr
+            join fetch pr.employeeSalary es
+            join fetch es.userProfile up
+            left join fetch pr.unit unit
+            where pr.payrollRun.code = :payrollRunCode
+              and pr.companyCode = :companyCode
+              and pr.isDeleted = false
+            """)
+    List<PayrollResult> findActiveByRunAndCompany(
+            @Param("payrollRunCode") String payrollRunCode,
+            @Param("companyCode") String companyCode);
 }

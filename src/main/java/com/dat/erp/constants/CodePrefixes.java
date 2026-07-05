@@ -27,5 +27,8 @@ public final class CodePrefixes {
     public static final String PAYROLL_RUN = "PRN-";
     public static final String PAYROLL_RESULT = "PRR-";
     public static final String PAYROLL_RESULT_DETAIL = "PRD-";
+    public static final String PAYROLL_RERUN_BATCH = "PRB-";
+    public static final String PAYROLL_RUN_AUDIT_LOG = "PRA-";
+    public static final String PAYROLL_RESULT_SNAPSHOT = "PRS-";
     public static final String DAILY_WORK = "DWK-";
 }

@@ -4,7 +4,9 @@ import java.time.LocalDateTime;
 import java.time.YearMonth;
 
 import com.dat.erp.constants.PayrollRunStatus;
+import com.dat.erp.dto.request.PayrollRerunRequest;
 import com.dat.erp.dto.response.PagedResponse;
+import com.dat.erp.dto.response.PayrollRerunResponse;
 import com.dat.erp.dto.response.PayrollRunResponse;
 
 public interface PayrollRunService {
@@ -20,4 +22,6 @@ public interface PayrollRunService {
             String sortDir);
 
     PayrollRunResponse runPayroll(YearMonth runDate);
+
+    PayrollRerunResponse rerunPayroll(String payrollRunCode, PayrollRerunRequest request);
 }

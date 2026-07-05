@@ -7,13 +7,17 @@ import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.dat.erp.constants.PayrollRunStatus;
+import com.dat.erp.dto.request.PayrollRerunRequest;
 import com.dat.erp.dto.response.PagedResponse;
+import com.dat.erp.dto.response.PayrollRerunResponse;
 import com.dat.erp.dto.response.PayrollRunResponse;
 import com.dat.erp.services.payroll.PayrollRunService;
 
@@ -76,5 +80,21 @@ public class PayrollRunController {
     public ResponseEntity<PayrollRunResponse> runPayroll(
             @Parameter(description = "Payroll run month (yyyy-MM)", example = "2026-04") @DateTimeFormat(pattern = "yyyy-MM") @RequestParam YearMonth runDate) {
         return ResponseEntity.status(201).body(payrollRunService.runPayroll(runDate));
+    }
+
+    @Operation(summary = "Re-run payroll", description = "Recalculates payroll for an existing payroll run with audit logging and optional dry-run preview.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Payroll re-run completed or preview calculated"),
+            @ApiResponse(responseCode = "400", description = "Invalid input"),
+            @ApiResponse(responseCode = "403", description = "Forbidden"),
+            @ApiResponse(responseCode = "404", description = "Payroll run not found"),
+            @ApiResponse(responseCode = "409", description = "Payroll run cannot be re-run now")
+    })
+    @PostMapping("/{payrollRunCode}/rerun")
+    @PreAuthorize("hasRoles({'HUMAN_RESOURCES'})")
+    public ResponseEntity<PayrollRerunResponse> rerunPayroll(
+            @PathVariable String payrollRunCode,
+            @RequestBody PayrollRerunRequest request) {
+        return ResponseEntity.ok(payrollRunService.rerunPayroll(payrollRunCode, request));
     }
 }

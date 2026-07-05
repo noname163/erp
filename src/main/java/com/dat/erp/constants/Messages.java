@@ -151,6 +151,13 @@ public final class Messages {
     public static final String ERROR_PAYROLL_RUN_MONTH_TOO_OLD = "runDate must not be earlier than current month minus 3 months";
     public static final String ERROR_PAYROLL_RUN_RUN_AT_RANGE_INVALID = "runAt range is invalid";
     public static final String ERROR_PAYROLL_RUN_CLOSE_AT_RANGE_INVALID = "closeAt range is invalid";
+    public static final String ERROR_PAYROLL_RUN_NOT_FOUND = "Payroll run not found with code %s";
+    public static final String ERROR_PAYROLL_RERUN_REASON_REQUIRED = "reason is required";
+    public static final String ERROR_PAYROLL_RERUN_MODE_INVALID = "mode is invalid";
+    public static final String ERROR_PAYROLL_RERUN_EMPLOYEES_REQUIRED = "employeeCodes is required for selected employees mode";
+    public static final String ERROR_PAYROLL_RERUN_CLOSED_NOT_ALLOWED = "Closed payroll run cannot be re-run";
+    public static final String ERROR_PAYROLL_RERUN_CONCURRENT = "Payroll run is already processing or rerunning";
+    public static final String ERROR_PAYROLL_RERUN_FAILED_ONLY_UNSUPPORTED = "FAILED_ONLY mode is not supported by current payroll result status model";
 
     // Payroll result
     public static final String ERROR_PAYROLL_RESULT_CODE_INVALID = "payrollResultCode is invalid";

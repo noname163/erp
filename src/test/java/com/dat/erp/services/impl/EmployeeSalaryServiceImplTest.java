@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -24,6 +25,7 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
 import com.dat.erp.constants.Messages;
+import com.dat.erp.constants.PayrollRunStatus;
 import com.dat.erp.dto.request.EmployeeSalaryRequest;
 import com.dat.erp.dto.response.EmployeeSalaryListResponse;
 import com.dat.erp.dto.response.EmployeeSalaryResponse;
@@ -33,6 +35,7 @@ import com.dat.erp.entities.Account;
 import com.dat.erp.entities.Company;
 import com.dat.erp.entities.EmployeeSalary;
 import com.dat.erp.entities.PayrollResult;
+import com.dat.erp.entities.PayrollRun;
 import com.dat.erp.entities.UserProfile;
 import com.dat.erp.exceptions.BadRequestException;
 import com.dat.erp.exceptions.ConflictException;
@@ -42,11 +45,13 @@ import com.dat.erp.repositories.customrepositories.CompanyRepository;
 import com.dat.erp.repositories.customrepositories.EmployeeSalaryRepository;
 import com.dat.erp.repositories.customrepositories.PayrollResultDetailRepository;
 import com.dat.erp.repositories.customrepositories.PayrollResultRepository;
+import com.dat.erp.repositories.customrepositories.PayrollRunRepository;
 import com.dat.erp.repositories.customrepositories.UserProfileRepository;
 import com.dat.erp.services.CodeGenerator;
 import com.dat.erp.services.EmployeeSalaryDetailService;
 import com.dat.erp.services.MonthlySalaryCalculationService;
 import com.dat.erp.services.SecurityContextService;
+import com.dat.erp.services.payroll.PayrollResultDetailService;
 import com.dat.erp.systemconfigs.CustomUserDetails;
 import com.dat.erp.utils.CompanySecretKeyCryptoUtils;
 
@@ -81,6 +86,12 @@ class EmployeeSalaryServiceImplTest {
 
     @Mock
     private PayrollResultDetailRepository payrollResultDetailRepository;
+
+    @Mock
+    private PayrollRunRepository payrollRunRepository;
+
+    @Mock
+    private PayrollResultDetailService payrollResultDetailService;
 
     @InjectMocks
     private EmployeeSalaryServiceImpl employeeSalaryService;
@@ -324,6 +335,8 @@ class EmployeeSalaryServiceImplTest {
                 .thenReturn(monthlySalaryCalculationResponse("EMP001", "1234.5000", "160"));
         when(monthlySalaryCalculationService.calculateEmployeeMonthlySalary("EMP002", YearMonth.of(2025, 3)))
                 .thenReturn(monthlySalaryCalculationResponse("EMP002", "2345.0000", "152"));
+        when(payrollResultRepository.saveAllAndFlush(any()))
+                .thenAnswer(invocation -> invocation.getArgument(0));
 
         employeeSalaryService.employeeSalaryCalculation(
                 "CMP-1",
@@ -332,7 +345,7 @@ class EmployeeSalaryServiceImplTest {
                 LocalDate.of(2025, 3, 31));
 
         ArgumentCaptor<List<PayrollResult>> captor = ArgumentCaptor.forClass(List.class);
-        verify(payrollResultRepository).saveAll(captor.capture());
+        verify(payrollResultRepository).saveAllAndFlush(captor.capture());
 
         List<PayrollResult> savedResults = captor.getValue();
         assertEquals(2, savedResults.size());
@@ -343,6 +356,53 @@ class EmployeeSalaryServiceImplTest {
         assertEquals("2345.0000",
                 CompanySecretKeyCryptoUtils.decrypt(savedResults.get(1).getActualAmount(), "company-secret-key"));
         assertEquals(152, savedResults.get(1).getActualQuantity());
+    }
+
+    @Test
+    void employeeSalaryCalculation_marksPayrollRunFailedWhenEmployeeCalculationFailsAndContinues() {
+        Account currentUserAccount = new Account();
+        currentUserAccount.setCode("ACC-1");
+        currentUserAccount.setCompanyCode("CMP-1");
+        when(securityContextService.getCurrentUser()).thenReturn(new CustomUserDetails(currentUserAccount, null));
+
+        Company company = new Company();
+        company.setCode("CMP-1");
+        company.setSecretKey("company-secret-key");
+        when(companyRepository.findByCode("CMP-1")).thenReturn(Optional.of(company));
+
+        PayrollRun payrollRun = new PayrollRun();
+        payrollRun.setCode("PRN-1");
+        payrollRun.setStatus(PayrollRunStatus.CALCULATED);
+        PayrollResult firstPayrollResult = payrollResult(1L, "EMP001");
+        firstPayrollResult.setCode("PRR-1");
+        firstPayrollResult.setPayrollRun(payrollRun);
+        PayrollResult secondPayrollResult = payrollResult(2L, "EMP002");
+        secondPayrollResult.setCode("PRR-2");
+        secondPayrollResult.setPayrollRun(payrollRun);
+
+        doThrow(new BadRequestException("Missing working-hour mapping for dayType null"))
+                .when(monthlySalaryCalculationService)
+                .calculateEmployeeMonthlySalary("EMP001", YearMonth.of(2025, 3));
+        when(monthlySalaryCalculationService.calculateEmployeeMonthlySalary("EMP002", YearMonth.of(2025, 3)))
+                .thenReturn(monthlySalaryCalculationResponse("EMP002", "2345.0000", "152"));
+        when(payrollResultRepository.saveAllAndFlush(any()))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+
+        employeeSalaryService.employeeSalaryCalculation(
+                "CMP-1",
+                List.of("EMP001", "EMP002"),
+                List.of(firstPayrollResult, secondPayrollResult),
+                LocalDate.of(2025, 3, 31));
+
+        ArgumentCaptor<List<PayrollResult>> resultsCaptor = ArgumentCaptor.forClass(List.class);
+        verify(payrollResultRepository).saveAllAndFlush(resultsCaptor.capture());
+        assertEquals(1, resultsCaptor.getValue().size());
+        assertEquals("PRR-2", resultsCaptor.getValue().get(0).getCode());
+
+        ArgumentCaptor<PayrollRun> runCaptor = ArgumentCaptor.forClass(PayrollRun.class);
+        verify(payrollRunRepository).save(runCaptor.capture());
+        assertEquals(PayrollRunStatus.FAILED, runCaptor.getValue().getStatus());
+        assertEquals("ACC-1", runCaptor.getValue().getUpdatedBy());
     }
 
     @Test

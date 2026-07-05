@@ -11,6 +11,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -57,6 +59,8 @@ import com.dat.erp.utils.PageableUtils;
 
 @Service
 public class PayrollResultServiceImpl extends AbstractAuditableService implements PayrollResultService {
+
+    private static final Logger log = LoggerFactory.getLogger(PayrollResultServiceImpl.class);
 
     private static final Set<DayType> WORKING_DAY_TYPES = EnumSet.of(
             DayType.NORMAL,
@@ -176,16 +180,30 @@ public class PayrollResultServiceImpl extends AbstractAuditableService implement
 
         YearMonth runMonth = resolveRunMonth(payrollRun);
         LocalDate runDate = runMonth.atEndOfMonth();
+        String payrollRunCode = payrollRun == null ? null : payrollRun.getCode();
+        log.info("PAYROLL_RESULT action=GENERATE_STARTED companyCode={} payrollRunCode={} period={} runDate={}",
+                companyCode, payrollRunCode, runMonth, runDate);
+
         List<String> activeEmployeeCodes = userProfileService.getActiveUserProfileCodesOfCurrentCompany();
         if (activeEmployeeCodes == null || activeEmployeeCodes.isEmpty()) {
+            log.warn("PAYROLL_RESULT action=GENERATE_FINISHED result=FAILED reason=NO_ACTIVE_EMPLOYEES companyCode={} payrollRunCode={} period={}",
+                    companyCode, payrollRunCode, runMonth);
             finalizePayrollRun(payrollRun, PayrollRunStatus.FAILED);
             return;
         }
+        log.info("PAYROLL_RESULT action=ACTIVE_EMPLOYEES_LOADED companyCode={} payrollRunCode={} period={} employeeCount={}",
+                companyCode, payrollRunCode, runMonth, activeEmployeeCodes.size());
 
         Map<String, PayrollPolicy> payrollPoliciesByEmployeeCode = employeePayrollPolicyService
                 .getCompanyPoliciesByEmployeeCodesAndDate(activeEmployeeCodes, runDate);
         List<EmployeeSalary> activeEmployeeSalaries = employeeSalaryRepository
                 .findActiveByCompanyCodeAndUserProfileCodesAndDate(companyCode, activeEmployeeCodes, runDate);
+        log.info("PAYROLL_RESULT action=INPUTS_LOADED companyCode={} payrollRunCode={} period={} policyCount={} salaryCount={}",
+                companyCode,
+                payrollRunCode,
+                runMonth,
+                payrollPoliciesByEmployeeCode == null ? 0 : payrollPoliciesByEmployeeCode.size(),
+                activeEmployeeSalaries == null ? 0 : activeEmployeeSalaries.size());
 
         int totalWorkingDays = calculateTotalWorkingDays(
                 calendarDateService.getCalendarDateTotalsByCompanyCodeAndMonth(companyCode, runMonth));
@@ -196,10 +214,19 @@ public class PayrollResultServiceImpl extends AbstractAuditableService implement
         Map<String, EmployeeSalary> salaryByEmployeeCode = mapSalariesByEmployeeCode(activeEmployeeSalaries);
 
         List<PayrollResult> payrollResults = new ArrayList<>();
+        int skippedEmployees = 0;
         for (String employeeCode : activeEmployeeCodes) {
             EmployeeSalary employeeSalary = salaryByEmployeeCode.get(employeeCode);
             PayrollPolicy payrollPolicy = payrollPoliciesByEmployeeCode.get(employeeCode);
             if (employeeSalary == null || payrollPolicy == null) {
+                skippedEmployees++;
+                log.warn("PAYROLL_RESULT action=EMPLOYEE_SKIPPED result=FAILED reason=MISSING_INPUT companyCode={} payrollRunCode={} period={} employeeCode={} hasSalary={} hasPolicy={}",
+                        companyCode,
+                        payrollRunCode,
+                        runMonth,
+                        employeeCode,
+                        employeeSalary != null,
+                        payrollPolicy != null);
                 continue;
             }
 
@@ -213,11 +240,27 @@ public class PayrollResultServiceImpl extends AbstractAuditableService implement
         PayrollRunStatus finalStatus = PayrollRunStatus.FAILED;
         if (!payrollResults.isEmpty()) {
             List<PayrollResult> savedPayrollResults = payrollResultRepository.saveAll(payrollResults);
+            log.info("PAYROLL_RESULT action=PREVIEW_RESULTS_CREATED result=SUCCESS companyCode={} payrollRunCode={} period={} createdCount={} skippedCount={} totalWorkingDays={}",
+                    companyCode,
+                    payrollRunCode,
+                    runMonth,
+                    savedPayrollResults.size(),
+                    skippedEmployees,
+                    totalWorkingDays);
             scheduleEmployeeSalaryCalculation(companyCode, activeEmployeeCodes, savedPayrollResults, runDate);
             finalStatus = PayrollRunStatus.CALCULATED;
+        } else {
+            log.warn("PAYROLL_RESULT action=GENERATE_FINISHED result=FAILED reason=NO_ELIGIBLE_EMPLOYEES companyCode={} payrollRunCode={} period={} activeEmployeeCount={} skippedCount={}",
+                    companyCode,
+                    payrollRunCode,
+                    runMonth,
+                    activeEmployeeCodes.size(),
+                    skippedEmployees);
         }
 
         finalizePayrollRun(payrollRun, finalStatus);
+        log.info("PAYROLL_RESULT action=RUN_STATUS_UPDATED companyCode={} payrollRunCode={} period={} status={}",
+                companyCode, payrollRunCode, runMonth, finalStatus);
     }
 
     private void finalizePayrollRun(PayrollRun payrollRun, PayrollRunStatus finalStatus) {
@@ -239,19 +282,50 @@ public class PayrollResultServiceImpl extends AbstractAuditableService implement
                 employeeCodesSnapshot,
                 payrollResultsSnapshot,
                 runDate);
+        String payrollRunCode = resolvePayrollRunCode(payrollResults);
+        YearMonth runMonth = YearMonth.from(runDate);
 
         if (TransactionSynchronizationManager.isSynchronizationActive()
                 && TransactionSynchronizationManager.isActualTransactionActive()) {
+            log.info("PAYROLL_CALC action=SCHEDULED timing=AFTER_COMMIT companyCode={} payrollRunCode={} period={} employeeCount={} resultCount={}",
+                    companyCodeSnapshot,
+                    payrollRunCode,
+                    runMonth,
+                    employeeCodesSnapshot.size(),
+                    payrollResultsSnapshot.size());
             TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
                 @Override
                 public void afterCommit() {
+                    log.info("PAYROLL_CALC action=DISPATCHING timing=AFTER_COMMIT companyCode={} payrollRunCode={} period={} employeeCount={} resultCount={}",
+                            companyCodeSnapshot,
+                            payrollRunCode,
+                            runMonth,
+                            employeeCodesSnapshot.size(),
+                            payrollResultsSnapshot.size());
                     task.run();
                 }
             });
             return;
         }
 
+        log.info("PAYROLL_CALC action=DISPATCHING timing=IMMEDIATE companyCode={} payrollRunCode={} period={} employeeCount={} resultCount={}",
+                companyCodeSnapshot,
+                payrollRunCode,
+                runMonth,
+                employeeCodesSnapshot.size(),
+                payrollResultsSnapshot.size());
         task.run();
+    }
+
+    private String resolvePayrollRunCode(List<PayrollResult> payrollResults) {
+        if (payrollResults == null || payrollResults.isEmpty()) {
+            return null;
+        }
+        PayrollResult payrollResult = payrollResults.get(0);
+        if (payrollResult == null || payrollResult.getPayrollRun() == null) {
+            return null;
+        }
+        return payrollResult.getPayrollRun().getCode();
     }
 
     private YearMonth resolveRunMonth(PayrollRun payrollRun) {
