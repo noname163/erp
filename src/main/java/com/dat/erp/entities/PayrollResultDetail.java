@@ -48,8 +48,14 @@ public class PayrollResultDetail extends BaseAuditableEntity {
     @Column(name = "unpaid_days")
     private BigDecimal unpaidDays;
 
+    @Column(name = "basis_hours")
+    private BigDecimal basisHours;
+
     @Column(name = "rate_per_day")
     private BigDecimal ratePerDay;
+
+    @Column(name = "amount")
+    private BigDecimal amount;
 
     @Column(name = "multiplier_applied")
     private BigDecimal multiplierApplied;

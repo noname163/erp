@@ -50,6 +50,7 @@ import com.dat.erp.repositories.customrepositories.CompanyRepository;
 import com.dat.erp.repositories.customrepositories.DailyWorkRepository;
 import com.dat.erp.repositories.customrepositories.EmployeeSalaryRepository;
 import com.dat.erp.repositories.customrepositories.PayrollResultRepository;
+import com.dat.erp.repositories.customrepositories.PayrollResultDetailRepository;
 import com.dat.erp.repositories.customrepositories.PayrollRunRepository;
 import com.dat.erp.repositories.projections.PayrollResultListProjection;
 import com.dat.erp.services.CalendarDateService;
@@ -85,6 +86,9 @@ class PayrollResultServiceImplTest {
     private PayrollResultRepository payrollResultRepository;
 
     @Mock
+    private PayrollResultDetailRepository payrollResultDetailRepository;
+
+    @Mock
     private CompanyRepository companyRepository;
 
     @Mock
@@ -112,6 +116,7 @@ class PayrollResultServiceImplTest {
                 dailyWorkRepository,
                 payrollRunRepository,
                 payrollResultRepository,
+                payrollResultDetailRepository,
                 companyRepository,
                 employeeSalaryService,
                 payrollResultMapper,

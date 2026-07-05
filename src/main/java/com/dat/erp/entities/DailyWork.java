@@ -4,6 +4,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
+import com.dat.erp.constants.ApprovalStatus;
 import com.dat.erp.constants.DailyWorkUnit;
 import com.dat.erp.constants.DayType;
 
@@ -65,4 +66,22 @@ public class DailyWork extends BaseAuditableEntity {
 
     @Column(name = "hours_worked")
     private BigDecimal hoursWorked;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "approval_status")
+    @Builder.Default
+    private ApprovalStatus approvalStatus = ApprovalStatus.APPROVED;
+
+    @Column(name = "late_minutes")
+    private Integer lateMinutes;
+
+    @Column(name = "early_leave_minutes")
+    private Integer earlyLeaveMinutes;
+
+    @Column(name = "overtime_hours")
+    private BigDecimal overtimeHours;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "day_type")
+    private DayType dayType;
 }

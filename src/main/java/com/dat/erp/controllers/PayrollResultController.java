@@ -1,17 +1,20 @@
 package com.dat.erp.controllers;
 
 import java.time.LocalDate;
+import java.util.List;
 
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.dat.erp.constants.PayrollStatus;
 import com.dat.erp.dto.response.PagedResponse;
+import com.dat.erp.dto.response.PayrollResultDetailResponse;
 import com.dat.erp.dto.response.PayrollResultListResponse;
 import com.dat.erp.services.payroll.PayrollResultService;
 
@@ -58,5 +61,21 @@ public class PayrollResultController {
                 size,
                 sortBy,
                 sortDir));
+    }
+
+    @Operation(summary = "Get payroll result detail", description = "Returns calculation detail rows for a payroll result.")
+    @GetMapping("/{payrollResultCode}/details")
+    @PreAuthorize("hasRoles({'HUMAN_RESOURCES'})")
+    public ResponseEntity<List<PayrollResultDetailResponse>> getPayrollResultDetails(
+            @Parameter(description = "Payroll result code", required = true) @PathVariable String payrollResultCode) {
+        return ResponseEntity.ok(payrollResultService.getPayrollResultDetails(payrollResultCode));
+    }
+
+    @Operation(summary = "Get salary slip breakdown", description = "Returns the salary slip breakdown for a payroll result.")
+    @GetMapping("/{payrollResultCode}/salary-slip")
+    @PreAuthorize("hasRoles({'HUMAN_RESOURCES', 'EMPLOYEE'})")
+    public ResponseEntity<List<PayrollResultDetailResponse>> getSalarySlip(
+            @Parameter(description = "Payroll result code", required = true) @PathVariable String payrollResultCode) {
+        return ResponseEntity.ok(payrollResultService.getPayrollResultDetails(payrollResultCode));
     }
 }

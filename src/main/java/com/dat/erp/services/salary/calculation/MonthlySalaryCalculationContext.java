@@ -9,8 +9,12 @@ import com.dat.erp.constants.DayType;
 import com.dat.erp.constants.SalaryBasisType;
 import com.dat.erp.dto.response.salary.MonthlySalaryDetailAuditResponse;
 import com.dat.erp.services.salary.calculation.basis.SalaryBasisCalculationResult;
+import com.dat.erp.entities.DailyWork;
+import com.dat.erp.entities.EmployeeKpiResult;
+import com.dat.erp.entities.EmployeeProductionResult;
 import com.dat.erp.entities.EmployeeSalary;
 import com.dat.erp.entities.EmployeeSalaryDetail;
+import com.dat.erp.entities.PayRateRule;
 import com.dat.erp.entities.PayrollPolicy;
 
 import lombok.AllArgsConstructor;
@@ -25,6 +29,14 @@ public class MonthlySalaryCalculationContext {
     private EmployeeSalary employeeSalary;
     private PayrollPolicy payrollPolicy;
     private List<EmployeeSalaryDetail> details;
+    private List<DailyWork> dailyWorks;
+    private List<PayRateRule> payRateRules;
+    private List<EmployeeProductionResult> productionResults;
+    private List<EmployeeKpiResult> kpiResults;
+    private BigDecimal paidLeaveHours;
+    private BigDecimal unpaidLeaveHours;
+    private BigDecimal lateEarlyDeductionHours;
+    private BigDecimal overtimeHours;
     private Map<DayType, BigDecimal> actualHoursByDayType;
     private BigDecimal expectedWorkingHourPerMonth;
     private BigDecimal actualWorkingHourPerMonth;

@@ -16,15 +16,19 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.dat.erp.constants.CodePrefixes;
+import com.dat.erp.constants.DayType;
 import com.dat.erp.constants.Messages;
+import com.dat.erp.constants.PayrollResultCalcBasis;
 import com.dat.erp.dto.request.EmployeeSalaryRequest;
 import com.dat.erp.dto.response.EmployeeSalaryListResponse;
 import com.dat.erp.dto.response.EmployeeSalaryResponse;
 import com.dat.erp.dto.response.PagedResponse;
+import com.dat.erp.dto.response.salary.MonthlySalaryDetailAuditResponse;
 import com.dat.erp.dto.response.salary.MonthlySalaryCalculationResponse;
 import com.dat.erp.entities.Company;
 import com.dat.erp.entities.EmployeeSalary;
 import com.dat.erp.entities.PayrollResult;
+import com.dat.erp.entities.PayrollResultDetail;
 import com.dat.erp.entities.UserProfile;
 import com.dat.erp.exceptions.BadRequestException;
 import com.dat.erp.exceptions.ConflictException;
@@ -32,6 +36,7 @@ import com.dat.erp.exceptions.ResourceNotFoundException;
 import com.dat.erp.mapper.interfaces.EmployeeSalaryMapper;
 import com.dat.erp.repositories.customrepositories.CompanyRepository;
 import com.dat.erp.repositories.customrepositories.EmployeeSalaryRepository;
+import com.dat.erp.repositories.customrepositories.PayrollResultDetailRepository;
 import com.dat.erp.repositories.customrepositories.PayrollResultRepository;
 import com.dat.erp.repositories.customrepositories.UserProfileRepository;
 import com.dat.erp.services.CodeGenerator;
@@ -53,6 +58,7 @@ public class EmployeeSalaryServiceImpl extends AbstractAuditableService implemen
     private final EmployeeSalaryDetailService employeeSalaryDetailService;
     private final MonthlySalaryCalculationService monthlySalaryCalculationService;
     private final PayrollResultRepository payrollResultRepository;
+    private final PayrollResultDetailRepository payrollResultDetailRepository;
 
     public EmployeeSalaryServiceImpl(EmployeeSalaryRepository employeeSalaryRepository,
             CompanyRepository companyRepository,
@@ -62,7 +68,8 @@ public class EmployeeSalaryServiceImpl extends AbstractAuditableService implemen
             SecurityContextService securityContextService,
             EmployeeSalaryDetailService employeeSalaryDetailService,
             MonthlySalaryCalculationService monthlySalaryCalculationService,
-            PayrollResultRepository payrollResultRepository) {
+            PayrollResultRepository payrollResultRepository,
+            PayrollResultDetailRepository payrollResultDetailRepository) {
         this.employeeSalaryRepository = employeeSalaryRepository;
         this.companyRepository = companyRepository;
         this.userProfileRepository = userProfileRepository;
@@ -71,6 +78,7 @@ public class EmployeeSalaryServiceImpl extends AbstractAuditableService implemen
         this.employeeSalaryDetailService = employeeSalaryDetailService;
         this.monthlySalaryCalculationService = monthlySalaryCalculationService;
         this.payrollResultRepository = payrollResultRepository;
+        this.payrollResultDetailRepository = payrollResultDetailRepository;
         this.securityContextService = securityContextService;
     }
 
@@ -295,11 +303,112 @@ public class EmployeeSalaryServiceImpl extends AbstractAuditableService implemen
             }
             applyUpdateAudit(payrollResult);
             updatedPayrollResults.add(payrollResult);
+            replacePayrollResultDetails(payrollResult, calculation);
         }
 
         if (!updatedPayrollResults.isEmpty()) {
             payrollResultRepository.saveAll(updatedPayrollResults);
         }
+    }
+
+    private void replacePayrollResultDetails(PayrollResult payrollResult, MonthlySalaryCalculationResponse calculation) {
+        if (payrollResult.getCode() != null) {
+            List<PayrollResultDetail> existingDetails = payrollResultDetailRepository
+                    .findByPayrollResult_CodeAndIsDeletedFalse(payrollResult.getCode());
+            existingDetails.forEach(detail -> {
+                detail.setIsDeleted(true);
+                applyUpdateAudit(detail);
+            });
+            if (!existingDetails.isEmpty()) {
+                payrollResultDetailRepository.saveAll(existingDetails);
+            }
+        }
+
+        List<PayrollResultDetail> details = new ArrayList<>();
+        details.add(buildSummaryDetail(payrollResult, calculation));
+        if (calculation.getPaidLeaveHours() != null && calculation.getPaidLeaveHours().compareTo(BigDecimal.ZERO) > 0) {
+            details.add(buildLeaveDetail(payrollResult, PayrollResultCalcBasis.PAID_LEAVE, calculation.getPaidLeaveHours(),
+                    calculation.getStandardMoneyPerHour(), BigDecimal.ZERO, "Paid leave counted as paid working time"));
+        }
+        if (calculation.getUnpaidLeaveHours() != null && calculation.getUnpaidLeaveHours().compareTo(BigDecimal.ZERO) > 0) {
+            details.add(buildLeaveDetail(payrollResult, PayrollResultCalcBasis.UNPAID_LEAVE,
+                    calculation.getUnpaidLeaveHours(), calculation.getStandardMoneyPerHour(),
+                    calculation.getUnpaidLeaveHours().multiply(calculation.getStandardMoneyPerHour()).negate(),
+                    "Unpaid leave excluded from paid working time"));
+        }
+        if (calculation.getLateEarlyDeductionHours() != null
+                && calculation.getLateEarlyDeductionHours().compareTo(BigDecimal.ZERO) > 0) {
+            details.add(buildLeaveDetail(payrollResult, PayrollResultCalcBasis.LATE_EARLY_DEDUCTION,
+                    calculation.getLateEarlyDeductionHours(), calculation.getStandardMoneyPerHour(),
+                    calculation.getLateEarlyDeductionHours().multiply(calculation.getStandardMoneyPerHour()).negate(),
+                    "Late arrival and early leave deducted from paid working time"));
+        }
+        for (MonthlySalaryDetailAuditResponse audit : calculation.getAuditTrail()) {
+            details.add(buildAuditDetail(payrollResult, audit));
+        }
+        payrollResultDetailRepository.saveAll(details);
+    }
+
+    private PayrollResultDetail buildSummaryDetail(PayrollResult payrollResult, MonthlySalaryCalculationResponse calculation) {
+        PayrollResultDetail detail = new PayrollResultDetail();
+        detail.setPayrollResult(payrollResult);
+        detail.setCalcBasis(PayrollResultCalcBasis.HOURS);
+        detail.setBasisHours(calculation.getExpectedWorkingHourPerMonth());
+        detail.setPaidDays(calculation.getActualWorkingHourPerMonth());
+        detail.setRatePerDay(calculation.getStandardMoneyPerHour());
+        detail.setAmount(calculation.getFinalSalary());
+        detail.setFormulaNote("basis=" + calculation.getSalaryBasisType() + ", expected="
+                + calculation.getExpectedBasisValue() + ", actual=" + calculation.getActualBasisValue()
+                + ", unit=" + calculation.getBasisUnit());
+        preparePayrollResultDetail(detail);
+        return detail;
+    }
+
+    private PayrollResultDetail buildLeaveDetail(PayrollResult payrollResult, PayrollResultCalcBasis calcBasis,
+            BigDecimal hours, BigDecimal rate, BigDecimal amount, String formulaNote) {
+        PayrollResultDetail detail = new PayrollResultDetail();
+        detail.setPayrollResult(payrollResult);
+        detail.setCalcBasis(calcBasis);
+        detail.setBasisHours(hours);
+        detail.setRatePerDay(rate);
+        detail.setAmount(amount);
+        detail.setFormulaNote(formulaNote);
+        preparePayrollResultDetail(detail);
+        return detail;
+    }
+
+    private PayrollResultDetail buildAuditDetail(PayrollResult payrollResult, MonthlySalaryDetailAuditResponse audit) {
+        PayrollResultDetail detail = new PayrollResultDetail();
+        detail.setPayrollResult(payrollResult);
+        detail.setCalcBasis(resolveCalcBasis(audit.getDayType()));
+        detail.setBasisHours(audit.getBaseAmount());
+        detail.setRatePerDay(audit.getConfiguredAmount());
+        detail.setMultiplierApplied(audit.getDependencyAmount());
+        detail.setAmount(audit.getResult());
+        detail.setFormulaNote("salaryCode=" + audit.getSalaryCode() + ", method=" + audit.getCalculateMethod()
+                + ", dependency=" + audit.getDependenceCode());
+        preparePayrollResultDetail(detail);
+        return detail;
+    }
+
+    private PayrollResultCalcBasis resolveCalcBasis(DayType dayType) {
+        if (dayType == DayType.HOLIDAY_WORK) {
+            return PayrollResultCalcBasis.HOLIDAY_WORK;
+        }
+        if (dayType == DayType.WEEKEND_WORK) {
+            return PayrollResultCalcBasis.WEEKEND_WORK;
+        }
+        return PayrollResultCalcBasis.SALARY_COMPONENT;
+    }
+
+    private void preparePayrollResultDetail(PayrollResultDetail detail) {
+        detail.setCompanyCode(payrollResultCompanyCode(detail));
+        generateCodeIfMissing(detail, CodePrefixes.PAYROLL_RESULT_DETAIL);
+        applyInsertAudit(detail);
+    }
+
+    private String payrollResultCompanyCode(PayrollResultDetail detail) {
+        return detail.getPayrollResult() == null ? null : detail.getPayrollResult().getCompanyCode();
     }
 
     private String resolveCompanySecretKey(String companyCode) {

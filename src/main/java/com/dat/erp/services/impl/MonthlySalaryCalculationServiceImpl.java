@@ -49,12 +49,17 @@ public class MonthlySalaryCalculationServiceImpl implements MonthlySalaryCalcula
         calculationSteps.forEach(step -> step.execute(context));
         SalaryBasisCalculationResult basisResult = context.getSalaryBasisCalculationResult();
 
-        return new MonthlySalaryCalculationResponse(context.getEmployeeCode(), context.getMonth(),
+        MonthlySalaryCalculationResponse response = new MonthlySalaryCalculationResponse(context.getEmployeeCode(), context.getMonth(),
                 context.getExpectedWorkingHourPerMonth(), context.getActualWorkingHourPerMonth(),
                 context.getStandardMoneyPerHour(), context.getFinalSalary(),
                 Collections.unmodifiableMap(context.getActualHoursByDayType()), List.copyOf(context.getAuditTrail()),
                 basisResult.salaryBasisType(), basisResult.basisUnit(), basisResult.expectedBasisValue(),
                 basisResult.actualBasisValue(), basisResult.standardMoneyPerUnit(),
                 Collections.unmodifiableMap(basisResult.actualBasisValuesByType()));
+        response.setPaidLeaveHours(context.getPaidLeaveHours());
+        response.setUnpaidLeaveHours(context.getUnpaidLeaveHours());
+        response.setLateEarlyDeductionHours(context.getLateEarlyDeductionHours());
+        response.setOvertimeHours(context.getOvertimeHours());
+        return response;
     }
 }

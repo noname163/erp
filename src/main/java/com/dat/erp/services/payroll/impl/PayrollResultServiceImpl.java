@@ -24,6 +24,7 @@ import com.dat.erp.constants.Messages;
 import com.dat.erp.constants.PayrollRunStatus;
 import com.dat.erp.constants.PayrollStatus;
 import com.dat.erp.dto.response.PagedResponse;
+import com.dat.erp.dto.response.PayrollResultDetailResponse;
 import com.dat.erp.dto.response.PayrollResultListResponse;
 import com.dat.erp.dto.response.salary.DailyWorkForSalaryResponse;
 import com.dat.erp.entities.Company;
@@ -34,13 +35,13 @@ import com.dat.erp.entities.PayrollResult;
 import com.dat.erp.entities.PayrollRun;
 import com.dat.erp.entities.UserProfile;
 import com.dat.erp.exceptions.BadRequestException;
-import com.dat.erp.exceptions.ForbiddenException;
 import com.dat.erp.exceptions.ResourceNotFoundException;
 import com.dat.erp.mapper.interfaces.PayrollResultMapper;
 import com.dat.erp.repositories.customrepositories.CompanyRepository;
 import com.dat.erp.repositories.customrepositories.DailyWorkRepository;
 import com.dat.erp.repositories.customrepositories.EmployeeSalaryRepository;
 import com.dat.erp.repositories.customrepositories.PayrollResultRepository;
+import com.dat.erp.repositories.customrepositories.PayrollResultDetailRepository;
 import com.dat.erp.repositories.customrepositories.PayrollRunRepository;
 import com.dat.erp.repositories.projections.PayrollResultListProjection;
 import com.dat.erp.services.CalendarDateService;
@@ -51,7 +52,6 @@ import com.dat.erp.services.SecurityContextService;
 import com.dat.erp.services.UserProfileService;
 import com.dat.erp.services.base.AbstractAuditableService;
 import com.dat.erp.services.payroll.PayrollResultService;
-import com.dat.erp.systemconfigs.CustomUserDetails;
 import com.dat.erp.utils.CustomStringUtils;
 import com.dat.erp.utils.PageableUtils;
 
@@ -76,6 +76,7 @@ public class PayrollResultServiceImpl extends AbstractAuditableService implement
     private final DailyWorkRepository dailyWorkRepository;
     private final PayrollRunRepository payrollRunRepository;
     private final PayrollResultRepository payrollResultRepository;
+    private final PayrollResultDetailRepository payrollResultDetailRepository;
     private final CompanyRepository companyRepository;
     private final EmployeeSalaryService employeeSalaryService;
     private final PayrollResultMapper payrollResultMapper;
@@ -88,6 +89,7 @@ public class PayrollResultServiceImpl extends AbstractAuditableService implement
             DailyWorkRepository dailyWorkRepository,
             PayrollRunRepository payrollRunRepository,
             PayrollResultRepository payrollResultRepository,
+            PayrollResultDetailRepository payrollResultDetailRepository,
             CompanyRepository companyRepository,
             EmployeeSalaryService employeeSalaryService,
             PayrollResultMapper payrollResultMapper,
@@ -100,11 +102,29 @@ public class PayrollResultServiceImpl extends AbstractAuditableService implement
         this.dailyWorkRepository = dailyWorkRepository;
         this.payrollRunRepository = payrollRunRepository;
         this.payrollResultRepository = payrollResultRepository;
+        this.payrollResultDetailRepository = payrollResultDetailRepository;
         this.companyRepository = companyRepository;
         this.employeeSalaryService = employeeSalaryService;
         this.payrollResultMapper = payrollResultMapper;
         this.codeGenerator = codeGenerator;
         this.securityContextService = securityContextService;
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<PayrollResultDetailResponse> getPayrollResultDetails(String payrollResultCode) {
+        String companyCode = requireCurrentUserCompanyCode();
+        String normalizedPayrollResultCode = CustomStringUtils.normalizeCode(payrollResultCode);
+        if (normalizedPayrollResultCode == null) {
+            throw new BadRequestException(Messages.ERROR_PAYROLL_RESULT_CODE_INVALID);
+        }
+        payrollResultRepository.findByCodeAndCompanyCodeAndIsDeletedFalse(normalizedPayrollResultCode, companyCode)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        String.format(Messages.ERROR_PAYROLL_RESULT_NOT_FOUND, normalizedPayrollResultCode)));
+        return payrollResultDetailRepository.findByPayrollResult_CodeAndIsDeletedFalse(normalizedPayrollResultCode)
+                .stream()
+                .map(payrollResultMapper::toDetailResponse)
+                .toList();
     }
 
     @Override
@@ -127,7 +147,9 @@ public class PayrollResultServiceImpl extends AbstractAuditableService implement
         LocalDate targetDate = createdDate == null ? LocalDate.now() : createdDate;
         LocalDateTime createdAtFrom = targetDate.atStartOfDay();
         LocalDateTime createdAtTo = targetDate.plusDays(1).atStartOfDay();
-        String scopedEmployeeCode = resolveScopedEmployeeCode(employeeCode);
+        String scopedEmployeeCode = CustomStringUtils.resolveScopedEmployeeCode(
+                securityContextService.getCurrentUser(),
+                employeeCode);
         Pageable pageable = PageableUtils.create(
                 page,
                 size,
@@ -145,34 +167,6 @@ public class PayrollResultServiceImpl extends AbstractAuditableService implement
         return PageableUtils.mapPage(payrollResults,
                 projection -> payrollResultMapper.toListResponse(projection, companySecretKey),
                 Messages.SUCCESS);
-    }
-
-    private String resolveScopedEmployeeCode(String requestedEmployeeCode) {
-        CustomUserDetails currentUser = securityContextService.getCurrentUser();
-        if (!isEmployee(currentUser)) {
-            return CustomStringUtils.normalizeCode(requestedEmployeeCode);
-        }
-
-        UserProfile currentProfile = currentUser.getUserProfile();
-        String currentEmployeeCode = currentProfile == null ? null : CustomStringUtils.normalizeCode(currentProfile.getCode());
-        if (currentEmployeeCode == null) {
-            throw new ForbiddenException("AUTH_403_001: Forbidden");
-        }
-
-        String normalizedRequestedEmployeeCode = CustomStringUtils.normalizeCode(requestedEmployeeCode);
-        if (normalizedRequestedEmployeeCode != null && !currentEmployeeCode.equals(normalizedRequestedEmployeeCode)) {
-            throw new ForbiddenException("AUTH_403_001: Forbidden");
-        }
-
-        return currentEmployeeCode;
-    }
-
-    private boolean isEmployee(CustomUserDetails currentUser) {
-        if (currentUser == null || currentUser.getAccount() == null || currentUser.getAccount().getRole() == null) {
-            return false;
-        }
-        String roleName = currentUser.getAccount().getRole().getName();
-        return roleName != null && "EMPLOYEE".equalsIgnoreCase(roleName.trim());
     }
 
     @Override

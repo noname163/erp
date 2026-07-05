@@ -5,7 +5,9 @@ import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.Named;
 
+import com.dat.erp.dto.response.PayrollResultDetailResponse;
 import com.dat.erp.dto.response.PayrollResultListResponse;
+import com.dat.erp.entities.PayrollResultDetail;
 import com.dat.erp.repositories.projections.PayrollResultListProjection;
 import com.dat.erp.systemconfigs.CentralMapperConfig;
 import com.dat.erp.utils.CompanySecretKeyCryptoUtils;
@@ -23,6 +25,8 @@ public interface PayrollResultMapper {
     @Mapping(target = "period", source = "period", qualifiedByName = "trimToNull")
     @Mapping(target = "employeeCode", source = "employeeCode", qualifiedByName = "trimToNull")
     PayrollResultListResponse toListResponse(PayrollResultListProjection projection, @Context String companySecretKey);
+
+    PayrollResultDetailResponse toDetailResponse(PayrollResultDetail detail);
 
     @Named("decryptAmount")
     default String decryptAmount(String value, @Context String companySecretKey) {

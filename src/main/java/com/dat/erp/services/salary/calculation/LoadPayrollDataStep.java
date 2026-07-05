@@ -6,12 +6,16 @@ import java.util.List;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 
+import com.dat.erp.constants.ApprovalStatus;
 import com.dat.erp.constants.Messages;
 import com.dat.erp.entities.EmployeeSalary;
 import com.dat.erp.entities.PayrollPolicy;
 import com.dat.erp.exceptions.ResourceNotFoundException;
+import com.dat.erp.repositories.customrepositories.EmployeeKpiResultRepository;
+import com.dat.erp.repositories.customrepositories.EmployeeProductionResultRepository;
 import com.dat.erp.repositories.customrepositories.EmployeeSalaryDetailRepository;
 import com.dat.erp.repositories.customrepositories.EmployeeSalaryRepository;
+import com.dat.erp.repositories.customrepositories.PayRateRuleRepository;
 import com.dat.erp.services.EmployeePayrollPolicyService;
 
 @Component
@@ -21,13 +25,22 @@ public class LoadPayrollDataStep implements MonthlySalaryCalculationStep {
     private final EmployeeSalaryRepository employeeSalaryRepository;
     private final EmployeeSalaryDetailRepository employeeSalaryDetailRepository;
     private final EmployeePayrollPolicyService employeePayrollPolicyService;
+    private final PayRateRuleRepository payRateRuleRepository;
+    private final EmployeeProductionResultRepository employeeProductionResultRepository;
+    private final EmployeeKpiResultRepository employeeKpiResultRepository;
 
     public LoadPayrollDataStep(EmployeeSalaryRepository employeeSalaryRepository,
             EmployeeSalaryDetailRepository employeeSalaryDetailRepository,
-            EmployeePayrollPolicyService employeePayrollPolicyService) {
+            EmployeePayrollPolicyService employeePayrollPolicyService,
+            PayRateRuleRepository payRateRuleRepository,
+            EmployeeProductionResultRepository employeeProductionResultRepository,
+            EmployeeKpiResultRepository employeeKpiResultRepository) {
         this.employeeSalaryRepository = employeeSalaryRepository;
         this.employeeSalaryDetailRepository = employeeSalaryDetailRepository;
         this.employeePayrollPolicyService = employeePayrollPolicyService;
+        this.payRateRuleRepository = payRateRuleRepository;
+        this.employeeProductionResultRepository = employeeProductionResultRepository;
+        this.employeeKpiResultRepository = employeeKpiResultRepository;
     }
 
     @Override
@@ -53,5 +66,14 @@ public class LoadPayrollDataStep implements MonthlySalaryCalculationStep {
         context.setPayrollPolicy(payrollPolicy);
         context.setDetails(employeeSalaryDetailRepository
                 .findForPayrollByEmployeeSalaryCodeAndCompanyCode(employeeSalary.getCode(), context.getCompanyCode()));
+        context.setPayRateRules(payRateRuleRepository.findActiveByPolicyCodeAndCompanyCodeAndPeriod(
+                payrollPolicy.getCode(), context.getCompanyCode(), context.getMonth().atDay(1),
+                context.getMonth().atEndOfMonth()));
+        context.setProductionResults(employeeProductionResultRepository.findApprovedByEmployeeAndDateRange(
+                context.getEmployeeCode(), context.getCompanyCode(), context.getMonth().atDay(1),
+                context.getMonth().atEndOfMonth(), ApprovalStatus.APPROVED));
+        context.setKpiResults(employeeKpiResultRepository.findApprovedByEmployeeAndPeriod(
+                context.getEmployeeCode(), context.getCompanyCode(), context.getMonth().toString(),
+                ApprovalStatus.APPROVED));
     }
 }

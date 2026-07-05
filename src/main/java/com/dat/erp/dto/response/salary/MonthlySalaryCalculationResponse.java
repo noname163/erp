@@ -20,6 +20,10 @@ public class MonthlySalaryCalculationResponse {
     private BigDecimal actualWorkingHourPerMonth;
     private BigDecimal standardMoneyPerHour;
     private BigDecimal finalSalary;
+    private BigDecimal paidLeaveHours;
+    private BigDecimal unpaidLeaveHours;
+    private BigDecimal lateEarlyDeductionHours;
+    private BigDecimal overtimeHours;
     private Map<DayType, BigDecimal> actualHoursByDayType;
     private List<MonthlySalaryDetailAuditResponse> auditTrail;
     private SalaryBasisType salaryBasisType;

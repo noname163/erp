@@ -4,8 +4,11 @@ import java.time.LocalDate;
 
 import com.dat.erp.constants.PayrollStatus;
 import com.dat.erp.dto.response.PagedResponse;
+import com.dat.erp.dto.response.PayrollResultDetailResponse;
 import com.dat.erp.dto.response.PayrollResultListResponse;
 import com.dat.erp.entities.PayrollRun;
+
+import java.util.List;
 
 public interface PayrollResultService {
     PagedResponse<PayrollResultListResponse> getPayrollResults(
@@ -19,4 +22,6 @@ public interface PayrollResultService {
             String sortDir);
 
     void generatePayrollResult(PayrollRun payrollRun);
+
+    List<PayrollResultDetailResponse> getPayrollResultDetails(String payrollResultCode);
 }

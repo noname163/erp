@@ -2,6 +2,7 @@ package com.dat.erp.repositories.customrepositories;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -58,4 +59,6 @@ public interface PayrollResultRepository extends JpaRepository<PayrollResult, Lo
             Pageable pageable);
 
     List<PayrollResult> findByPayrollRun_CodeAndIsDeletedFalse(String payrollRunCode);
+
+    Optional<PayrollResult> findByCodeAndCompanyCodeAndIsDeletedFalse(String code, String companyCode);
 }

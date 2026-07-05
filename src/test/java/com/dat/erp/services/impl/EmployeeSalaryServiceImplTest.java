@@ -40,6 +40,7 @@ import com.dat.erp.exceptions.ResourceNotFoundException;
 import com.dat.erp.mapper.interfaces.EmployeeSalaryMapper;
 import com.dat.erp.repositories.customrepositories.CompanyRepository;
 import com.dat.erp.repositories.customrepositories.EmployeeSalaryRepository;
+import com.dat.erp.repositories.customrepositories.PayrollResultDetailRepository;
 import com.dat.erp.repositories.customrepositories.PayrollResultRepository;
 import com.dat.erp.repositories.customrepositories.UserProfileRepository;
 import com.dat.erp.services.CodeGenerator;
@@ -77,6 +78,9 @@ class EmployeeSalaryServiceImplTest {
 
     @Mock
     private PayrollResultRepository payrollResultRepository;
+
+    @Mock
+    private PayrollResultDetailRepository payrollResultDetailRepository;
 
     @InjectMocks
     private EmployeeSalaryServiceImpl employeeSalaryService;
