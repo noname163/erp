@@ -1,0 +1,12 @@
+package com.dat.erp.constants;
+
+public enum PayrollRunAuditActionType {
+    RERUN_REQUESTED,
+    RERUN_STARTED,
+    OLD_RESULT_SNAPSHOT_CREATED,
+    EMPLOYEE_RERUN_STARTED,
+    EMPLOYEE_RERUN_SUCCESS,
+    EMPLOYEE_RERUN_FAILED,
+    RERUN_COMPLETED,
+    RERUN_FAILED
+}

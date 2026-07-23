@@ -1,31 +1,29 @@
 package com.dat.erp.entities;
 
-import jakarta.persistence.*;
-import lombok.*;
+import com.dat.erp.converters.EncryptFieldConverter;
 
-import java.time.LocalDateTime;
-import java.util.List;
-
-import org.hibernate.annotations.Fetch;
-import org.hibernate.annotations.FetchMode;
+import jakarta.persistence.Column;
+import jakarta.persistence.Convert;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Table;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+import lombok.ToString;
 
 @Entity
-@Table(name = "companies")
+@Table(name = "company")
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-@EqualsAndHashCode(onlyExplicitlyIncluded = true)
+@EqualsAndHashCode(onlyExplicitlyIncluded = true, callSuper = true)
 @Builder
-public class Company {
-
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @EqualsAndHashCode.Include
-    private Long id;
-
-    @Column(nullable = false, unique = true, length = 50)
-    private String code;
+@ToString
+public class Company extends BaseAuditableEntity {
 
     @Column(nullable = false, length = 255)
     private String name;
@@ -33,30 +31,23 @@ public class Company {
     @Column(length = 100)
     private String industry;
 
+    @Column(length = 100)
+    @Convert(converter = EncryptFieldConverter.class)
+    private String taxNumber;
+
+    @Column(name = "secret_key")
+    private String secretKey;
+
+    @Column(name = "tax")
+    @Convert(converter = EncryptFieldConverter.class)
+    private String tax;
+
+    @Column(name = "email")
+    private String email;
+
     @Column(columnDefinition = "TEXT")
     private String address;
 
     @Column(name = "phone_number", length = 50)
     private String phoneNumber;
-
-    @Column(name = "created_at", nullable = false, updatable = false)
-    private LocalDateTime createdAt;
-
-    @Column(name = "updated_at", nullable = false)
-    private LocalDateTime updatedAt;
-
-    @OneToMany(mappedBy = "company", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
-    @Fetch(FetchMode.JOIN)
-    private List<EmployeeInformation> employees;
-
-    @PrePersist
-    protected void onCreate() {
-        this.createdAt = LocalDateTime.now();
-        this.updatedAt = LocalDateTime.now();
-    }
-
-    @PreUpdate
-    protected void onUpdate() {
-        this.updatedAt = LocalDateTime.now();
-    }
 }

@@ -1,11 +1,15 @@
 package com.dat.erp.services;
 
-import com.dat.erp.dtos.requests.LoginRequest;
+import com.dat.erp.dto.request.LoginRequest;
+import com.dat.erp.dto.request.ResetPasswordRequest;
+import com.dat.erp.dto.response.LoginResponse;
 
 import jakarta.servlet.http.HttpServletResponse;
 
 public interface AuthenticationService {
-    public String login(LoginRequest request, HttpServletResponse response);
+    public LoginResponse login(LoginRequest request, HttpServletResponse response);
 
     public String logout(HttpServletResponse response);
+
+    public String resetPassword(ResetPasswordRequest request);
 }
