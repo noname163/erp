@@ -3,9 +3,12 @@
     <include resource="org/springframework/boot/logging/logback/defaults.xml"/>
 
     <springProperty scope="context" name="PAYROLL_LOG_FILE" source="payroll.logging.file" defaultValue="logs/payroll-run.log"/>
+    <springProperty scope="context" name="SERVICE_LOG_FILE" source="service.logging.file" defaultValue="logs/service.log"/>
+    <springProperty scope="context" name="APPLICATION_NAME" source="spring.application.name" defaultValue="erp"/>
 
-    <property name="CONSOLE_LOG_PATTERN" value="%d{yyyy-MM-dd HH:mm:ss.SSS} [%X{requestId}] %-5level %logger{36} - %msg%n"/>
-    <property name="PAYROLL_LOG_PATTERN" value="%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] [%X{requestId}] %-5level %logger{60} - %msg%n"/>
+    <property name="CONSOLE_LOG_PATTERN" value="%d{yyyy-MM-dd HH:mm:ss.SSS} app=${APPLICATION_NAME} requestId=%X{requestId} traceId=%X{traceId} %-5level service=%logger{36} - %msg%n"/>
+    <property name="SERVICE_LOG_PATTERN" value="%d{yyyy-MM-dd HH:mm:ss.SSS} app=${APPLICATION_NAME} thread=%thread requestId=%X{requestId} traceId=%X{traceId} %-5level service=%logger{60} - %msg%n"/>
+    <property name="PAYROLL_LOG_PATTERN" value="%d{yyyy-MM-dd HH:mm:ss.SSS} app=${APPLICATION_NAME} thread=%thread requestId=%X{requestId} traceId=%X{traceId} %-5level service=%logger{60} - %msg%n"/>
 
     <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
         <encoder>
@@ -25,6 +28,23 @@
             <totalSizeCap>1GB</totalSizeCap>
         </rollingPolicy>
     </appender>
+
+    <appender name="SERVICE_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${SERVICE_LOG_FILE}</file>
+        <encoder>
+            <pattern>${SERVICE_LOG_PATTERN}</pattern>
+        </encoder>
+        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+            <fileNamePattern>${SERVICE_LOG_FILE}.%d{yyyy-MM-dd}.%i.gz</fileNamePattern>
+            <maxFileSize>10MB</maxFileSize>
+            <maxHistory>30</maxHistory>
+            <totalSizeCap>1GB</totalSizeCap>
+        </rollingPolicy>
+    </appender>
+
+    <logger name="com.dat.erp.services" level="INFO">
+        <appender-ref ref="SERVICE_FILE"/>
+    </logger>
 
     <logger name="com.dat.erp.services.payroll.impl" level="INFO">
         <appender-ref ref="PAYROLL_FILE"/>
