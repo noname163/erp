@@ -27,11 +27,12 @@ import com.dat.erp.repositories.customrepositories.SalaryRepository;
 import com.dat.erp.services.CodeGenerator;
 import com.dat.erp.services.EmployeeSalaryDetailService;
 import com.dat.erp.services.SecurityContextService;
-import com.dat.erp.services.base.AbstractAuditableService;
 import com.dat.erp.utils.CustomStringUtils;
 
 @Service
-public class EmployeeSalaryDetailServiceImpl extends AbstractAuditableService implements EmployeeSalaryDetailService {
+public class EmployeeSalaryDetailServiceImpl implements EmployeeSalaryDetailService {
+
+    private final SecurityContextService securityContextService;
 
     private final EmployeeSalaryDetailRepository employeeSalaryDetailRepository;
     private final EmployeeSalaryRepository employeeSalaryRepository;
@@ -42,11 +43,10 @@ public class EmployeeSalaryDetailServiceImpl extends AbstractAuditableService im
             SalaryRepository salaryRepository,
             CodeGenerator codeGenerator,
             SecurityContextService securityContextService) {
+        this.securityContextService = securityContextService;
         this.employeeSalaryDetailRepository = employeeSalaryDetailRepository;
         this.employeeSalaryRepository = employeeSalaryRepository;
         this.salaryRepository = salaryRepository;
-        this.codeGenerator = codeGenerator;
-        this.securityContextService = securityContextService;
     }
 
     @Override
@@ -146,8 +146,6 @@ public class EmployeeSalaryDetailServiceImpl extends AbstractAuditableService im
                     .isFixed(Boolean.TRUE.equals(request.getIsFixed()))
                     .unitType(request.getUnitType())
                     .build();
-            generateCodeIfMissing(detail, CodePrefixes.EMPLOYEE_SALARY_DETAIL);
-            applyInsertAudit(detail);
             details.add(detail);
         }
 

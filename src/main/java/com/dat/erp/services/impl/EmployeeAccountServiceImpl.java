@@ -19,7 +19,6 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.dat.erp.constants.CodePrefixes;
 import com.dat.erp.constants.Messages;
 import com.dat.erp.constants.RoleType;
 import com.dat.erp.dto.request.CreateEmployeeRequest;
@@ -44,13 +43,11 @@ import com.dat.erp.repositories.customrepositories.RoleRepository;
 import com.dat.erp.repositories.customrepositories.UserProfileRepository;
 import com.dat.erp.repositories.customrepositories.UserSkillRepository;
 import com.dat.erp.repositories.projections.EmployeeSkillRow;
-import com.dat.erp.services.CodeGenerator;
 import com.dat.erp.services.EmailService;
 import com.dat.erp.services.EmployeeAccountService;
 import com.dat.erp.services.PasswordGenerator;
 import com.dat.erp.services.SecurityContextService;
 import com.dat.erp.services.UserProfileService;
-import com.dat.erp.services.base.AbstractAuditableService;
 import com.dat.erp.systemconfigs.CustomUserDetails;
 import com.dat.erp.utils.CryptoUtils;
 
@@ -59,9 +56,11 @@ import jakarta.persistence.criteria.Join;
 import jakarta.persistence.criteria.JoinType;
 import jakarta.persistence.criteria.Predicate;
 import jakarta.persistence.criteria.Subquery;
+import lombok.AllArgsConstructor;
 
 @Service
-public class EmployeeAccountServiceImpl extends AbstractAuditableService implements EmployeeAccountService {
+@AllArgsConstructor
+public class EmployeeAccountServiceImpl implements EmployeeAccountService {
     private static final Logger log = LoggerFactory.getLogger(EmployeeAccountServiceImpl.class);
 
     private static final int DEFAULT_PAGE_NO = 0;
@@ -94,31 +93,7 @@ public class EmployeeAccountServiceImpl extends AbstractAuditableService impleme
     private final UserProfileMapper userProfileMapper;
     private final UserProfileRepository userProfileRepository;
     private final UserSkillRepository userSkillRepository;
-
-    public EmployeeAccountServiceImpl(
-            AccountRepository accountRepository,
-            RoleRepository roleRepository,
-            UserProfileService userProfileService,
-            EmailService emailService,
-            PasswordGenerator passwordGenerator,
-            CodeGenerator codeGenerator,
-            SecurityContextService securityContextService,
-            EmployeeAccountMapper employeeAccountMapper,
-            UserProfileMapper userProfileMapper,
-            UserProfileRepository userProfileRepository,
-            UserSkillRepository userSkillRepository) {
-        this.accountRepository = accountRepository;
-        this.roleRepository = roleRepository;
-        this.userProfileService = userProfileService;
-        this.emailService = emailService;
-        this.passwordGenerator = passwordGenerator;
-        this.codeGenerator = codeGenerator;
-        this.securityContextService = securityContextService;
-        this.employeeAccountMapper = employeeAccountMapper;
-        this.userProfileMapper = userProfileMapper;
-        this.userProfileRepository = userProfileRepository;
-        this.userSkillRepository = userSkillRepository;
-    }
+    private final SecurityContextService securityContextService;
 
     @Transactional
     @Override
@@ -147,8 +122,6 @@ public class EmployeeAccountServiceImpl extends AbstractAuditableService impleme
         account.setPasswordHash(CryptoUtils.hash(rawPassword));
         account.setIsActive(true);
         account.setRole(role);
-        generateCodeIfMissing(account, CodePrefixes.ACCOUNT);
-        applyInsertAudit(account);
         accountRepository.save(account);
 
         UserProfileCreateRequest profileCreateRequest = employeeAccountMapper.toUserProfileCreateRequest(request,

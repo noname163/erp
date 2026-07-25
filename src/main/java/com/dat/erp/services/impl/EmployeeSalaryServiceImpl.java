@@ -48,13 +48,14 @@ import com.dat.erp.services.EmployeeSalaryDetailService;
 import com.dat.erp.services.EmployeeSalaryService;
 import com.dat.erp.services.MonthlySalaryCalculationService;
 import com.dat.erp.services.SecurityContextService;
-import com.dat.erp.services.base.AbstractAuditableService;
 import com.dat.erp.services.payroll.PayrollResultDetailService;
 import com.dat.erp.utils.CompanySecretKeyCryptoUtils;
 import com.dat.erp.utils.CustomStringUtils;
 
 @Service
-public class EmployeeSalaryServiceImpl extends AbstractAuditableService implements EmployeeSalaryService {
+public class EmployeeSalaryServiceImpl implements EmployeeSalaryService {
+
+    private final SecurityContextService securityContextService;
 
     private static final Logger log = LoggerFactory.getLogger(EmployeeSalaryServiceImpl.class);
 
@@ -79,17 +80,16 @@ public class EmployeeSalaryServiceImpl extends AbstractAuditableService implemen
             PayrollResultRepository payrollResultRepository,
             PayrollRunRepository payrollRunRepository,
             PayrollResultDetailService payrollResultDetailService) {
+        this.securityContextService = securityContextService;
         this.employeeSalaryRepository = employeeSalaryRepository;
         this.companyRepository = companyRepository;
         this.userProfileRepository = userProfileRepository;
         this.employeeSalaryMapper = employeeSalaryMapper;
-        this.codeGenerator = codeGenerator;
         this.employeeSalaryDetailService = employeeSalaryDetailService;
         this.monthlySalaryCalculationService = monthlySalaryCalculationService;
         this.payrollResultRepository = payrollResultRepository;
         this.payrollRunRepository = payrollRunRepository;
         this.payrollResultDetailService = payrollResultDetailService;
-        this.securityContextService = securityContextService;
     }
 
     @Override
@@ -111,7 +111,7 @@ public class EmployeeSalaryServiceImpl extends AbstractAuditableService implemen
                 Messages.ERROR_EMPLOYEE_SALARY_TOTAL_AMOUNT_INVALID);
         String currency = request.getCurrency().trim().toUpperCase();
 
-        String companyCode = requireCurrentUserCompanyCode();
+        String companyCode = securityContextService.getCurrentCompanyCode();
 
         String companySecretKey = resolveCompanySecretKey(companyCode);
 
@@ -139,9 +139,6 @@ public class EmployeeSalaryServiceImpl extends AbstractAuditableService implemen
                 .setTotalAmount(CompanySecretKeyCryptoUtils.encrypt(totalAmount.toPlainString(), companySecretKey));
         employeeSalary.setCurrency(currency);
 
-        generateCodeIfMissing(employeeSalary, CodePrefixes.EMPLOYEE_SALARY);
-        applyInsertAudit(employeeSalary);
-
         EmployeeSalary saved = employeeSalaryRepository.save(employeeSalary);
         EmployeeSalaryResponse response = employeeSalaryMapper.toResponse(saved);
         response.setTotalAmount(totalAmount.toPlainString());
@@ -166,7 +163,7 @@ public class EmployeeSalaryServiceImpl extends AbstractAuditableService implemen
             throw new BadRequestException(Messages.ERROR_EMPLOYEE_SALARY_AMOUNT_RANGE_INVALID);
         }
 
-        String companyCode = requireCurrentUserCompanyCode();
+        String companyCode = securityContextService.getCurrentCompanyCode();
         String companySecretKey = resolveCompanySecretKey(companyCode);
 
         List<EmployeeSalary> employeeSalaries = employeeSalaryRepository.searchByConditions(companyCode, employeeName,
@@ -338,7 +335,6 @@ public class EmployeeSalaryServiceImpl extends AbstractAuditableService implemen
                 if (calculation.getActualWorkingHourPerMonth() != null) {
                     payrollResult.setActualQuantity(calculation.getActualWorkingHourPerMonth().intValue());
                 }
-                applyUpdateAudit(payrollResult);
                 updatedPayrollResults.add(payrollResult);
                 calculationsByPayrollResult.put(payrollResult, calculation);
                 successCount++;
@@ -399,7 +395,6 @@ public class EmployeeSalaryServiceImpl extends AbstractAuditableService implemen
             return;
         }
         payrollRun.setStatus(status);
-        applyUpdateAudit(payrollRun);
         payrollRunRepository.save(payrollRun);
         log.warn("PAYROLL_CALC action=RUN_STATUS_UPDATED result=FAILED payrollRunCode={} status={} reason={}",
                 payrollRun.getCode(), status, reason);
@@ -459,7 +454,6 @@ public class EmployeeSalaryServiceImpl extends AbstractAuditableService implemen
         detail.setFormulaNote("basis=" + calculation.getSalaryBasisType() + ", expected="
                 + calculation.getExpectedBasisValue() + ", actual=" + calculation.getActualBasisValue()
                 + ", unit=" + calculation.getBasisUnit());
-        preparePayrollResultDetail(detail);
         return detail;
     }
 
@@ -472,7 +466,6 @@ public class EmployeeSalaryServiceImpl extends AbstractAuditableService implemen
         detail.setRatePerDay(rate);
         detail.setAmount(amount);
         detail.setFormulaNote("type=" + calcBasis + ", " + formulaNote);
-        preparePayrollResultDetail(detail);
         return detail;
     }
 
@@ -486,7 +479,6 @@ public class EmployeeSalaryServiceImpl extends AbstractAuditableService implemen
         detail.setAmount(audit.getResult());
         detail.setFormulaNote("salaryCode=" + audit.getSalaryCode() + ", method=" + audit.getCalculateMethod()
                 + ", dependency=" + audit.getDependenceCode());
-        preparePayrollResultDetail(detail);
         return detail;
     }
 
@@ -498,12 +490,6 @@ public class EmployeeSalaryServiceImpl extends AbstractAuditableService implemen
             return PayrollResultCalcBasis.WEEKEND_WORK;
         }
         return PayrollResultCalcBasis.HOURS;
-    }
-
-    private void preparePayrollResultDetail(PayrollResultDetail detail) {
-        detail.setCompanyCode(payrollResultCompanyCode(detail));
-        generateCodeIfMissing(detail, CodePrefixes.PAYROLL_RESULT_DETAIL);
-        applyInsertAudit(detail);
     }
 
     private String payrollResultCompanyCode(PayrollResultDetail detail) {

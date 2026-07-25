@@ -44,4 +44,26 @@ public class SecurityContextServiceImpl implements SecurityContextService {
         }
         throw new UnauthorizedException("User is not authenticated");
     }
+
+    @Override
+    public String getCurrentUserCode() {
+        try {
+            CustomUserDetails currentUser = getCurrentUser();
+            String userCode = currentUser.getCode();
+            return userCode == null || userCode.isBlank() ? "SYSTEM" : userCode;
+        } catch (UnauthorizedException ex) {
+            return "SYSTEM";
+        }
+    }
+
+    @Override
+    public String getCurrentCompanyCode() {
+        CustomUserDetails currentUser = getCurrentUser();
+        Account account = currentUser.getAccount();
+        String companyCode = account == null ? null : account.getCompanyCode();
+        if (companyCode == null || companyCode.isBlank()) {
+            throw new UnauthorizedException("Current user's company is not available");
+        }
+        return companyCode;
+    }
 }

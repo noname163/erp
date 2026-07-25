@@ -28,11 +28,13 @@ import com.dat.erp.repositories.customrepositories.UserProfileRepository;
 import com.dat.erp.services.CodeGenerator;
 import com.dat.erp.services.EmployeePayrollPolicyService;
 import com.dat.erp.services.SecurityContextService;
-import com.dat.erp.services.base.AbstractAuditableService;
 import com.dat.erp.utils.CustomStringUtils;
 
 @Service
-public class EmployeePayrollPolicyServiceImpl extends AbstractAuditableService implements EmployeePayrollPolicyService {
+public class EmployeePayrollPolicyServiceImpl implements EmployeePayrollPolicyService {
+
+
+    private final SecurityContextService securityContextService;
 
     private final EmployeePayrollPolicyRepository employeePayrollPolicyRepository;
     private final UserProfileRepository userProfileRepository;
@@ -46,12 +48,11 @@ public class EmployeePayrollPolicyServiceImpl extends AbstractAuditableService i
             EmployeePayrollPolicyMapper employeePayrollPolicyMapper,
             CodeGenerator codeGenerator,
             SecurityContextService securityContextService) {
+        this.securityContextService = securityContextService;
         this.employeePayrollPolicyRepository = employeePayrollPolicyRepository;
         this.userProfileRepository = userProfileRepository;
         this.payrollPolicyRepository = payrollPolicyRepository;
         this.employeePayrollPolicyMapper = employeePayrollPolicyMapper;
-        this.codeGenerator = codeGenerator;
-        this.securityContextService = securityContextService;
     }
 
     @Override
@@ -66,7 +67,7 @@ public class EmployeePayrollPolicyServiceImpl extends AbstractAuditableService i
         ensureCurrentCompanyOwns(userProfile.getCompanyCode());
         ensureCurrentCompanyOwns(payrollPolicy.getCompanyCode());
 
-        ensureNoActiveOverlap(resolveCurrentUserCompanyCode(), List.of(userProfile.getCode()), request.getEffectiveFrom(),
+        ensureNoActiveOverlap(securityContextService.getCurrentCompanyCode(), List.of(userProfile.getCode()), request.getEffectiveFrom(),
                 request.getEffectiveTo());
 
         return toResponse(employeePayrollPolicyRepository
@@ -78,7 +79,7 @@ public class EmployeePayrollPolicyServiceImpl extends AbstractAuditableService i
     public List<EmployeePayrollPolicyResponse> applyPayrollPolicyToEmployees(EmployeePayrollPolicyBatchRequest request) {
         validateRequest(request);
 
-        String companyCode = resolveCurrentUserCompanyCode();
+        String companyCode = securityContextService.getCurrentCompanyCode();
         PayrollPolicy payrollPolicy = getPayrollPolicy(request.getPolicyCode());
         ensureCurrentCompanyOwns(payrollPolicy.getCompanyCode());
 
@@ -119,7 +120,6 @@ public class EmployeePayrollPolicyServiceImpl extends AbstractAuditableService i
         ensureCurrentCompanyOwns(employeePayrollPolicy.getCompanyCode());
 
         employeePayrollPolicy.setIsActive(false);
-        applyUpdateAudit(employeePayrollPolicy);
         return toResponse(employeePayrollPolicyRepository.save(employeePayrollPolicy));
     }
 
@@ -146,7 +146,7 @@ public class EmployeePayrollPolicyServiceImpl extends AbstractAuditableService i
             return Map.of();
         }
 
-        String companyCode = requireCurrentUserCompanyCode();
+        String companyCode = securityContextService.getCurrentCompanyCode();
 
         List<String> normalizedEmployeeCodes = employeeCodes.stream()
                 .map(CustomStringUtils::normalizeCode)
@@ -195,8 +195,6 @@ public class EmployeePayrollPolicyServiceImpl extends AbstractAuditableService i
                 .effectiveTo(effectiveTo)
                 .isActive(true)
                 .build();
-        generateCodeIfMissing(employeePayrollPolicy, CodePrefixes.EMPLOYEE_PAYROLL_POLICY);
-        applyInsertAudit(employeePayrollPolicy);
         return employeePayrollPolicy;
     }
 
@@ -227,7 +225,7 @@ public class EmployeePayrollPolicyServiceImpl extends AbstractAuditableService i
     }
 
     private void ensureCurrentCompanyOwns(String companyCode) {
-        String currentCompanyCode = resolveCurrentUserCompanyCode();
+        String currentCompanyCode = securityContextService.getCurrentCompanyCode();
         if (!Objects.equals(currentCompanyCode, companyCode)) {
             throw new ResourceNotFoundException(Messages.ERROR_EMPLOYEE_PAYROLL_POLICY_NOT_FOUND);
         }

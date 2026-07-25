@@ -20,19 +20,24 @@ import com.dat.erp.exceptions.ConflictException;
 import com.dat.erp.mapper.interfaces.CompanyMapper;
 import com.dat.erp.repositories.customrepositories.CompanyRepository;
 import com.dat.erp.services.CompanyService;
-import com.dat.erp.services.base.AbstractAuditableService;
+import com.dat.erp.services.SecurityContextService;
 import com.dat.erp.utils.PageableUtils;
 
+import lombok.AllArgsConstructor;
+
 @Service
-public class CompanyServiceImpl extends AbstractAuditableService implements CompanyService {
+@AllArgsConstructor
+public class CompanyServiceImpl implements CompanyService {
     private static final Logger log = LoggerFactory.getLogger(CompanyServiceImpl.class);
 
-    @Autowired
-    private CompanyRepository companyRepository;
-    @Autowired
-    private CompanyMapper companyMapper;
-    @Autowired
-    private CompanyDefaultSetupService companyDefaultSetupService;
+    private final CompanyRepository companyRepository;
+  
+    private final CompanyMapper companyMapper;
+
+    private final CompanyDefaultSetupService companyDefaultSetupService;
+
+    private final SecurityContextService securityContextService;
+
 
     @Transactional
     @Override
@@ -47,10 +52,9 @@ public class CompanyServiceImpl extends AbstractAuditableService implements Comp
                     throw new ConflictException(Messages.ERROR_COMPANY_TAX_NUMBER_EXISTS);
                 });
         company.setSecretKey(UUID.randomUUID().toString());
-        generateCodeIfMissing(company, CodePrefixes.COMPANY);
         companyRepository.save(company);
 
-        String actorCode = resolveActorCode();
+        String actorCode = securityContextService.getCurrentUserCode();
         log.info("AUDIT action=CREATE_COMPANY actor={} companyCode={} result=SUCCESS", actorCode, company.getCode());
 
         companyDefaultSetupService.setAccountDefault(company.getCode(), company.getEmail(), company.getName(), actorCode);
@@ -66,15 +70,4 @@ public class CompanyServiceImpl extends AbstractAuditableService implements Comp
         return PageableUtils.mapPage(companies, companyMapper::toResponse, Messages.SUCCESS);
     }
 
-    private String resolveActorCode() {
-        try {
-            var user = securityContextService.getCurrentUser();
-            if (user == null || user.getCode() == null || user.getCode().isBlank()) {
-                return "SYSTEM";
-            }
-            return user.getCode();
-        } catch (Exception e) {
-            return "SYSTEM";
-        }
-    }
 }

@@ -26,12 +26,13 @@ import com.dat.erp.repositories.customrepositories.SalaryRepository;
 import com.dat.erp.services.CodeGenerator;
 import com.dat.erp.services.SalaryService;
 import com.dat.erp.services.SecurityContextService;
-import com.dat.erp.services.base.AbstractAuditableService;
 import com.dat.erp.utils.CustomStringUtils;
 import com.dat.erp.utils.PageableUtils;
 
 @Service
-public class SalaryServiceImpl extends AbstractAuditableService implements SalaryService {
+public class SalaryServiceImpl implements SalaryService {
+
+    private final SecurityContextService securityContextService;
 
     private final SalaryRepository salaryRepository;
     private final SalaryMapper salaryMapper;
@@ -40,10 +41,9 @@ public class SalaryServiceImpl extends AbstractAuditableService implements Salar
             SalaryMapper salaryMapper,
             CodeGenerator codeGenerator,
             SecurityContextService securityContextService) {
+        this.securityContextService = securityContextService;
         this.salaryRepository = salaryRepository;
         this.salaryMapper = salaryMapper;
-        this.codeGenerator = codeGenerator;
-        this.securityContextService = securityContextService;
     }
 
     @Override
@@ -74,7 +74,7 @@ public class SalaryServiceImpl extends AbstractAuditableService implements Salar
             }
         }
 
-        String companyCode = requireCurrentUserCompanyCode();
+        String companyCode = securityContextService.getCurrentCompanyCode();
 
         if (!salaryRepository.findExistingUpperCaseNamesByCompanyCodeAndIsDeletedFalse(companyCode, normalizedNames)
                 .isEmpty()) {
@@ -87,9 +87,6 @@ public class SalaryServiceImpl extends AbstractAuditableService implements Salar
             salary.setName(normalizedNames.get(i));
             salary.setCalculateMethod(parseCalculateMethod(requests.get(i).getCalculateMethod()));
             salary.setIsDeduct(requests.get(i).getIsDeduct());
-
-            generateCodeIfMissing(salary, CodePrefixes.SALARY);
-            applyInsertAudit(salary);
         }
 
         List<Salary> persisted = salaryRepository.saveAll(entities);
@@ -99,7 +96,7 @@ public class SalaryServiceImpl extends AbstractAuditableService implements Salar
     @Override
     public PagedResponse<SalaryListResponse> getSalaries(String name, Integer page, Integer size, String sortBy,
             String sortDir) {
-        String companyCode = requireCurrentUserCompanyCode();
+        String companyCode = securityContextService.getCurrentCompanyCode();
         String normalizedName = CustomStringUtils.trimToNull(name);
         Pageable pageable = PageableUtils.create(page, size, sortBy, sortDir);
         Page<Salary> salaries = salaryRepository.findOptionsByFilters(companyCode, normalizedName, pageable);
@@ -110,7 +107,7 @@ public class SalaryServiceImpl extends AbstractAuditableService implements Salar
     @Override
     public PagedResponse<SelectionOptionResponse> getSalaryOptionsByCompanyCode(String name, Integer page, Integer size,
             String sortBy, String sortDir) {
-        String companyCode = requireCurrentUserCompanyCode();
+        String companyCode = securityContextService.getCurrentCompanyCode();
         String normalizedName = CustomStringUtils.trimToNull(name);
         Pageable pageable = PageableUtils.create(page, size, sortBy, sortDir);
         Page<Salary> salaries = salaryRepository.findOptionsByFilters(companyCode, normalizedName, pageable);

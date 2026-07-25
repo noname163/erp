@@ -4,23 +4,49 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 import com.dat.erp.constants.PayrollRunAuditActionType;
+import com.dat.erp.constants.PayrollRunAuditStatus;
+import com.dat.erp.utils.UuidV7;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.Table;
+import lombok.AccessLevel;
 import lombok.Getter;
-import lombok.Setter;
+import lombok.NoArgsConstructor;
 
 @Getter
-@Setter
 @Entity
 @Table(name = "payroll_run_audit_log")
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class PayrollRunAuditLog extends BaseAuditableEntity {
 
     @Column(name = "payroll_run_code")
     private String payrollRunCode;
+
+    public PayrollRunAuditLog(String payrollRunCode, String rerunBatchCode, PayrollRunAuditActionType actionType,
+             String reason, String employeeCode, String oldPayrollResultCode,
+            String newPayrollResultCode, BigDecimal oldActualAmount, BigDecimal newActualAmount,
+            BigDecimal oldExpectedAmount, BigDecimal newExpectedAmount,
+            String errorMessage, String requestId, String traceId, LocalDateTime eventCreatedAt) {
+        assignCode("PRRAL" + UuidV7.generate());
+        this.payrollRunCode = payrollRunCode;
+        this.rerunBatchCode = rerunBatchCode;
+        this.actionType = actionType;
+        this.reason = reason;
+        this.employeeCode = employeeCode;
+        this.oldPayrollResultCode = oldPayrollResultCode;
+        this.newPayrollResultCode = newPayrollResultCode;
+        this.oldActualAmount = oldActualAmount;
+        this.newActualAmount = newActualAmount;
+        this.oldExpectedAmount = oldExpectedAmount;
+        this.newExpectedAmount = newExpectedAmount;
+        this.errorMessage = errorMessage;
+        this.requestId = requestId;
+        this.traceId = traceId;
+        this.eventCreatedAt = eventCreatedAt;
+    }
 
     @Column(name = "rerun_batch_code")
     private String rerunBatchCode;
@@ -56,8 +82,9 @@ public class PayrollRunAuditLog extends BaseAuditableEntity {
     @Column(name = "new_expected_amount", precision = 19, scale = 4)
     private BigDecimal newExpectedAmount;
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "status")
-    private String status;
+    private PayrollRunAuditStatus status;
 
     @Column(name = "error_message", length = 2000)
     private String errorMessage;
@@ -70,4 +97,8 @@ public class PayrollRunAuditLog extends BaseAuditableEntity {
 
     @Column(name = "event_created_at")
     private LocalDateTime eventCreatedAt;
+
+    public void assignRequestedPersonCode(String code){
+        this.requestedBy = code;
+    }
 }

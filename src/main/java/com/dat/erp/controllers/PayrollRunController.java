@@ -6,6 +6,7 @@ import java.time.YearMonth;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -14,6 +15,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.dat.erp.constants.Messages;
 import com.dat.erp.constants.PayrollRunStatus;
 import com.dat.erp.dto.request.PayrollRerunRequest;
 import com.dat.erp.dto.response.PagedResponse;
@@ -26,8 +28,11 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotNull;
 
 @Tag(name = "Payroll Run", description = "APIs for payroll run management")
+@Validated
 @RestController
 @RequestMapping("/api/payroll-runs")
 public class PayrollRunController {
@@ -94,6 +99,7 @@ public class PayrollRunController {
     @PreAuthorize("hasRoles({'HUMAN_RESOURCES'})")
     public ResponseEntity<PayrollRerunResponse> rerunPayroll(
             @PathVariable String payrollRunCode,
+            @Valid @NotNull(message = Messages.ERROR_PAYROLL_RERUN_MODE_INVALID)
             @RequestBody PayrollRerunRequest request) {
         return ResponseEntity.ok(payrollRunService.rerunPayroll(payrollRunCode, request));
     }

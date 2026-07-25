@@ -4,21 +4,22 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
-import com.dat.erp.constants.SystemUnitType;
 import com.dat.erp.constants.Messages;
+import com.dat.erp.constants.SystemUnitType;
 import com.dat.erp.dto.response.PagedResponse;
 import com.dat.erp.dto.response.SelectionOptionResponse;
 import com.dat.erp.entities.SystemUnit;
 import com.dat.erp.mapper.interfaces.SystemUnitMapper;
 import com.dat.erp.repositories.customrepositories.SystemUnitRepository;
+import com.dat.erp.services.CodeGenerator;
 import com.dat.erp.services.SecurityContextService;
 import com.dat.erp.services.SystemUnitService;
-import com.dat.erp.services.base.AbstractAuditableService;
 import com.dat.erp.utils.CustomStringUtils;
 import com.dat.erp.utils.PageableUtils;
 
 @Service
-public class SystemUnitServiceImpl extends AbstractAuditableService implements SystemUnitService {
+public class SystemUnitServiceImpl implements SystemUnitService {
+
 
     private final SystemUnitRepository systemUnitRepository;
     private final SystemUnitMapper systemUnitMapper;
@@ -26,10 +27,10 @@ public class SystemUnitServiceImpl extends AbstractAuditableService implements S
     public SystemUnitServiceImpl(
             SystemUnitRepository systemUnitRepository,
             SystemUnitMapper systemUnitMapper,
+            CodeGenerator codeGenerator,
             SecurityContextService securityContextService) {
         this.systemUnitRepository = systemUnitRepository;
         this.systemUnitMapper = systemUnitMapper;
-        this.securityContextService = securityContextService;
     }
 
     @Override

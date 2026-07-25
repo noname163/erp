@@ -19,11 +19,10 @@ import com.dat.erp.repositories.customrepositories.RoleRepository;
 import com.dat.erp.services.AccountService;
 import com.dat.erp.services.EmailService;
 import com.dat.erp.services.PasswordGenerator;
-import com.dat.erp.services.base.AbstractAuditableService;
 import com.dat.erp.utils.CryptoUtils;
 
 @Service
-public class AccountServiceImpl extends AbstractAuditableService implements AccountService {
+public class AccountServiceImpl implements AccountService {
     private static final Logger log = LoggerFactory.getLogger(AccountServiceImpl.class);
 
     private final AccountRepository accountRepository;
@@ -70,10 +69,6 @@ public class AccountServiceImpl extends AbstractAuditableService implements Acco
         account.setPasswordHash(CryptoUtils.hash(rawPassword));
         account.setIsActive(true);
         account.setRole(role);
-        account.setCompanyCode(companyCode);
-
-        generateCodeIfMissing(account, CodePrefixes.ACCOUNT);
-        applyInsertAudit(account);
         accountRepository.save(account);
 
         log.info(
@@ -88,11 +83,9 @@ public class AccountServiceImpl extends AbstractAuditableService implements Acco
         String normalized = (roleType == null || roleType.isBlank()) ? RoleType.ROLE_COMPANY_MANAGER : roleType.trim();
         return roleRepository.findByType(normalized).orElseGet(() -> {
             Role role = new Role();
-            role.setCode(CodePrefixes.ROLE + normalized);
             role.setName(normalized);
             role.setType(normalized);
             role.setDescription("Auto-created role");
-            applyInsertAudit(role);
             return roleRepository.save(role);
         });
     }

@@ -1,6 +1,7 @@
 package com.dat.erp.entities;
 
 import java.util.List;
+import java.util.Objects;
 
 import com.dat.erp.constants.PayrollStatus;
 
@@ -70,4 +71,9 @@ public class PayrollResult extends BaseAuditableEntity {
 
     @OneToMany(mappedBy = "payrollResult", fetch = FetchType.LAZY)
     private List<PayrollResultDetail> details;
+
+    public void assignPayrollRun(PayrollRun payrollRun){
+        Objects.requireNonNull(payrollRun);
+        this.payrollRun = payrollRun;
+    }
 }

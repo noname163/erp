@@ -102,7 +102,7 @@ public class PayrollResultDetailServiceImpl implements PayrollResultDetailServic
         for (PayrollResultDetail detail : existingDetails) {
             try {
                 requiresNewTransactionTemplate.executeWithoutResult(status -> {
-                    detail.setIsDeleted(true);
+                    detail.markDeleted();
                     payrollResultDetailRepository.saveAndFlush(detail);
                 });
                 deletedCount++;

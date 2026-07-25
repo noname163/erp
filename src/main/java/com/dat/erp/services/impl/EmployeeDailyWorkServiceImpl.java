@@ -17,7 +17,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.dat.erp.constants.CodePrefixes;
 import com.dat.erp.constants.DayType;
 import com.dat.erp.constants.Messages;
 import com.dat.erp.dto.request.EmployeeDailyWorkRequest;
@@ -34,33 +33,23 @@ import com.dat.erp.mapper.interfaces.EmployeeDailyWorkMapper;
 import com.dat.erp.repositories.customrepositories.DailyWorkRepository;
 import com.dat.erp.repositories.customrepositories.UserProfileRepository;
 import com.dat.erp.repositories.projections.EmployeeDailyWorkListProjection;
-import com.dat.erp.services.CodeGenerator;
 import com.dat.erp.services.EmployeeDailyWorkService;
 import com.dat.erp.services.SecurityContextService;
-import com.dat.erp.services.base.AbstractAuditableService;
 import com.dat.erp.utils.CustomStringUtils;
 import com.dat.erp.utils.PageableUtils;
 
+import lombok.AllArgsConstructor;
+
 @Service
-public class EmployeeDailyWorkServiceImpl extends AbstractAuditableService implements EmployeeDailyWorkService {
+@AllArgsConstructor
+public class EmployeeDailyWorkServiceImpl implements EmployeeDailyWorkService {
     private static final String DEFAULT_SORT_BY = "workingDate";
     private static final String DEFAULT_SORT_DIR = "DESC";
 
     private final DailyWorkRepository dailyWorkRepository;
     private final UserProfileRepository userProfileRepository;
     private final EmployeeDailyWorkMapper employeeDailyWorkMapper;
-
-    public EmployeeDailyWorkServiceImpl(DailyWorkRepository dailyWorkRepository,
-            UserProfileRepository userProfileRepository,
-            EmployeeDailyWorkMapper employeeDailyWorkMapper,
-            CodeGenerator codeGenerator,
-            SecurityContextService securityContextService) {
-        this.dailyWorkRepository = dailyWorkRepository;
-        this.userProfileRepository = userProfileRepository;
-        this.employeeDailyWorkMapper = employeeDailyWorkMapper;
-        this.codeGenerator = codeGenerator;
-        this.securityContextService = securityContextService;
-    }
+    private final SecurityContextService securityContextService;
 
     @Override
     @Transactional
@@ -69,7 +58,7 @@ public class EmployeeDailyWorkServiceImpl extends AbstractAuditableService imple
             throw new BadRequestException(Messages.ERROR_DAILY_WORK_REQUESTS_INVALID);
         }
 
-        String companyCode = requireCurrentUserCompanyCode();
+        String companyCode = securityContextService.getCurrentCompanyCode();
         String scopedEmployeeCode = CustomStringUtils.resolveScopedEmployeeCode(
                 securityContextService.getCurrentUser(),
                 null);
@@ -170,9 +159,6 @@ public class EmployeeDailyWorkServiceImpl extends AbstractAuditableService imple
                     .otTime(otTime == null ? 0 : otTime)
                     .hoursWorked(hoursWorked)
                     .build();
-
-            generateCodeIfMissing(dailyWork, CodePrefixes.DAILY_WORK);
-            applyInsertAudit(dailyWork);
             dailyWorks.add(dailyWork);
         }
 
@@ -195,7 +181,7 @@ public class EmployeeDailyWorkServiceImpl extends AbstractAuditableService imple
             Integer size,
             String sortBy,
             String sortDir) {
-        String companyCode = requireCurrentUserCompanyCode();
+        String companyCode = securityContextService.getCurrentCompanyCode();
         if (startDate != null && endDate != null && startDate.isAfter(endDate)) {
             throw new BadRequestException(Messages.ERROR_DAILY_WORK_WORKING_DATE_INVALID);
         }
@@ -258,7 +244,7 @@ public class EmployeeDailyWorkServiceImpl extends AbstractAuditableService imple
             return Map.of();
         }
 
-        String companyCode = requireCurrentUserCompanyCode();
+        String companyCode = securityContextService.getCurrentCompanyCode();
 
         List<String> normalizedEmployeeCodes = employeeCodes.stream()
                 .map(CustomStringUtils::normalizeCode)

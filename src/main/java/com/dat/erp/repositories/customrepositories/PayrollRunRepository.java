@@ -1,6 +1,7 @@
 package com.dat.erp.repositories.customrepositories;
 
 import java.time.LocalDateTime;
+import java.time.Month;
 import java.util.Optional;
 
 import org.springframework.data.domain.Page;
@@ -40,7 +41,7 @@ public interface PayrollRunRepository extends JpaRepository<PayrollRun, Long> {
             @Param("closeAtNullValue") LocalDateTime closeAtNullValue,
             Pageable pageable);
 
-    Optional<PayrollRun> findByCompanyCodeAndPeriodAndIsDeletedFalse(String companyCode, String period);
+    Optional<PayrollRun> findByCompanyCodeAndPeriodAndIsDeletedFalse(String companyCode, Month period);
 
     Optional<PayrollRun> findByCodeAndCompanyCodeAndIsDeletedFalse(String code, String companyCode);
 

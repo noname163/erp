@@ -52,13 +52,14 @@ import com.dat.erp.services.EmployeePayrollPolicyService;
 import com.dat.erp.services.EmployeeSalaryService;
 import com.dat.erp.services.SecurityContextService;
 import com.dat.erp.services.UserProfileService;
-import com.dat.erp.services.base.AbstractAuditableService;
 import com.dat.erp.services.payroll.PayrollResultService;
 import com.dat.erp.utils.CustomStringUtils;
 import com.dat.erp.utils.PageableUtils;
 
 @Service
-public class PayrollResultServiceImpl extends AbstractAuditableService implements PayrollResultService {
+public class PayrollResultServiceImpl implements PayrollResultService {
+
+    private final SecurityContextService securityContextService;
 
     private static final Logger log = LoggerFactory.getLogger(PayrollResultServiceImpl.class);
 
@@ -99,6 +100,7 @@ public class PayrollResultServiceImpl extends AbstractAuditableService implement
             PayrollResultMapper payrollResultMapper,
             CodeGenerator codeGenerator,
             SecurityContextService securityContextService) {
+        this.securityContextService = securityContextService;
         this.userProfileService = userProfileService;
         this.employeePayrollPolicyService = employeePayrollPolicyService;
         this.calendarDateService = calendarDateService;
@@ -110,14 +112,12 @@ public class PayrollResultServiceImpl extends AbstractAuditableService implement
         this.companyRepository = companyRepository;
         this.employeeSalaryService = employeeSalaryService;
         this.payrollResultMapper = payrollResultMapper;
-        this.codeGenerator = codeGenerator;
-        this.securityContextService = securityContextService;
     }
 
     @Override
     @Transactional(readOnly = true)
     public List<PayrollResultDetailResponse> getPayrollResultDetails(String payrollResultCode) {
-        String companyCode = requireCurrentUserCompanyCode();
+        String companyCode = securityContextService.getCurrentCompanyCode();
         String normalizedPayrollResultCode = CustomStringUtils.normalizeCode(payrollResultCode);
         if (normalizedPayrollResultCode == null) {
             throw new BadRequestException(Messages.ERROR_PAYROLL_RESULT_CODE_INVALID);
@@ -142,7 +142,7 @@ public class PayrollResultServiceImpl extends AbstractAuditableService implement
             Integer size,
             String sortBy,
             String sortDir) {
-        String companyCode = requireCurrentUserCompanyCode();
+        String companyCode = securityContextService.getCurrentCompanyCode();
         String companySecretKey = resolveCompanySecretKey(companyCode);
         String normalizedPayrollRunCode = CustomStringUtils.normalizeCode(payrollRunCode);
         if (normalizedPayrollRunCode == null) {
@@ -176,7 +176,7 @@ public class PayrollResultServiceImpl extends AbstractAuditableService implement
     @Override
     @Transactional
     public void generatePayrollResult(PayrollRun payrollRun) {
-        String companyCode = requireCurrentUserCompanyCode();
+        String companyCode = securityContextService.getCurrentCompanyCode();
 
         YearMonth runMonth = resolveRunMonth(payrollRun);
         LocalDate runDate = runMonth.atEndOfMonth();
@@ -265,7 +265,6 @@ public class PayrollResultServiceImpl extends AbstractAuditableService implement
 
     private void finalizePayrollRun(PayrollRun payrollRun, PayrollRunStatus finalStatus) {
         payrollRun.setStatus(finalStatus);
-        applyUpdateAudit(payrollRun);
         payrollRunRepository.save(payrollRun);
     }
 
@@ -417,8 +416,6 @@ public class PayrollResultServiceImpl extends AbstractAuditableService implement
                 .isRetro(false)
                 .retroReason(null)
                 .build();
-        generateCodeIfMissing(payrollResult, CodePrefixes.PAYROLL_RESULT);
-        applyInsertAudit(payrollResult);
         return payrollResult;
     }
 

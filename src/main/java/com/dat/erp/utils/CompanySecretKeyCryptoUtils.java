@@ -1,5 +1,6 @@
 package com.dat.erp.utils;
 
+import java.math.BigDecimal;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
@@ -32,7 +33,8 @@ public final class CompanySecretKeyCryptoUtils {
             secureRandom.nextBytes(iv);
 
             Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
-            cipher.init(Cipher.ENCRYPT_MODE, deriveAesKey(companySecretKey), new GCMParameterSpec(GCM_TAG_LENGTH_BITS, iv));
+            cipher.init(Cipher.ENCRYPT_MODE, deriveAesKey(companySecretKey),
+                    new GCMParameterSpec(GCM_TAG_LENGTH_BITS, iv));
 
             byte[] cipherText = cipher.doFinal(plainText.getBytes(StandardCharsets.UTF_8));
             byte[] packed = ByteBuffer.allocate(iv.length + cipherText.length).put(iv).put(cipherText).array();
@@ -61,7 +63,8 @@ public final class CompanySecretKeyCryptoUtils {
             System.arraycopy(packed, GCM_IV_LENGTH_BYTES, cipherText, 0, cipherText.length);
 
             Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
-            cipher.init(Cipher.DECRYPT_MODE, deriveAesKey(companySecretKey), new GCMParameterSpec(GCM_TAG_LENGTH_BITS, iv));
+            cipher.init(Cipher.DECRYPT_MODE, deriveAesKey(companySecretKey),
+                    new GCMParameterSpec(GCM_TAG_LENGTH_BITS, iv));
 
             byte[] plain = cipher.doFinal(cipherText);
             return new String(plain, StandardCharsets.UTF_8);
@@ -70,6 +73,13 @@ public final class CompanySecretKeyCryptoUtils {
         } catch (Exception e) {
             throw new RuntimeException("Decryption failed", e);
         }
+    }
+
+    public static BigDecimal decryptAmount(String encryptedAmount, String companySecretKey) {
+        if (encryptedAmount == null || encryptedAmount.isBlank()) {
+            return BigDecimal.ZERO;
+        }
+        return new BigDecimal(CompanySecretKeyCryptoUtils.decrypt(encryptedAmount, companySecretKey));
     }
 
     private static SecretKey deriveAesKey(String companySecretKey) {
@@ -82,4 +92,3 @@ public final class CompanySecretKeyCryptoUtils {
         }
     }
 }
-
