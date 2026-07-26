@@ -10,13 +10,14 @@ import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.Lob;
 import jakarta.persistence.Table;
+import lombok.AccessLevel;
 import lombok.Getter;
-import lombok.Setter;
+import lombok.NoArgsConstructor;
 
 @Getter
-@Setter
 @Entity
 @Table(name = "payroll_result_snapshot")
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class PayrollResultSnapshot extends BaseAuditableEntity {
 
     @Column(name = "payroll_run_code")

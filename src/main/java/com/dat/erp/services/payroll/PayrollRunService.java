@@ -24,4 +24,6 @@ public interface PayrollRunService {
     PayrollRunResponse runPayroll(YearMonth runDate);
 
     PayrollRerunResponse rerunPayroll(String payrollRunCode, PayrollRerunRequest request);
+
+    void finalizePayrollRun(String payrollCode, boolean isSuccess);
 }

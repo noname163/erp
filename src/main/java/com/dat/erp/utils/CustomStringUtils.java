@@ -80,4 +80,8 @@ public class CustomStringUtils {
         String roleName = currentUser.getAccount().getRole().getName();
         return roleName != null && "EMPLOYEE".equalsIgnoreCase(roleName.trim());
     }
+
+    public static String escapeJson(String value) {
+        return value == null ? "" : value.replace("\\", "\\\\").replace("\"", "\\\"");
+    }
 }

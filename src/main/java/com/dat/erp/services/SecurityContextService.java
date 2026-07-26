@@ -10,4 +10,6 @@ public interface SecurityContextService {
     String getCurrentUserCode();
 
     String getCurrentCompanyCode();
+
+    String getCurrentCompanySecretKey();
 }

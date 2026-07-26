@@ -13,22 +13,21 @@ import com.dat.erp.entities.Company;
 import com.dat.erp.entities.PayrollResult;
 import com.dat.erp.entities.PayrollRun;
 import com.dat.erp.entities.PayrollRunAuditLog;
-import com.dat.erp.entities.UserProfile;
 import com.dat.erp.exceptions.ResourceNotFoundException;
 import com.dat.erp.repositories.customrepositories.CompanyRepository;
 import com.dat.erp.repositories.customrepositories.PayrollRunAuditLogRepository;
 import com.dat.erp.services.SecurityContextService;
-import com.dat.erp.services.payroll.payrollRunAuditLogService;
+import com.dat.erp.services.payroll.PayrollRunAuditLogService;
 import com.dat.erp.utils.CompanySecretKeyCryptoUtils;
 
 @Service
-public class payrollRunAuditLogServiceImpl implements payrollRunAuditLogService {
+public class PayrollRunAuditLogServiceImpl implements PayrollRunAuditLogService {
 
     private final PayrollRunAuditLogRepository payrollRunAuditLogRepository;
     private final CompanyRepository companyRepository;
     private final SecurityContextService securityContextService;
 
-    public payrollRunAuditLogServiceImpl(
+    public PayrollRunAuditLogServiceImpl(
             PayrollRunAuditLogRepository payrollRunAuditLogRepository,
             CompanyRepository companyRepository,
             SecurityContextService securityContextService) {

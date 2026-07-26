@@ -66,4 +66,11 @@ public class SecurityContextServiceImpl implements SecurityContextService {
         }
         return companyCode;
     }
+
+    @Override
+    public String getCurrentCompanySecretKey() {
+        String companyCode = getCurrentCompanyCode();
+        return accountRepository.getCurrentCompanySecretKeyByCompanyCode(companyCode)
+                .orElseThrow(() -> new UnauthorizedException("Current user's company is not available"));
+    }
 }

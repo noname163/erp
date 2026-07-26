@@ -8,9 +8,11 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Lock;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.dat.erp.constants.PayrollRunStatus;
 import com.dat.erp.entities.PayrollRun;
@@ -23,7 +25,7 @@ public interface PayrollRunRepository extends JpaRepository<PayrollRun, Long> {
             select pr
             from PayrollRun pr
             where pr.companyCode = :companyCode
-              and pr.isDeleted = false
+              and pr.deleted = false
               and pr.status = coalesce(:status, pr.status)
               and coalesce(pr.runAt, :runAtNullValue) >= :runAtFrom
               and coalesce(pr.runAt, :runAtNullValue) <= :runAtTo
@@ -51,9 +53,28 @@ public interface PayrollRunRepository extends JpaRepository<PayrollRun, Long> {
             from PayrollRun pr
             where pr.code = :code
               and pr.companyCode = :companyCode
-              and pr.isDeleted = false
+              and pr.deleted = false
             """)
     Optional<PayrollRun> findLockedByCodeAndCompanyCode(
             @Param("code") String code,
             @Param("companyCode") String companyCode);
+
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Transactional
+    @Query("""
+            update PayrollRun pr
+            set pr.status = case
+                when :success = true then com.dat.erp.constants.PayrollRunStatus.CALCULATED
+                else com.dat.erp.constants.PayrollRunStatus.FAILED
+            end
+            where pr.code = :code
+              and pr.companyCode = :companyCode
+              and pr.deleted = false
+            """)
+    int updateStatusBySuccessFlag(
+            @Param("code") String code,
+            @Param("companyCode") String companyCode,
+            @Param("success") boolean success);
+
+    
 }

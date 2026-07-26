@@ -5,12 +5,10 @@ import java.time.LocalDateTime;
 import java.time.Month;
 import java.time.YearMonth;
 import java.time.ZoneOffset;
-import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -20,15 +18,14 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.dat.erp.constants.CodePrefixes;
 import com.dat.erp.constants.Messages;
-import com.dat.erp.constants.PayrollResultCalcBasis;
 import com.dat.erp.constants.PayrollRerunMode;
+import com.dat.erp.constants.PayrollResultCalcBasis;
 import com.dat.erp.constants.PayrollRunAuditActionType;
 import com.dat.erp.constants.PayrollRunAuditStatus;
 import com.dat.erp.constants.PayrollRunStatus;
-import com.dat.erp.dto.request.PayrollRunAuditLogRequest;
 import com.dat.erp.dto.request.PayrollRerunRequest;
+import com.dat.erp.dto.request.PayrollRunAuditLogRequest;
 import com.dat.erp.dto.response.PagedResponse;
 import com.dat.erp.dto.response.PayrollRerunEmployeeResultResponse;
 import com.dat.erp.dto.response.PayrollRerunErrorResponse;
@@ -36,36 +33,33 @@ import com.dat.erp.dto.response.PayrollRerunResponse;
 import com.dat.erp.dto.response.PayrollRunResponse;
 import com.dat.erp.dto.response.salary.MonthlySalaryCalculationResponse;
 import com.dat.erp.dto.response.salary.MonthlySalaryDetailAuditResponse;
-import com.dat.erp.entities.Company;
 import com.dat.erp.entities.EmployeeSalary;
 import com.dat.erp.entities.PayrollResult;
 import com.dat.erp.entities.PayrollResultDetail;
-import com.dat.erp.entities.PayrollResultSnapshot;
 import com.dat.erp.entities.PayrollRun;
 import com.dat.erp.entities.UserProfile;
 import com.dat.erp.exceptions.BadRequestException;
 import com.dat.erp.exceptions.ConflictException;
 import com.dat.erp.exceptions.ResourceNotFoundException;
 import com.dat.erp.mapper.interfaces.PayrollRunMapper;
-import com.dat.erp.repositories.customrepositories.CompanyRepository;
 import com.dat.erp.repositories.customrepositories.EmployeeSalaryRepository;
-import com.dat.erp.repositories.customrepositories.PayrollResultDetailRepository;
-import com.dat.erp.repositories.customrepositories.PayrollResultRepository;
-import com.dat.erp.repositories.customrepositories.PayrollResultSnapshotRepository;
 import com.dat.erp.repositories.customrepositories.PayrollRunRepository;
-import com.dat.erp.services.CodeGenerator;
 import com.dat.erp.services.MonthlySalaryCalculationService;
 import com.dat.erp.services.SecurityContextService;
 import com.dat.erp.services.payroll.PayrollResultDetailService;
 import com.dat.erp.services.payroll.PayrollResultService;
+import com.dat.erp.services.payroll.PayrollResultSnapshotService;
+import com.dat.erp.services.payroll.PayrollRunAuditLogService;
 import com.dat.erp.services.payroll.PayrollRunService;
-import com.dat.erp.services.payroll.payrollRunAuditLogService;
 import com.dat.erp.utils.CompanySecretKeyCryptoUtils;
 import com.dat.erp.utils.CustomStringUtils;
 import com.dat.erp.utils.PageableUtils;
 import com.dat.erp.utils.UuidV7;
 
+import lombok.AllArgsConstructor;
+
 @Service
+@AllArgsConstructor
 public class PayrollRunServiceImpl implements PayrollRunService {
 
     private final SecurityContextService securityContextService;
@@ -81,42 +75,12 @@ public class PayrollRunServiceImpl implements PayrollRunService {
     private final PayrollRunRepository payrollRunRepository;
     private final PayrollRunMapper payrollRunMapper;
     private final PayrollResultService payrollResultService;
-    private final PayrollResultRepository payrollResultRepository;
-    private final PayrollResultDetailRepository payrollResultDetailRepository;
-    private final PayrollResultSnapshotRepository payrollResultSnapshotRepository;
+    private final PayrollResultSnapshotService payrollResultSnapshotService;
     private final EmployeeSalaryRepository employeeSalaryRepository;
     private final MonthlySalaryCalculationService monthlySalaryCalculationService;
-    private final CompanyRepository companyRepository;
     private final PayrollResultDetailService payrollResultDetailService;
-    private final payrollRunAuditLogService payrollRunAuditLogService;
+    private final PayrollRunAuditLogService payrollRunAuditLogService;
 
-    public PayrollRunServiceImpl(
-            PayrollRunRepository payrollRunRepository,
-            PayrollResultService payrollResultService,
-            PayrollRunMapper payrollRunMapper,
-            PayrollResultRepository payrollResultRepository,
-            PayrollResultDetailRepository payrollResultDetailRepository,
-            PayrollResultSnapshotRepository payrollResultSnapshotRepository,
-            EmployeeSalaryRepository employeeSalaryRepository,
-            MonthlySalaryCalculationService monthlySalaryCalculationService,
-            CompanyRepository companyRepository,
-            PayrollResultDetailService payrollResultDetailService,
-            payrollRunAuditLogService payrollRunAuditLogService,
-            CodeGenerator codeGenerator,
-            SecurityContextService securityContextService) {
-        this.securityContextService = securityContextService;
-        this.payrollRunRepository = payrollRunRepository;
-        this.payrollResultService = payrollResultService;
-        this.payrollRunMapper = payrollRunMapper;
-        this.payrollResultRepository = payrollResultRepository;
-        this.payrollResultDetailRepository = payrollResultDetailRepository;
-        this.payrollResultSnapshotRepository = payrollResultSnapshotRepository;
-        this.employeeSalaryRepository = employeeSalaryRepository;
-        this.monthlySalaryCalculationService = monthlySalaryCalculationService;
-        this.companyRepository = companyRepository;
-        this.payrollResultDetailService = payrollResultDetailService;
-        this.payrollRunAuditLogService = payrollRunAuditLogService;
-    }
 
     @Override
     @Transactional(readOnly = true)
@@ -192,15 +156,14 @@ public class PayrollRunServiceImpl implements PayrollRunService {
         }
         validateRerunRequest(request);
 
-        boolean dryRun = Boolean.TRUE.equals(request.getDryRun());
         String rerunBatchCode = "PRR" + UuidV7.generate();
-        PayrollRun payrollRun = payrollRunRepository.findLockedByCodeAndCompanyCode(normalizedPayrollRunCode, companyCode)
+        PayrollRun payrollRun = payrollRunRepository
+                .findLockedByCodeAndCompanyCode(normalizedPayrollRunCode, companyCode)
                 .orElseThrow(() -> new ResourceNotFoundException(
                         String.format(Messages.ERROR_PAYROLL_RUN_NOT_FOUND, normalizedPayrollRunCode)));
         validateRerunnableStatus(payrollRun);
 
         String reason = request.getReason().trim();
-        PayrollRerunMode mode = request.getMode() == null ? PayrollRerunMode.FULL_RUN : request.getMode();
         payrollRunAuditLogService.writeAudit(
                 payrollRun,
                 new PayrollRunAuditLogRequest(rerunBatchCode, PayrollRunAuditActionType.RERUN_REQUESTED, reason, null,
@@ -211,18 +174,20 @@ public class PayrollRunServiceImpl implements PayrollRunService {
         payrollRunAuditLogService.writeAudit(
                 payrollRun,
                 new PayrollRunAuditLogRequest(rerunBatchCode, PayrollRunAuditActionType.RERUN_STARTED, reason, null,
-                        null, null, dryRun ? PayrollRunAuditStatus.DRY_RUN : PayrollRunAuditStatus.STARTED, null));
+                        null, null, request.isDryRun() ? PayrollRunAuditStatus.DRY_RUN : PayrollRunAuditStatus.STARTED,
+                        null));
 
-        List<PayrollResult> targetOldResults = resolveTargetResults(payrollRun, companyCode, request, mode);
+        List<PayrollResult> targetOldResults = payrollResultService.resolveTargetResults(payrollRun.getCode(), companyCode, request,
+                request.getMode());
         Map<String, PayrollResult> oldResultsByEmployee = mapResultsByEmployeeCode(targetOldResults);
         List<String> targetEmployeeCodes = new ArrayList<>(oldResultsByEmployee.keySet());
         PayrollRerunResponse response = new PayrollRerunResponse();
         response.setPayrollRunCode(normalizedPayrollRunCode);
         response.setRerunBatchCode(rerunBatchCode);
-        response.setDryRun(dryRun);
+        response.setDryRun(request.isDryRun());
         response.setTotalEmployees(targetEmployeeCodes.size());
 
-        String companySecretKey = resolveCompanySecretKey(companyCode);
+        String companySecretKey = securityContextService.getCurrentCompanySecretKey();
         int successCount = 0;
         int failureCount = 0;
         for (String employeeCode : targetEmployeeCodes) {
@@ -234,8 +199,8 @@ public class PayrollRunServiceImpl implements PayrollRunService {
                         new PayrollRunAuditLogRequest(rerunBatchCode,
                                 PayrollRunAuditActionType.EMPLOYEE_RERUN_STARTED, reason, employeeCode, oldResult,
                                 null, PayrollRunAuditStatus.STARTED, null));
-                if (!dryRun) {
-                    createSnapshot(payrollRun, oldResult, rerunBatchCode, employeeCode);
+                if (request.isDryRun()) {
+                    payrollResultSnapshotService.createSnapshot(payrollRun, oldResult, rerunBatchCode, employeeCode);
                 }
 
                 MonthlySalaryCalculationResponse calculation = monthlySalaryCalculationService
@@ -244,14 +209,14 @@ public class PayrollRunServiceImpl implements PayrollRunService {
                         .findFirstActiveByEmployeeCodeAndCompanyCodeAndDate(
                                 employeeCode, companyCode, payrollRun.getPeriod().atEndOfMonth())
                         .orElse(oldResult.getEmployeeSalary());
-                PayrollResult newResult = buildRerunPayrollResult(payrollRun, oldResult, activeSalary, calculation,
+                PayrollResult newResult = payrollResultService.buildRerunPayrollResult(payrollRun, oldResult, activeSalary, calculation,
                         companySecretKey);
 
-                if (!dryRun) {
-                    PayrollResult savedNewResult = payrollResultRepository.saveAndFlush(newResult);
+                if (!request.isDryRun()) {
+                    PayrollResult savedNewResult = payrollResultService.saveRerunPayRollResult(newResult);
                     payrollResultDetailService.replacePayrollResultDetailsBestEffort(
                             "PAYROLL_RERUN", savedNewResult, buildPayrollResultDetails(savedNewResult, calculation));
-                    softDeleteOldResult(oldResult);
+                    payrollResultService.softDeleteOldResult(oldResult.getCode());
                     newResult = savedNewResult;
                 }
 
@@ -263,7 +228,7 @@ public class PayrollRunServiceImpl implements PayrollRunService {
                         payrollRun,
                         new PayrollRunAuditLogRequest(rerunBatchCode,
                                 PayrollRunAuditActionType.EMPLOYEE_RERUN_SUCCESS, reason, employeeCode, oldResult,
-                                dryRun ? null : newResult, PayrollRunAuditStatus.SUCCESS, null));
+                                request.isDryRun() ? null : newResult, PayrollRunAuditStatus.SUCCESS, null));
                 logRerun("EMPLOYEE_RERUN_SUCCESS", "SUCCESS", normalizedPayrollRunCode, rerunBatchCode, employeeCode,
                         reason, employeeResponse.getOldActualAmount(), employeeResponse.getNewActualAmount(), null,
                         System.currentTimeMillis() - startedAt);
@@ -286,8 +251,8 @@ public class PayrollRunServiceImpl implements PayrollRunService {
                 ? PayrollRunStatus.FAILED
                 : PayrollRunStatus.CALCULATED;
         response.setStatus(finalStatus);
-        if (!dryRun) {
-            payrollRun.completeRerun(failureCount, dryRun);
+        if (!request.isDryRun()) {
+            payrollRun.completeRerun(failureCount, request.isDryRun());
             payrollRunRepository.save(payrollRun);
         }
         payrollRunAuditLogService.writeAudit(
@@ -323,26 +288,10 @@ public class PayrollRunServiceImpl implements PayrollRunService {
         if (payrollRun.getStatus() == PayrollRunStatus.CLOSED) {
             throw new ConflictException(Messages.ERROR_PAYROLL_RERUN_CLOSED_NOT_ALLOWED);
         }
-        if (payrollRun.getStatus() == PayrollRunStatus.PROCESSING || payrollRun.getStatus() == PayrollRunStatus.RERUNNING) {
+        if (payrollRun.getStatus() == PayrollRunStatus.PROCESSING
+                || payrollRun.getStatus() == PayrollRunStatus.RERUNNING) {
             throw new ConflictException(Messages.ERROR_PAYROLL_RERUN_CONCURRENT);
         }
-    }
-
-    private List<PayrollResult> resolveTargetResults(
-            PayrollRun payrollRun,
-            String companyCode,
-            PayrollRerunRequest request,
-            PayrollRerunMode mode) {
-        if (PayrollRerunMode.SELECTED_EMPLOYEES.equals(mode)) {
-            List<String> employeeCodes = request.getEmployeeCodes().stream()
-                    .map(CustomStringUtils::normalizeCode)
-                    .filter(Objects::nonNull)
-                    .distinct()
-                    .toList();
-            return payrollResultRepository.findActiveByRunAndCompanyAndEmployeeCodes(
-                    payrollRun.getCode(), companyCode, employeeCodes);
-        }
-        return payrollResultRepository.findActiveByRunAndCompany(payrollRun.getCode(), companyCode);
     }
 
     private Map<String, PayrollResult> mapResultsByEmployeeCode(List<PayrollResult> payrollResults) {
@@ -354,30 +303,6 @@ public class PayrollRunServiceImpl implements PayrollRunService {
             }
         }
         return resultsByEmployee;
-    }
-
-    private PayrollResult buildRerunPayrollResult(
-            PayrollRun payrollRun,
-            PayrollResult oldResult,
-            EmployeeSalary activeSalary,
-            MonthlySalaryCalculationResponse calculation,
-            String companySecretKey) {
-        PayrollResult payrollResult = new PayrollResult();
-        payrollResult.setPayrollRun(payrollRun);
-        payrollResult.setEmployeeSalary(activeSalary);
-        payrollResult.setExpectedAmount(activeSalary == null ? oldResult.getExpectedAmount() : activeSalary.getTotalAmount());
-        payrollResult.setActualAmount(CompanySecretKeyCryptoUtils.encrypt(
-                calculation.getFinalSalary().toPlainString(), companySecretKey));
-        payrollResult.setCurrency(activeSalary == null ? oldResult.getCurrency() : activeSalary.getCurrency());
-        payrollResult.setExpectedQuantity(oldResult.getExpectedQuantity());
-        payrollResult.setActualQuantity(calculation.getActualWorkingHourPerMonth() == null
-                ? oldResult.getActualQuantity()
-                : calculation.getActualWorkingHourPerMonth().intValue());
-        payrollResult.setUnit(oldResult.getUnit());
-        payrollResult.setSourceType(oldResult.getSourceType());
-        payrollResult.setIsRetro(Boolean.TRUE);
-        payrollResult.setRetroReason("Payroll re-run");
-        return payrollResult;
     }
 
     private List<PayrollResultDetail> buildPayrollResultDetails(
@@ -410,7 +335,8 @@ public class PayrollRunServiceImpl implements PayrollRunService {
         return details;
     }
 
-    private PayrollResultDetail buildSummaryDetail(PayrollResult payrollResult, MonthlySalaryCalculationResponse calculation) {
+    private PayrollResultDetail buildSummaryDetail(PayrollResult payrollResult,
+            MonthlySalaryCalculationResponse calculation) {
         PayrollResultDetail detail = new PayrollResultDetail();
         detail.setPayrollResult(payrollResult);
         detail.setCalcBasis(PayrollResultCalcBasis.HOURS);
@@ -450,57 +376,21 @@ public class PayrollRunServiceImpl implements PayrollRunService {
     }
 
 
-    private void softDeleteOldResult(PayrollResult oldResult) {
-        List<PayrollResultDetail> oldDetails = payrollResultDetailRepository
-                .findByPayrollResult_CodeAndIsDeletedFalse(oldResult.getCode());
-        oldDetails.forEach(detail -> {
-            detail.markDeleted();
-        });
-        if (!oldDetails.isEmpty()) {
-            payrollResultDetailRepository.saveAll(oldDetails);
-        }
-        oldResult.markDeleted();
-        payrollResultRepository.save(oldResult);
-    }
 
-    private void createSnapshot(
-            PayrollRun payrollRun,
-            PayrollResult oldResult,
-            String rerunBatchCode,
-            String employeeCode) {
-        PayrollResultSnapshot snapshot = new PayrollResultSnapshot();
-        snapshot.setPayrollRunCode(payrollRun.getCode());
-        snapshot.setPayrollResultCode(oldResult.getCode());
-        snapshot.setRerunBatchCode(rerunBatchCode);
-        snapshot.setEmployeeSalaryCode(oldResult.getEmployeeSalary() == null ? null : oldResult.getEmployeeSalary().getCode());
-        snapshot.setEmployeeCode(employeeCode);
-        snapshot.setExpectedAmount(oldResult.getExpectedAmount());
-        snapshot.setActualAmount(oldResult.getActualAmount());
-        snapshot.setExpectedQuantity(oldResult.getExpectedQuantity());
-        snapshot.setActualQuantity(oldResult.getActualQuantity());
-        snapshot.setCurrency(oldResult.getCurrency());
-        snapshot.setSourceType(oldResult.getSourceType());
-        snapshot.setResultJson(toResultJson(oldResult));
-        snapshot.setDetailJson(toDetailJson(oldResult));
-        snapshot.setSnapshotAt(LocalDateTime.now(ZoneOffset.UTC));
-        snapshot.setSnapshotBy(securityContextService.getCurrentUserCode());
-        payrollResultSnapshotRepository.save(snapshot);
-        payrollRunAuditLogService.writeAudit(
-                payrollRun,
-                new PayrollRunAuditLogRequest(rerunBatchCode,
-                        PayrollRunAuditActionType.OLD_RESULT_SNAPSHOT_CREATED, null, employeeCode, oldResult, null,
-                        PayrollRunAuditStatus.SUCCESS, null));
-    }
 
     private PayrollRerunEmployeeResultResponse buildEmployeeResponse(
             String employeeCode,
             PayrollResult oldResult,
             PayrollResult newResult,
             String companySecretKey) {
-        BigDecimal oldActualAmount = CompanySecretKeyCryptoUtils.decryptAmount(oldResult.getActualAmount(), companySecretKey);
-        BigDecimal newActualAmount = CompanySecretKeyCryptoUtils.decryptAmount(newResult.getActualAmount(), companySecretKey);
-        BigDecimal oldExpectedAmount = CompanySecretKeyCryptoUtils.decryptAmount(oldResult.getExpectedAmount(), companySecretKey);
-        BigDecimal newExpectedAmount = CompanySecretKeyCryptoUtils.decryptAmount(newResult.getExpectedAmount(), companySecretKey);
+        BigDecimal oldActualAmount = CompanySecretKeyCryptoUtils.decryptAmount(oldResult.getActualAmount(),
+                companySecretKey);
+        BigDecimal newActualAmount = CompanySecretKeyCryptoUtils.decryptAmount(newResult.getActualAmount(),
+                companySecretKey);
+        BigDecimal oldExpectedAmount = CompanySecretKeyCryptoUtils.decryptAmount(oldResult.getExpectedAmount(),
+                companySecretKey);
+        BigDecimal newExpectedAmount = CompanySecretKeyCryptoUtils.decryptAmount(newResult.getExpectedAmount(),
+                companySecretKey);
         return new PayrollRerunEmployeeResultResponse(
                 employeeCode,
                 "SUCCESS",
@@ -532,7 +422,8 @@ public class PayrollRunServiceImpl implements PayrollRunService {
             java.math.BigDecimal newActualAmount,
             String errorMessage,
             long executionTimeMs) {
-        log.info("payroll_rerun action={} requestId={} traceId={} payrollRunCode={} rerunBatchCode={} employeeCode={} oldActualAmount={} newActualAmount={} executionTimeMs={} status={} reason={} errorMessage={}",
+        log.info(
+                "payroll_rerun action={} requestId={} traceId={} payrollRunCode={} rerunBatchCode={} employeeCode={} oldActualAmount={} newActualAmount={} executionTimeMs={} status={} reason={} errorMessage={}",
                 action,
                 MDC.get("requestId"),
                 MDC.get("traceId"),
@@ -556,52 +447,6 @@ public class PayrollRunServiceImpl implements PayrollRunService {
     }
 
 
-    private String resolveCompanySecretKey(String companyCode) {
-        Company company = companyRepository.findByCode(companyCode)
-                .orElseThrow(() -> new ResourceNotFoundException(
-                        String.format(Messages.ERROR_COMPANY_NOT_FOUND_WITH_CODE, companyCode)));
-        if (company.getSecretKey() == null || company.getSecretKey().isBlank()) {
-            throw new BadRequestException(Messages.ERROR_EMPLOYEE_SALARY_COMPANY_SECRET_KEY_MISSING);
-        }
-        return company.getSecretKey();
-    }
-
-    private String toResultJson(PayrollResult payrollResult) {
-        return "{"
-                + "\"code\":\"" + escapeJson(payrollResult.getCode()) + "\","
-                + "\"expectedAmount\":\"" + escapeJson(payrollResult.getExpectedAmount()) + "\","
-                + "\"actualAmount\":\"" + escapeJson(payrollResult.getActualAmount()) + "\","
-                + "\"expectedQuantity\":" + payrollResult.getExpectedQuantity() + ","
-                + "\"actualQuantity\":" + payrollResult.getActualQuantity() + ","
-                + "\"currency\":\"" + escapeJson(payrollResult.getCurrency()) + "\","
-                + "\"sourceType\":\"" + payrollResult.getSourceType() + "\""
-                + "}";
-    }
-
-    private String toDetailJson(PayrollResult payrollResult) {
-        List<PayrollResultDetail> details = payrollResultDetailRepository
-                .findByPayrollResult_CodeAndIsDeletedFalse(payrollResult.getCode());
-        StringBuilder json = new StringBuilder("[");
-        for (int i = 0; i < details.size(); i++) {
-            PayrollResultDetail detail = details.get(i);
-            if (i > 0) {
-                json.append(",");
-            }
-            json.append("{")
-                    .append("\"code\":\"").append(escapeJson(detail.getCode())).append("\",")
-                    .append("\"calcBasis\":\"").append(detail.getCalcBasis()).append("\",")
-                    .append("\"basisHours\":").append(detail.getBasisHours()).append(",")
-                    .append("\"amount\":").append(detail.getAmount()).append(",")
-                    .append("\"formulaNote\":\"").append(escapeJson(detail.getFormulaNote())).append("\"")
-                    .append("}");
-        }
-        json.append("]");
-        return json.toString();
-    }
-
-    private String escapeJson(String value) {
-        return value == null ? "" : value.replace("\\", "\\\\").replace("\"", "\\\"");
-    }
 
     private YearMonth validateAndResolveRunMonth(YearMonth runDate) {
         if (runDate == null) {
@@ -641,5 +486,11 @@ public class PayrollRunServiceImpl implements PayrollRunService {
 
     private LocalDateTime resolveNullValueForRange(LocalDateTime from, LocalDateTime to) {
         return from == null && to != null ? MAX_FILTER_DATE : MIN_FILTER_DATE;
+    }
+
+    @Override
+    public void finalizePayrollRun(String payrollCode, boolean isSuccess) {
+        payrollRunRepository.updateStatusBySuccessFlag(payrollCode, securityContextService.getCurrentCompanyCode(),
+                isSuccess);
     }
 }

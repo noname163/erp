@@ -162,4 +162,5 @@ public final class Messages {
     // Payroll result
     public static final String ERROR_PAYROLL_RESULT_CODE_INVALID = "payrollResultCode is invalid";
     public static final String ERROR_PAYROLL_RESULT_NOT_FOUND = "Payroll result not found with code %s";
+    public static final String ERROR_PAYROLL_RESULT_NULL = "Payroll result can not bale to be null";
 }

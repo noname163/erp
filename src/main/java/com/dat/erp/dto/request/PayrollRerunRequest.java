@@ -3,6 +3,9 @@ package com.dat.erp.dto.request;
 import java.util.List;
 
 import com.dat.erp.constants.PayrollRerunMode;
+
+import io.micrometer.common.lang.NonNull;
+
 import com.dat.erp.constants.Messages;
 
 import jakarta.validation.constraints.NotBlank;
@@ -17,7 +20,8 @@ public class PayrollRerunRequest {
 
     private List<String> employeeCodes;
 
-    private PayrollRerunMode mode;
+    @NonNull
+    private PayrollRerunMode mode = PayrollRerunMode.FULL_RUN ;
 
-    private Boolean dryRun;
+    private boolean dryRun;
 }
