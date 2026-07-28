@@ -12,4 +12,6 @@ public interface PayrollResultDetailService {
             String operation,
             PayrollResult payrollResult,
             List<PayrollResultDetail> newDetails);
+
+    String toDetailJson(String payrollResultCode);
 }

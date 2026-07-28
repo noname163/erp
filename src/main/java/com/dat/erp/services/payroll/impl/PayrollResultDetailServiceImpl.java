@@ -3,6 +3,7 @@ package com.dat.erp.services.payroll.impl;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -14,8 +15,10 @@ import org.springframework.transaction.support.TransactionTemplate;
 
 import com.dat.erp.entities.PayrollResult;
 import com.dat.erp.entities.PayrollResultDetail;
+import com.dat.erp.exceptions.BadRequestException;
 import com.dat.erp.repositories.customrepositories.PayrollResultDetailRepository;
 import com.dat.erp.services.payroll.PayrollResultDetailService;
+import com.dat.erp.utils.CustomStringUtils;
 
 @Service
 public class PayrollResultDetailServiceImpl implements PayrollResultDetailService {
@@ -150,5 +153,31 @@ public class PayrollResultDetailServiceImpl implements PayrollResultDetailServic
                     ex);
             return false;
         }
+    }
+
+    @Override
+    public String toDetailJson(String payrollResultCode) {
+        if(StringUtils.isBlank(payrollResultCode)){
+            throw new BadRequestException("Result code null or blank is invalid");
+        }
+        List<PayrollResultDetail> details = payrollResultDetailRepository
+                .findByPayrollResult_CodeAndIsDeletedFalse(payrollResultCode);
+        StringBuilder json = new StringBuilder("[");
+        for (int i = 0; i < details.size(); i++) {
+            PayrollResultDetail detail = details.get(i);
+            if (i > 0) {
+                json.append(",");
+            }
+            json.append("{")
+                    .append("\"code\":\"").append(CustomStringUtils.escapeJson(detail.getCode())).append("\",")
+                    .append("\"calcBasis\":\"").append(detail.getCalcBasis()).append("\",")
+                    .append("\"basisHours\":").append(detail.getBasisHours()).append(",")
+                    .append("\"amount\":").append(detail.getAmount()).append(",")
+                    .append("\"formulaNote\":\"").append(CustomStringUtils.escapeJson(detail.getFormulaNote()))
+                    .append("\"")
+                    .append("}");
+        }
+        json.append("]");
+        return json.toString();
     }
 }
