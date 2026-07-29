@@ -8,6 +8,7 @@ import com.dat.erp.dto.request.EmployeeSalaryRequest;
 import com.dat.erp.dto.response.EmployeeSalaryListResponse;
 import com.dat.erp.dto.response.EmployeeSalaryResponse;
 import com.dat.erp.dto.response.PagedResponse;
+import com.dat.erp.entities.EmployeeSalary;
 import com.dat.erp.entities.PayrollResult;
 
 public interface EmployeeSalaryService {
@@ -19,4 +20,6 @@ public interface EmployeeSalaryService {
 
     void employeeSalaryCalculation(String companyCode, List<String> employeeCodes, List<PayrollResult> payrollResults,
             LocalDate runDate);
+
+    EmployeeSalary getActiveByEmployeeCodeAndDate(String employeeCode, LocalDate runDate);
 }

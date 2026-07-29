@@ -14,6 +14,7 @@ import com.dat.erp.entities.PayrollResult;
 import com.dat.erp.entities.PayrollRun;
 
 import java.util.List;
+import java.util.Map;
 
 public interface PayrollResultService {
     PagedResponse<PayrollResultListResponse> getPayrollResults(
@@ -45,4 +46,5 @@ public interface PayrollResultService {
 
     PayrollResult saveRerunPayRollResult(PayrollResult payrollResult);
     void softDeleteOldResult(String payrollRunCode);
+    Map<String, PayrollResult> mapResultsByEmployeeCodeByPayRollResultCodes(List<String> payrollResultCodes);
 }

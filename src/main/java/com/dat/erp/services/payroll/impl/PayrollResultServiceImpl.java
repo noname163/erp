@@ -47,6 +47,7 @@ import com.dat.erp.repositories.customrepositories.DailyWorkRepository;
 import com.dat.erp.repositories.customrepositories.EmployeeSalaryRepository;
 import com.dat.erp.repositories.customrepositories.PayrollResultDetailRepository;
 import com.dat.erp.repositories.customrepositories.PayrollResultRepository;
+import com.dat.erp.repositories.projections.PayrollResultEmployeeCodeProjection;
 import com.dat.erp.repositories.projections.PayrollResultListProjection;
 import com.dat.erp.services.CalendarDateService;
 import com.dat.erp.services.EmployeePayrollPolicyService;
@@ -505,6 +506,33 @@ public class PayrollResultServiceImpl implements PayrollResultService {
         }
         oldResult.markDeleted();
         payrollResultRepository.save(oldResult);
+    }
+
+    @Override
+    public Map<String, PayrollResult> mapResultsByEmployeeCodeByPayRollResultCodes(List<String> payrollResultCodes) {
+        Map<String, PayrollResult> resultsByEmployee = new LinkedHashMap<>();
+        List<String> normalizedPayrollResultCodes = payrollResultCodes == null
+                ? List.of()
+                : payrollResultCodes.stream()
+                        .map(CustomStringUtils::normalizeCode)
+                        .filter(Objects::nonNull)
+                        .distinct()
+                        .toList();
+        if (normalizedPayrollResultCodes.isEmpty()) {
+            return resultsByEmployee;
+        }
+
+        List<PayrollResultEmployeeCodeProjection> projections = payrollResultRepository
+                .findEmployeeCodesByPayrollResultCodes(
+                        securityContextService.getCurrentCompanyCode(),
+                        normalizedPayrollResultCodes);
+        for (PayrollResultEmployeeCodeProjection projection : projections) {
+            String employeeCode = CustomStringUtils.normalizeCode(projection.employeeCode());
+            if (employeeCode != null) {
+                resultsByEmployee.putIfAbsent(employeeCode, projection.payrollResult());
+            }
+        }
+        return resultsByEmployee;
     }
 
 }

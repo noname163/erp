@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.PageImpl;
@@ -52,7 +53,10 @@ import com.dat.erp.services.payroll.PayrollResultDetailService;
 import com.dat.erp.utils.CompanySecretKeyCryptoUtils;
 import com.dat.erp.utils.CustomStringUtils;
 
+import lombok.AllArgsConstructor;
+
 @Service
+@AllArgsConstructor
 public class EmployeeSalaryServiceImpl implements EmployeeSalaryService {
 
     private final SecurityContextService securityContextService;
@@ -68,29 +72,6 @@ public class EmployeeSalaryServiceImpl implements EmployeeSalaryService {
     private final PayrollResultRepository payrollResultRepository;
     private final PayrollRunRepository payrollRunRepository;
     private final PayrollResultDetailService payrollResultDetailService;
-
-    public EmployeeSalaryServiceImpl(EmployeeSalaryRepository employeeSalaryRepository,
-            CompanyRepository companyRepository,
-            UserProfileRepository userProfileRepository,
-            EmployeeSalaryMapper employeeSalaryMapper,
-            CodeGenerator codeGenerator,
-            SecurityContextService securityContextService,
-            EmployeeSalaryDetailService employeeSalaryDetailService,
-            MonthlySalaryCalculationService monthlySalaryCalculationService,
-            PayrollResultRepository payrollResultRepository,
-            PayrollRunRepository payrollRunRepository,
-            PayrollResultDetailService payrollResultDetailService) {
-        this.securityContextService = securityContextService;
-        this.employeeSalaryRepository = employeeSalaryRepository;
-        this.companyRepository = companyRepository;
-        this.userProfileRepository = userProfileRepository;
-        this.employeeSalaryMapper = employeeSalaryMapper;
-        this.employeeSalaryDetailService = employeeSalaryDetailService;
-        this.monthlySalaryCalculationService = monthlySalaryCalculationService;
-        this.payrollResultRepository = payrollResultRepository;
-        this.payrollRunRepository = payrollRunRepository;
-        this.payrollResultDetailService = payrollResultDetailService;
-    }
 
     @Override
     @Transactional
@@ -113,7 +94,7 @@ public class EmployeeSalaryServiceImpl implements EmployeeSalaryService {
 
         String companyCode = securityContextService.getCurrentCompanyCode();
 
-        String companySecretKey = resolveCompanySecretKey(companyCode);
+        String companySecretKey = securityContextService.getCurrentCompanySecretKey();
 
         UserProfile userProfile = userProfileRepository.findByCode(userProfileCode)
                 .orElseThrow(() -> new ResourceNotFoundException(Messages.ERROR_EMPLOYEE_SALARY_EMPLOYEE_NOT_FOUND));
@@ -164,7 +145,7 @@ public class EmployeeSalaryServiceImpl implements EmployeeSalaryService {
         }
 
         String companyCode = securityContextService.getCurrentCompanyCode();
-        String companySecretKey = resolveCompanySecretKey(companyCode);
+        String companySecretKey = securityContextService.getCurrentCompanySecretKey();
 
         List<EmployeeSalary> employeeSalaries = employeeSalaryRepository.searchByConditions(companyCode, employeeName,
                 effectiveFrom, effectiveTo);
@@ -261,7 +242,8 @@ public class EmployeeSalaryServiceImpl implements EmployeeSalaryService {
     @Override
     @Async("payrollCalculationTaskExecutor")
     @Transactional
-    public void employeeSalaryCalculation(String companyCode, List<String> employeeCodes, List<PayrollResult> payrollResults,
+    public void employeeSalaryCalculation(String companyCode, List<String> employeeCodes,
+            List<PayrollResult> payrollResults,
             LocalDate runDate) {
         if (runDate == null) {
             log.warn("PAYROLL_CALC action=START_REJECTED result=FAILED reason=RUN_DATE_MISSING companyCode={}",
@@ -270,7 +252,8 @@ public class EmployeeSalaryServiceImpl implements EmployeeSalaryService {
         }
         YearMonth runMonth = YearMonth.from(runDate);
         String payrollRunCode = resolvePayrollRunCode(payrollResults);
-        log.info("PAYROLL_CALC action=STARTED companyCode={} payrollRunCode={} period={} employeeCount={} resultCount={}",
+        log.info(
+                "PAYROLL_CALC action=STARTED companyCode={} payrollRunCode={} period={} employeeCount={} resultCount={}",
                 companyCode,
                 payrollRunCode,
                 runMonth,
@@ -278,7 +261,8 @@ public class EmployeeSalaryServiceImpl implements EmployeeSalaryService {
                 payrollResults == null ? 0 : payrollResults.size());
 
         if (employeeCodes == null || employeeCodes.isEmpty() || payrollResults == null || payrollResults.isEmpty()) {
-            log.warn("PAYROLL_CALC action=FINISHED result=FAILED reason=EMPTY_INPUT companyCode={} payrollRunCode={} period={} employeeCount={} resultCount={}",
+            log.warn(
+                    "PAYROLL_CALC action=FINISHED result=FAILED reason=EMPTY_INPUT companyCode={} payrollRunCode={} period={} employeeCount={} resultCount={}",
                     companyCode,
                     payrollRunCode,
                     runMonth,
@@ -288,13 +272,14 @@ public class EmployeeSalaryServiceImpl implements EmployeeSalaryService {
             return;
         }
         if (companyCode == null || companyCode.isBlank() || "SYSTEM".equals(companyCode)) {
-            log.warn("PAYROLL_CALC action=START_REJECTED result=FAILED reason=INVALID_COMPANY companyCode={} payrollRunCode={} period={}",
+            log.warn(
+                    "PAYROLL_CALC action=START_REJECTED result=FAILED reason=INVALID_COMPANY companyCode={} payrollRunCode={} period={}",
                     companyCode, payrollRunCode, runMonth);
             throw new BadRequestException(Messages.ERROR_CURRENT_USER_COMPANY_MISSING);
         }
 
         Map<String, PayrollResult> payrollResultsByEmployeeCode = new LinkedHashMap<>();
-        String companySecretKey = resolveCompanySecretKey(companyCode);
+        String companySecretKey = securityContextService.getCurrentCompanySecretKey();
         for (PayrollResult payrollResult : payrollResults) {
             if (payrollResult == null || payrollResult.getEmployeeSalary() == null
                     || payrollResult.getEmployeeSalary().getUserProfile() == null) {
@@ -321,7 +306,8 @@ public class EmployeeSalaryServiceImpl implements EmployeeSalaryService {
             PayrollResult payrollResult = payrollResultsByEmployeeCode.get(employeeCode);
             if (payrollResult == null) {
                 skippedCount++;
-                log.warn("PAYROLL_CALC action=EMPLOYEE_SKIPPED result=FAILED reason=PAYROLL_RESULT_MISSING companyCode={} payrollRunCode={} period={} employeeCode={}",
+                log.warn(
+                        "PAYROLL_CALC action=EMPLOYEE_SKIPPED result=FAILED reason=PAYROLL_RESULT_MISSING companyCode={} payrollRunCode={} period={} employeeCode={}",
                         companyCode, payrollRunCode, runMonth, employeeCode);
                 continue;
             }
@@ -338,7 +324,8 @@ public class EmployeeSalaryServiceImpl implements EmployeeSalaryService {
                 updatedPayrollResults.add(payrollResult);
                 calculationsByPayrollResult.put(payrollResult, calculation);
                 successCount++;
-                log.info("PAYROLL_CALC action=EMPLOYEE_CALCULATED result=SUCCESS companyCode={} payrollRunCode={} period={} employeeCode={} payrollResultCode={} actualHours={} detailCount={}",
+                log.info(
+                        "PAYROLL_CALC action=EMPLOYEE_CALCULATED result=SUCCESS companyCode={} payrollRunCode={} period={} employeeCode={} payrollResultCode={} actualHours={} detailCount={}",
                         companyCode,
                         payrollRunCode,
                         runMonth,
@@ -348,7 +335,8 @@ public class EmployeeSalaryServiceImpl implements EmployeeSalaryService {
                         calculation.getAuditTrail() == null ? 1 : calculation.getAuditTrail().size() + 1);
             } catch (Exception ex) {
                 failureCount++;
-                log.warn("PAYROLL_CALC action=EMPLOYEE_CALCULATED result=FAILED companyCode={} payrollRunCode={} period={} employeeCode={} payrollResultCode={} error={}",
+                log.warn(
+                        "PAYROLL_CALC action=EMPLOYEE_CALCULATED result=FAILED companyCode={} payrollRunCode={} period={} employeeCode={} payrollResultCode={} error={}",
                         companyCode,
                         payrollRunCode,
                         runMonth,
@@ -367,13 +355,15 @@ public class EmployeeSalaryServiceImpl implements EmployeeSalaryService {
                     replacePayrollResultDetails(savedPayrollResult, calculation);
                 }
             }
-            log.info("PAYROLL_CALC action=RESULTS_SAVED result=SUCCESS companyCode={} payrollRunCode={} period={} savedCount={}",
+            log.info(
+                    "PAYROLL_CALC action=RESULTS_SAVED result=SUCCESS companyCode={} payrollRunCode={} period={} savedCount={}",
                     companyCode, payrollRunCode, runMonth, savedPayrollResults.size());
         }
         if (failureCount > 0) {
             updatePayrollRunStatus(payrollResults, PayrollRunStatus.FAILED, "EMPLOYEE_CALCULATION_FAILED");
         }
-        log.info("PAYROLL_CALC action=FINISHED result={} companyCode={} payrollRunCode={} period={} successCount={} failureCount={} skippedCount={} savedCount={}",
+        log.info(
+                "PAYROLL_CALC action=FINISHED result={} companyCode={} payrollRunCode={} period={} successCount={} failureCount={} skippedCount={} savedCount={}",
                 failureCount == 0 ? "SUCCESS" : "FAILED",
                 companyCode,
                 payrollRunCode,
@@ -390,7 +380,8 @@ public class EmployeeSalaryServiceImpl implements EmployeeSalaryService {
             String reason) {
         PayrollRun payrollRun = resolvePayrollRun(payrollResults);
         if (payrollRun == null || payrollRun.getCode() == null || payrollRun.getCode().isBlank()) {
-            log.warn("PAYROLL_CALC action=RUN_STATUS_UPDATE_SKIPPED reason=PAYROLL_RUN_MISSING status={} failureReason={}",
+            log.warn(
+                    "PAYROLL_CALC action=RUN_STATUS_UPDATE_SKIPPED reason=PAYROLL_RUN_MISSING status={} failureReason={}",
                     status, reason);
             return;
         }
@@ -416,14 +407,17 @@ public class EmployeeSalaryServiceImpl implements EmployeeSalaryService {
         return payrollRun.getCode();
     }
 
-    private void replacePayrollResultDetails(PayrollResult payrollResult, MonthlySalaryCalculationResponse calculation) {
+    private void replacePayrollResultDetails(PayrollResult payrollResult,
+            MonthlySalaryCalculationResponse calculation) {
         List<PayrollResultDetail> details = new ArrayList<>();
         details.add(buildSummaryDetail(payrollResult, calculation));
         if (calculation.getPaidLeaveHours() != null && calculation.getPaidLeaveHours().compareTo(BigDecimal.ZERO) > 0) {
-            details.add(buildLeaveDetail(payrollResult, PayrollResultCalcBasis.PAID_LEAVE, calculation.getPaidLeaveHours(),
+            details.add(buildLeaveDetail(payrollResult, PayrollResultCalcBasis.PAID_LEAVE,
+                    calculation.getPaidLeaveHours(),
                     calculation.getStandardMoneyPerHour(), BigDecimal.ZERO, "Paid leave counted as paid working time"));
         }
-        if (calculation.getUnpaidLeaveHours() != null && calculation.getUnpaidLeaveHours().compareTo(BigDecimal.ZERO) > 0) {
+        if (calculation.getUnpaidLeaveHours() != null
+                && calculation.getUnpaidLeaveHours().compareTo(BigDecimal.ZERO) > 0) {
             details.add(buildLeaveDetail(payrollResult, PayrollResultCalcBasis.UNPAID_LEAVE,
                     calculation.getUnpaidLeaveHours(), calculation.getStandardMoneyPerHour(),
                     calculation.getUnpaidLeaveHours().multiply(calculation.getStandardMoneyPerHour()).negate(),
@@ -443,7 +437,8 @@ public class EmployeeSalaryServiceImpl implements EmployeeSalaryService {
                 "EMPLOYEE_SALARY_CALCULATION", payrollResult, details);
     }
 
-    private PayrollResultDetail buildSummaryDetail(PayrollResult payrollResult, MonthlySalaryCalculationResponse calculation) {
+    private PayrollResultDetail buildSummaryDetail(PayrollResult payrollResult,
+            MonthlySalaryCalculationResponse calculation) {
         PayrollResultDetail detail = new PayrollResultDetail();
         detail.setPayrollResult(payrollResult);
         detail.setCalcBasis(PayrollResultCalcBasis.HOURS);
@@ -492,19 +487,20 @@ public class EmployeeSalaryServiceImpl implements EmployeeSalaryService {
         return PayrollResultCalcBasis.HOURS;
     }
 
-    private String payrollResultCompanyCode(PayrollResultDetail detail) {
-        return detail.getPayrollResult() == null ? null : detail.getPayrollResult().getCompanyCode();
-    }
 
-    private String resolveCompanySecretKey(String companyCode) {
-        Company company = companyRepository.findByCode(companyCode)
-                .orElseThrow(() -> new ResourceNotFoundException(
-                        String.format(Messages.ERROR_COMPANY_NOT_FOUND_WITH_CODE, companyCode)));
-
-        String companySecretKey = company.getSecretKey();
-        if (companySecretKey == null || companySecretKey.isBlank()) {
-            throw new BadRequestException(Messages.ERROR_EMPLOYEE_SALARY_COMPANY_SECRET_KEY_MISSING);
+    @Override
+    public EmployeeSalary getActiveByEmployeeCodeAndDate(String employeeCode, LocalDate runDate) {
+        if(StringUtils.isBlank(employeeCode)){
+            throw new BadRequestException(Messages.EMPLOYEE_CODE_CANNOT_BLANK);
         }
-        return companySecretKey;
+        if(null == runDate){
+            throw new BadRequestException(Messages.ERROR_DATA_INVALID);
+        }
+        String companyCode = securityContextService.getCurrentCompanyCode();
+        return employeeSalaryRepository
+                .findFirstActiveByEmployeeCodeAndCompanyCodeAndDate(
+                        employeeCode, companyCode, runDate)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        Messages.ERROR_EMPLOYEE_SALARY_NOT_FOUND_WITH_CODE + employeeCode));
     }
 }

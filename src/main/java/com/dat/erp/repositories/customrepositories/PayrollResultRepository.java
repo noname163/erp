@@ -13,6 +13,7 @@ import org.springframework.stereotype.Repository;
 
 import com.dat.erp.constants.PayrollStatus;
 import com.dat.erp.entities.PayrollResult;
+import com.dat.erp.repositories.projections.PayrollResultEmployeeCodeProjection;
 import com.dat.erp.repositories.projections.PayrollResultListProjection;
 
 @Repository
@@ -91,4 +92,22 @@ public interface PayrollResultRepository extends JpaRepository<PayrollResult, Lo
     List<PayrollResult> findActiveByRunAndCompany(
             @Param("payrollRunCode") String payrollRunCode,
             @Param("companyCode") String companyCode);
+
+    @Query("""
+            select new com.dat.erp.repositories.projections.PayrollResultEmployeeCodeProjection(
+                pr,
+                pr.code,
+                up.code
+            )
+            from PayrollResult pr
+            join pr.employeeSalary es
+            join es.userProfile up
+            where pr.companyCode = :companyCode
+              and pr.isDeleted = false
+              and up.isDeleted = false
+              and pr.code in :payrollResultCodes
+            """)
+    List<PayrollResultEmployeeCodeProjection> findEmployeeCodesByPayrollResultCodes(
+            @Param("companyCode") String companyCode,
+            @Param("payrollResultCodes") List<String> payrollResultCodes);
 }
