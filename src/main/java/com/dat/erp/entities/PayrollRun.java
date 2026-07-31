@@ -20,6 +20,7 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -29,7 +30,9 @@ import lombok.ToString;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @ToString(exclude = { "results" })
 @Entity
-@Table(name = "payroll_run")
+@Table(name = "payroll_run", uniqueConstraints = {
+        @UniqueConstraint(name = "uk_payroll_run_code_company_code", columnNames = { "code", "company_code" })
+})
 public class PayrollRun extends BaseAuditableEntity {
 
     @Convert(converter = YearMonthConverter.class)
@@ -88,7 +91,6 @@ public class PayrollRun extends BaseAuditableEntity {
         Objects.requireNonNull(result);
 
         results.add(result);
-        result.assignPayrollRun(this);
     }
 
     public void completeRerun(
@@ -103,5 +105,12 @@ public class PayrollRun extends BaseAuditableEntity {
         this.status = failureCount > 0
                 ? PayrollRunStatus.FAILED
                 : PayrollRunStatus.CALCULATED;
+    }
+
+    public void markFailed(){
+        this.status = PayrollRunStatus.FAILED;
+    }
+    public void markCaculated(){
+        this.status = PayrollRunStatus.CALCULATED;
     }
 }

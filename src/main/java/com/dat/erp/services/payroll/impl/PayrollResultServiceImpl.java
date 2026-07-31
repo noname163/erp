@@ -31,6 +31,9 @@ import com.dat.erp.dto.response.PayrollResultDetailResponse;
 import com.dat.erp.dto.response.PayrollResultListResponse;
 import com.dat.erp.dto.response.salary.DailyWorkForSalaryResponse;
 import com.dat.erp.dto.response.salary.MonthlySalaryCalculationResponse;
+import com.dat.erp.data.MeasuredQuantityData;
+import com.dat.erp.data.MonetaryAmountData;
+import com.dat.erp.data.PayrollTraceData;
 import com.dat.erp.entities.Company;
 import com.dat.erp.entities.DailyWork;
 import com.dat.erp.entities.EmployeeSalary;
@@ -156,6 +159,7 @@ public class PayrollResultServiceImpl implements PayrollResultService {
     @Transactional
     public void generatePayrollResult(PayrollRun payrollRun) {
         String companyCode = securityContextService.getCurrentCompanyCode();
+        String companySecretKey = resolveCompanySecretKey(companyCode);
 
         YearMonth runMonth = payrollRun.getPeriod();
         LocalDate runDate = runMonth.atEndOfMonth();
@@ -218,7 +222,8 @@ public class PayrollResultServiceImpl implements PayrollResultService {
                     employeeSalary,
                     payrollPolicy,
                     totalWorkingDays,
-                    leaveQuantitiesByEmployeeCode.getOrDefault(employeeCode, 0)));
+                    leaveQuantitiesByEmployeeCode.getOrDefault(employeeCode, 0),
+                    companySecretKey));
         }
         boolean finalStatus = false;
         if (!payrollResults.isEmpty()) {
@@ -372,22 +377,28 @@ public class PayrollResultServiceImpl implements PayrollResultService {
             EmployeeSalary employeeSalary,
             PayrollPolicy payrollPolicy,
             int totalWorkingDays,
-            int leaveQuantity) {
+            int leaveQuantity,
+            String companySecretKey) {
         int standardQuantityPerDay = payrollPolicy.getStandardQuantityPerDay() == null
                 ? 0
                 : payrollPolicy.getStandardQuantityPerDay();
         int expectedQuantity = standardQuantityPerDay * totalWorkingDays;
-        PayrollResult payrollResult = PayrollResult.builder()
-                .payrollRun(payrollRun)
-                .employeeSalary(employeeSalary)
-                .expectedAmount(employeeSalary.getTotalAmount())
-                .currency(employeeSalary.getCurrency())
-                .expectedQuantity(expectedQuantity)
-                .unit(payrollPolicy.getUnit())
-                .sourceType(PayrollStatus.RUNNING)
-                .isRetro(false)
-                .retroReason(null)
-                .build();
+        PayrollResult payrollResult = PayrollResult.create(
+                payrollRun,
+                employeeSalary,
+                MonetaryAmountData.builder()
+                        .expectedAmount(employeeSalary.getTotalAmount())
+                        .actualAmount(CompanySecretKeyCryptoUtils.encrypt("0", companySecretKey))
+                        .currency(employeeSalary.getCurrency())
+                        .build(),
+                MeasuredQuantityData.builder()
+                        .expectedQuantity(expectedQuantity)
+                        .actualQuantity(0)
+                        .systemUnit(payrollPolicy.getUnit())
+                        .build(),
+                PayrollTraceData.builder()
+                        .sourceType(PayrollStatus.RUNNING)
+                        .build());
         return payrollResult;
     }
 
@@ -463,22 +474,32 @@ public class PayrollResultServiceImpl implements PayrollResultService {
     @Override
     public PayrollResult buildRerunPayrollResult(PayrollRun payrollRun, PayrollResult oldResult,
             EmployeeSalary activeSalary, MonthlySalaryCalculationResponse calculation, String companySecretKey) {
-        PayrollResult payrollResult = new PayrollResult();
-        payrollResult.setPayrollRun(payrollRun);
-        payrollResult.setEmployeeSalary(activeSalary);
-        payrollResult.setExpectedAmount(
-                activeSalary == null ? oldResult.getExpectedAmount() : activeSalary.getTotalAmount());
-        payrollResult.setActualAmount(CompanySecretKeyCryptoUtils.encrypt(
-                calculation.getFinalSalary().toPlainString(), companySecretKey));
-        payrollResult.setCurrency(activeSalary == null ? oldResult.getCurrency() : activeSalary.getCurrency());
-        payrollResult.setExpectedQuantity(oldResult.getExpectedQuantity());
-        payrollResult.setActualQuantity(calculation.getActualWorkingHourPerMonth() == null
+        EmployeeSalary payrollEmployeeSalary = activeSalary == null ? oldResult.getEmployeeSalary() : activeSalary;
+        String expectedAmount = activeSalary == null ? oldResult.getExpectedAmount() : activeSalary.getTotalAmount();
+        String currency = activeSalary == null ? oldResult.getCurrency() : activeSalary.getCurrency();
+        Integer actualQuantity = calculation.getActualWorkingHourPerMonth() == null
                 ? oldResult.getActualQuantity()
-                : calculation.getActualWorkingHourPerMonth().intValue());
-        payrollResult.setUnit(oldResult.getUnit());
-        payrollResult.setSourceType(oldResult.getSourceType());
-        payrollResult.setIsRetro(Boolean.TRUE);
-        payrollResult.setRetroReason("Payroll re-run");
+                : calculation.getActualWorkingHourPerMonth().intValue();
+
+        PayrollResult payrollResult = PayrollResult.create(
+                payrollRun,
+                payrollEmployeeSalary,
+                MonetaryAmountData.builder()
+                        .expectedAmount(expectedAmount)
+                        .actualAmount(CompanySecretKeyCryptoUtils.encrypt(
+                                calculation.getFinalSalary().toPlainString(), companySecretKey))
+                        .currency(currency)
+                        .build(),
+                MeasuredQuantityData.builder()
+                        .expectedQuantity(oldResult.getExpectedQuantity())
+                        .actualQuantity(actualQuantity)
+                        .systemUnit(oldResult.getUnit())
+                        .build(),
+                PayrollTraceData.builder()
+                        .sourceType(oldResult.getSourceType())
+                        .build());
+        payrollResult.assignRetro();
+        payrollResult.assignRetroReason("Payroll re-run");
         payrollResultRepository.saveAndFlush(payrollResult);
         return payrollResult;
     }

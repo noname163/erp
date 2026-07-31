@@ -3,6 +3,7 @@ package com.dat.erp.entities;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
@@ -17,7 +18,9 @@ import lombok.Setter;
 @Builder
 @EqualsAndHashCode(onlyExplicitlyIncluded = true, callSuper = true)
 @Entity
-@Table(name = "role")
+@Table(name = "role", uniqueConstraints = {
+        @UniqueConstraint(name = "uk_role_code_company_code", columnNames = { "code", "company_code" })
+})
 public class Role extends BaseAuditableEntity {
     @Column(unique = true, nullable = false)
     private String name;

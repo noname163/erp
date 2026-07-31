@@ -11,6 +11,7 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
@@ -30,7 +31,9 @@ import lombok.ToString;
         "employeePayrollPolicies"
 })
 @Entity
-@Table(name = "user_profile")
+@Table(name = "user_profile", uniqueConstraints = {
+        @UniqueConstraint(name = "uk_user_profile_code_company_code", columnNames = { "code", "company_code" })
+})
 public class UserProfile extends BaseAuditableEntity {
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "account_code", referencedColumnName = "code")

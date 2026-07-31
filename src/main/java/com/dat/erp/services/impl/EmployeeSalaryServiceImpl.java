@@ -18,7 +18,6 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.dat.erp.constants.CodePrefixes;
 import com.dat.erp.constants.DayType;
 import com.dat.erp.constants.Messages;
 import com.dat.erp.constants.PayrollResultCalcBasis;
@@ -27,9 +26,8 @@ import com.dat.erp.dto.request.EmployeeSalaryRequest;
 import com.dat.erp.dto.response.EmployeeSalaryListResponse;
 import com.dat.erp.dto.response.EmployeeSalaryResponse;
 import com.dat.erp.dto.response.PagedResponse;
-import com.dat.erp.dto.response.salary.MonthlySalaryDetailAuditResponse;
 import com.dat.erp.dto.response.salary.MonthlySalaryCalculationResponse;
-import com.dat.erp.entities.Company;
+import com.dat.erp.dto.response.salary.MonthlySalaryDetailAuditResponse;
 import com.dat.erp.entities.EmployeeSalary;
 import com.dat.erp.entities.PayrollResult;
 import com.dat.erp.entities.PayrollResultDetail;
@@ -39,12 +37,10 @@ import com.dat.erp.exceptions.BadRequestException;
 import com.dat.erp.exceptions.ConflictException;
 import com.dat.erp.exceptions.ResourceNotFoundException;
 import com.dat.erp.mapper.interfaces.EmployeeSalaryMapper;
-import com.dat.erp.repositories.customrepositories.CompanyRepository;
 import com.dat.erp.repositories.customrepositories.EmployeeSalaryRepository;
 import com.dat.erp.repositories.customrepositories.PayrollResultRepository;
 import com.dat.erp.repositories.customrepositories.PayrollRunRepository;
 import com.dat.erp.repositories.customrepositories.UserProfileRepository;
-import com.dat.erp.services.CodeGenerator;
 import com.dat.erp.services.EmployeeSalaryDetailService;
 import com.dat.erp.services.EmployeeSalaryService;
 import com.dat.erp.services.MonthlySalaryCalculationService;
@@ -64,7 +60,6 @@ public class EmployeeSalaryServiceImpl implements EmployeeSalaryService {
     private static final Logger log = LoggerFactory.getLogger(EmployeeSalaryServiceImpl.class);
 
     private final EmployeeSalaryRepository employeeSalaryRepository;
-    private final CompanyRepository companyRepository;
     private final UserProfileRepository userProfileRepository;
     private final EmployeeSalaryMapper employeeSalaryMapper;
     private final EmployeeSalaryDetailService employeeSalaryDetailService;
@@ -316,11 +311,12 @@ public class EmployeeSalaryServiceImpl implements EmployeeSalaryService {
                 MonthlySalaryCalculationResponse calculation = monthlySalaryCalculationService
                         .calculateEmployeeMonthlySalary(employeeCode, runMonth);
 
-                payrollResult.setActualAmount(CompanySecretKeyCryptoUtils.encrypt(
-                        calculation.getFinalSalary().toPlainString(), companySecretKey));
-                if (calculation.getActualWorkingHourPerMonth() != null) {
-                    payrollResult.setActualQuantity(calculation.getActualWorkingHourPerMonth().intValue());
-                }
+                payrollResult.updateActualResult(
+                        CompanySecretKeyCryptoUtils.encrypt(
+                                calculation.getFinalSalary().toPlainString(), companySecretKey),
+                        calculation.getActualWorkingHourPerMonth() == null
+                                ? payrollResult.getActualQuantity()
+                                : calculation.getActualWorkingHourPerMonth().intValue());
                 updatedPayrollResults.add(payrollResult);
                 calculationsByPayrollResult.put(payrollResult, calculation);
                 successCount++;
@@ -385,7 +381,7 @@ public class EmployeeSalaryServiceImpl implements EmployeeSalaryService {
                     status, reason);
             return;
         }
-        payrollRun.setStatus(status);
+        payrollRun.markFailed();;
         payrollRunRepository.save(payrollRun);
         log.warn("PAYROLL_CALC action=RUN_STATUS_UPDATED result=FAILED payrollRunCode={} status={} reason={}",
                 payrollRun.getCode(), status, reason);

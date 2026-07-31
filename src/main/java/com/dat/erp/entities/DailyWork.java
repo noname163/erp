@@ -7,6 +7,11 @@ import java.time.LocalDateTime;
 import com.dat.erp.constants.ApprovalStatus;
 import com.dat.erp.constants.DailyWorkUnit;
 import com.dat.erp.constants.DayType;
+import com.dat.erp.data.ApprovalStateData;
+import com.dat.erp.data.DayClassificationData;
+import com.dat.erp.data.EmployeeOwnedRecordData;
+import com.dat.erp.data.MeasuredQuantityData;
+import com.dat.erp.utils.ErrorUtils;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -84,4 +89,43 @@ public class DailyWork extends BaseAuditableEntity {
     @Enumerated(EnumType.STRING)
     @Column(name = "day_type")
     private DayType dayType;
+
+    public DailyWork(
+            EmployeeOwnedRecordData employeeOwner,
+            MeasuredQuantityData measuredQuantity,
+            DayClassificationData dayClassification,
+            ApprovalStateData approvalState,
+            LocalDate workingDate) {
+
+        employeeOwner = ErrorUtils.requireNonNull(employeeOwner, "Daily work owner data is required");
+        measuredQuantity = ErrorUtils.requireNonNull(measuredQuantity, "Daily work quantity data is required");
+        dayClassification = ErrorUtils.requireNonNull(dayClassification, "Daily work day classification is required");
+        approvalState = ErrorUtils.requireNonNull(approvalState, "Daily work approval state is required");
+
+        this.userProfile = ErrorUtils.requireNonNull(
+                employeeOwner.getUserProfile(),
+                "Daily work user profile is required");
+        this.quantity = ErrorUtils.requireNonNegative(
+                measuredQuantity.getQuantity(),
+                "Daily work quantity is required",
+                "Daily work quantity must not be negative");
+        this.workingDate = ErrorUtils.requireNonNull(
+                workingDate,
+                "Daily work date is required");
+        this.workType = dayClassification.getWorkType();
+        this.dayType = dayClassification.getDayType();
+        this.approvalStatus = ErrorUtils.requireNonNull(
+                approvalState.getApprovalStatus(),
+                "Daily work approval status is required");
+    }
+
+    public static DailyWork create(
+            EmployeeOwnedRecordData employeeOwner,
+            MeasuredQuantityData measuredQuantity,
+            DayClassificationData dayClassification,
+            ApprovalStateData approvalState,
+            LocalDate workingDate) {
+
+        return new DailyWork(employeeOwner, measuredQuantity, dayClassification, approvalState, workingDate);
+    }
 }

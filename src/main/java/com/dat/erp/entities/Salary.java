@@ -5,6 +5,7 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
@@ -21,7 +22,9 @@ import com.dat.erp.constants.SalaryCalculateMethod;
 @Builder
 @EqualsAndHashCode(onlyExplicitlyIncluded = true, callSuper = true)
 @Entity
-@Table(name = "salary")
+@Table(name = "salary", uniqueConstraints = {
+        @UniqueConstraint(name = "uk_salary_code_company_code", columnNames = { "code", "company_code" })
+})
 public class Salary extends BaseAuditableEntity {
     @Column(name = "name")
     private String name;

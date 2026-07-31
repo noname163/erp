@@ -5,6 +5,10 @@ import java.time.LocalDateTime;
 
 import com.dat.erp.constants.PayrollRunAuditActionType;
 import com.dat.erp.constants.PayrollRunAuditStatus;
+import com.dat.erp.data.EmployeeOwnedRecordData;
+import com.dat.erp.data.OperationalTextData;
+import com.dat.erp.data.PayrollTraceData;
+import com.dat.erp.utils.ErrorUtils;
 import com.dat.erp.utils.UuidV7;
 
 import jakarta.persistence.Column;
@@ -100,5 +104,77 @@ public class PayrollRunAuditLog extends BaseAuditableEntity {
 
     public void assignRequestedPersonCode(String code){
         this.requestedBy = code;
+    }
+
+    public PayrollRunAuditLog(
+            PayrollTraceData payrollTrace,
+            EmployeeOwnedRecordData employeeOwner,
+            OperationalTextData operationalText,
+            PayrollRunAuditActionType actionType,
+            String oldPayrollResultCode,
+            String newPayrollResultCode,
+            BigDecimal oldActualAmount,
+            BigDecimal newActualAmount,
+            BigDecimal oldExpectedAmount,
+            BigDecimal newExpectedAmount,
+            String requestId,
+            String traceId,
+            LocalDateTime eventCreatedAt) {
+
+        payrollTrace = ErrorUtils.requireNonNull(payrollTrace, "Payroll audit trace data is required");
+        employeeOwner = ErrorUtils.requireNonNull(employeeOwner, "Payroll audit employee owner data is required");
+        operationalText = ErrorUtils.requireNonNull(operationalText, "Payroll audit text data is required");
+
+        assignCode("PRRAL" + UuidV7.generate());
+        this.payrollRunCode = ErrorUtils.requireNotBlank(
+                payrollTrace.getPayrollRunCode(),
+                "Payroll run code is required");
+        this.rerunBatchCode = payrollTrace.getRerunBatchCode();
+        this.actionType = ErrorUtils.requireNonNull(actionType, "Payroll audit action type is required");
+        this.reason = operationalText.getReason();
+        this.employeeCode = employeeOwner.getEmployeeCode();
+        this.oldPayrollResultCode = oldPayrollResultCode;
+        this.newPayrollResultCode = newPayrollResultCode;
+        this.oldActualAmount = oldActualAmount;
+        this.newActualAmount = newActualAmount;
+        this.oldExpectedAmount = oldExpectedAmount;
+        this.newExpectedAmount = newExpectedAmount;
+        this.errorMessage = operationalText.getErrorMessage();
+        this.requestId = requestId;
+        this.traceId = traceId;
+        this.eventCreatedAt = ErrorUtils.requireNonNull(
+                eventCreatedAt,
+                "Payroll audit event time is required");
+    }
+
+    public static PayrollRunAuditLog create(
+            PayrollTraceData payrollTrace,
+            EmployeeOwnedRecordData employeeOwner,
+            OperationalTextData operationalText,
+            PayrollRunAuditActionType actionType,
+            String oldPayrollResultCode,
+            String newPayrollResultCode,
+            BigDecimal oldActualAmount,
+            BigDecimal newActualAmount,
+            BigDecimal oldExpectedAmount,
+            BigDecimal newExpectedAmount,
+            String requestId,
+            String traceId,
+            LocalDateTime eventCreatedAt) {
+
+        return new PayrollRunAuditLog(
+                payrollTrace,
+                employeeOwner,
+                operationalText,
+                actionType,
+                oldPayrollResultCode,
+                newPayrollResultCode,
+                oldActualAmount,
+                newActualAmount,
+                oldExpectedAmount,
+                newExpectedAmount,
+                requestId,
+                traceId,
+                eventCreatedAt);
     }
 }

@@ -62,7 +62,7 @@ public abstract class BaseAuditableEntity {
     @Column(name = "updated_by")
     private String updatedBy;
 
-    @Column(name = "company_code", unique = true, nullable = false)
+    @Column(name = "company_code", nullable = false)
     @EqualsAndHashCode.Include
     private String companyCode;
 
