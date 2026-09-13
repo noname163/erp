@@ -46,15 +46,16 @@ import com.dat.erp.entities.PayrollRun;
 import com.dat.erp.entities.UserProfile;
 import com.dat.erp.exceptions.BadRequestException;
 import com.dat.erp.exceptions.ConflictException;
+import com.dat.erp.mapper.interfaces.PayrollResultDetailCalculationMapper;
 import com.dat.erp.mapper.interfaces.PayrollRunMapper;
 import com.dat.erp.repositories.customrepositories.CompanyRepository;
-import com.dat.erp.repositories.customrepositories.EmployeeSalaryRepository;
 import com.dat.erp.repositories.customrepositories.PayrollResultDetailRepository;
 import com.dat.erp.repositories.customrepositories.PayrollResultRepository;
 import com.dat.erp.repositories.customrepositories.PayrollResultSnapshotRepository;
 import com.dat.erp.repositories.customrepositories.PayrollRunAuditLogRepository;
 import com.dat.erp.repositories.customrepositories.PayrollRunRepository;
 import com.dat.erp.services.CodeGenerator;
+import com.dat.erp.services.EmployeeSalaryService;
 import com.dat.erp.services.MonthlySalaryCalculationService;
 import com.dat.erp.services.SecurityContextService;
 import com.dat.erp.services.payroll.PayrollResultDetailService;
@@ -83,7 +84,7 @@ class PayrollRunServiceImplTest {
     private PayrollRunAuditLogRepository payrollRunAuditLogRepository;
 
     @Mock
-    private EmployeeSalaryRepository employeeSalaryRepository;
+    private EmployeeSalaryService employeeSalaryService;
 
     @Mock
     private MonthlySalaryCalculationService monthlySalaryCalculationService;
@@ -102,6 +103,10 @@ class PayrollRunServiceImplTest {
 
     @Spy
     private PayrollRunMapper payrollRunMapper = Mappers.getMapper(PayrollRunMapper.class);
+
+    @Spy
+    private PayrollResultDetailCalculationMapper payrollResultDetailCalculationMapper =
+            new PayrollResultDetailCalculationMapper();
 
     @InjectMocks
     private PayrollRunServiceImpl payrollRunService;
@@ -348,9 +353,8 @@ class PayrollRunServiceImplTest {
         when(payrollResultRepository.findActiveByRunAndCompany("PRN-1", "CMP-1"))
                 .thenReturn(List.of(oldResult));
         when(companyRepository.findByCode("CMP-1")).thenReturn(Optional.of(company));
-        when(employeeSalaryRepository.findFirstActiveByEmployeeCodeAndCompanyCodeAndDate(
-                eq("EMP001"), eq("CMP-1"), any()))
-                        .thenReturn(Optional.of(oldResult.getEmployeeSalary()));
+        when(employeeSalaryService.getActiveByEmployeeCodeAndDate(eq("EMP001"), any()))
+                .thenReturn(oldResult.getEmployeeSalary());
         when(monthlySalaryCalculationService.calculateEmployeeMonthlySalary(eq("EMP001"), any()))
                 .thenReturn(new MonthlySalaryCalculationResponse(
                         "EMP001",

@@ -23,26 +23,18 @@ import com.dat.erp.repositories.customrepositories.DepartmentRepository;
 import com.dat.erp.services.CodeGenerator;
 import com.dat.erp.services.DepartmentService;
 import com.dat.erp.services.SecurityContextService;
-import com.dat.erp.services.base.AbstractAuditableService;
 import com.dat.erp.utils.PageableUtils;
 
+import lombok.AllArgsConstructor;
+
 @Service
-public class DepartmentServiceImpl extends AbstractAuditableService implements DepartmentService {
+@AllArgsConstructor
+public class DepartmentServiceImpl implements DepartmentService {
     private static final Logger log = LoggerFactory.getLogger(DepartmentServiceImpl.class);
 
     private final DepartmentRepository departmentRepository;
     private final DepartmentMapper departmentMapper;
-
-    public DepartmentServiceImpl(
-            DepartmentRepository departmentRepository,
-            DepartmentMapper departmentMapper,
-            CodeGenerator codeGenerator,
-            SecurityContextService securityContextService) {
-        this.departmentRepository = departmentRepository;
-        this.departmentMapper = departmentMapper;
-        this.codeGenerator = codeGenerator;
-        this.securityContextService = securityContextService;
-    }
+    private final SecurityContextService securityContextService;
 
     @Override
     public String createDepartment(DepartmentRequest departmentRequest) {
@@ -66,7 +58,6 @@ public class DepartmentServiceImpl extends AbstractAuditableService implements D
             return existing.getCode();
         }
         Department department = setAuditDepartmentInfo(departmentRequest);
-        department.setCompanyCode(departmentRequest.getCompanyCode());
         departmentRepository.save(department);
         String code = department.getCode();
         log.info(
@@ -85,7 +76,7 @@ public class DepartmentServiceImpl extends AbstractAuditableService implements D
 
     @Override
     public List<SelectionOptionResponse> getDepartmentOptionsByCompanyCode(String name) {
-        String companyCode = resolveCurrentUserCompanyCode();
+        String companyCode = securityContextService.getCurrentCompanyCode();
         List<Department> departments = departmentRepository
                 .findByNameAndCompanyCodeAndStatusAndIsDeletedFalseOrderByNameAsc(name, companyCode, CommonStatus.ACTIVATE);
         return new ArrayList<>(departments.stream().map(departmentMapper::toOptionResponse).toList());
@@ -97,8 +88,6 @@ public class DepartmentServiceImpl extends AbstractAuditableService implements D
                 && departmentRepository.existsByNameAndCompanyCode(department.getName(), department.getCompanyCode())) {
             throw new ConflictException(Messages.ERROR_DEPARTMENT_NAME_EXISTS);
         }
-        generateCodeIfMissing(department, CodePrefixes.DEPARTMENT);
-        applyInsertAudit(department);
         department.setStatus(CommonStatus.ACTIVATE);
         return department;
     }

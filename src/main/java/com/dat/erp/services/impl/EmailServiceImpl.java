@@ -1,7 +1,5 @@
 package com.dat.erp.services.impl;
 
-import java.util.UUID;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -51,7 +49,6 @@ public class EmailServiceImpl implements EmailService {
     @Override
     public void sendCreateAccountMail(EmailRequest request) {
         Email email = emailMapper.toEntity(request);
-        email.setCode("EML-" + UUID.randomUUID());
         email.setSubject("Create account");
         email.setRetryTime(0);
         email.setNeedRetry(NEED_RETRY_NO);

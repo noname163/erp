@@ -28,29 +28,19 @@ import com.dat.erp.services.CalendarDateService;
 import com.dat.erp.services.CodeGenerator;
 import com.dat.erp.services.CompanyCalendarService;
 import com.dat.erp.services.SecurityContextService;
-import com.dat.erp.services.base.AbstractAuditableService;
 import com.dat.erp.utils.CustomStringUtils;
 import com.dat.erp.utils.PageableUtils;
 
+import lombok.AllArgsConstructor;
+
 @Service
-public class CompanyCalendarServiceImpl extends AbstractAuditableService implements CompanyCalendarService {
+@AllArgsConstructor
+public class CompanyCalendarServiceImpl  implements CompanyCalendarService {
 
     private final CompanyCalendarRepository companyCalendarRepository;
     private final CalendarDateService calendarDateService;
     private final CompanyCalendarMapper companyCalendarMapper;
-
-    public CompanyCalendarServiceImpl(
-            CompanyCalendarRepository companyCalendarRepository,
-            CalendarDateService calendarDateService,
-            CompanyCalendarMapper companyCalendarMapper,
-            CodeGenerator codeGenerator,
-            SecurityContextService securityContextService) {
-        this.companyCalendarRepository = companyCalendarRepository;
-        this.calendarDateService = calendarDateService;
-        this.companyCalendarMapper = companyCalendarMapper;
-        this.codeGenerator = codeGenerator;
-        this.securityContextService = securityContextService;
-    }
+    private final SecurityContextService securityContextService;
 
     @Override
     @Transactional
@@ -67,12 +57,10 @@ public class CompanyCalendarServiceImpl extends AbstractAuditableService impleme
         LocalDate effectiveTo = request.getEffectiveTo();
         validateEffectiveDates(effectiveFrom, effectiveTo);
 
-        requireCurrentUserCompanyCode();
+        securityContextService.getCurrentCompanyCode();
 
         CompanyCalendar calendar = companyCalendarMapper.toEntity(request);
         validateCalendar(calendar);
-        generateCodeIfMissing(calendar, CodePrefixes.COMPANY_CALENDAR);
-        applyInsertAudit(calendar);
 
         CompanyCalendar savedCalendar = companyCalendarRepository.save(calendar);
         List<CalendarDate> savedDates = calendarDateService.createCalendarDates(request.getDates(), savedCalendar);
@@ -99,12 +87,11 @@ public class CompanyCalendarServiceImpl extends AbstractAuditableService impleme
 
         CompanyCalendar calendar = companyCalendarRepository.findByCodeAndCompanyCodeAndIsDeletedFalse(
                 code.trim(),
-                requireCurrentUserCompanyCode())
+                securityContextService.getCurrentCompanyCode())
                 .orElseThrow(() -> new ResourceNotFoundException(Messages.ERROR_COMPANY_CALENDAR_NOT_FOUND));
 
         companyCalendarMapper.updateEntity(request, calendar);
         validateCalendar(calendar);
-        applyUpdateAudit(calendar);
 
         CompanyCalendar savedCalendar = companyCalendarRepository.save(calendar);
         List<CalendarDate> savedDates = calendarDateService.replaceCalendarDates(request.getDates(), savedCalendar);
@@ -124,7 +111,7 @@ public class CompanyCalendarServiceImpl extends AbstractAuditableService impleme
             Integer size,
             String sortBy,
             String sortDir) {
-        String companyCode = requireCurrentUserCompanyCode();
+        String companyCode = securityContextService.getCurrentCompanyCode();
         String normalizedTimeZone = normalizeOptionalTimeZone(timeZone);
         Pageable pageable = PageableUtils.create(page, size, sortBy, sortDir);
         Page<CompanyCalendar> calendars = companyCalendarRepository.searchByConditions(
@@ -145,7 +132,7 @@ public class CompanyCalendarServiceImpl extends AbstractAuditableService impleme
 
         CompanyCalendar calendar = companyCalendarRepository.findByCodeAndCompanyCodeAndIsDeletedFalse(
                 code.trim(),
-                requireCurrentUserCompanyCode())
+                securityContextService.getCurrentCompanyCode())
                 .orElseThrow(() -> new ResourceNotFoundException(Messages.ERROR_COMPANY_CALENDAR_NOT_FOUND));
 
         return calendarDateService.getCompanyCalendarDates(calendar);

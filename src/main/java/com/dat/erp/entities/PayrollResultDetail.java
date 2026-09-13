@@ -12,6 +12,7 @@ import jakarta.persistence.FetchType;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
@@ -28,7 +29,9 @@ import lombok.ToString;
 @EqualsAndHashCode(onlyExplicitlyIncluded = true, callSuper = true)
 @ToString(exclude = "payrollResult")
 @Entity
-@Table(name = "payroll_result_detail")
+@Table(name = "payroll_result_detail", uniqueConstraints = {
+        @UniqueConstraint(name = "uk_payroll_result_detail_code_company_code", columnNames = { "code", "company_code" })
+})
 public class PayrollResultDetail extends BaseAuditableEntity {
 
     @ManyToOne(fetch = FetchType.LAZY)

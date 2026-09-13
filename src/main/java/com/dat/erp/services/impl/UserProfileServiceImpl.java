@@ -21,28 +21,21 @@ import com.dat.erp.mapper.interfaces.UserProfileMapper;
 import com.dat.erp.repositories.customrepositories.AccountRepository;
 import com.dat.erp.repositories.customrepositories.DepartmentRepository;
 import com.dat.erp.repositories.customrepositories.UserProfileRepository;
+import com.dat.erp.services.SecurityContextService;
 import com.dat.erp.services.UserProfileService;
-import com.dat.erp.services.base.AbstractAuditableService;
 import com.dat.erp.utils.CustomStringUtils;
 import com.dat.erp.utils.PageableUtils;
 
+import lombok.AllArgsConstructor;
+
 @Service
-public class UserProfileServiceImpl extends AbstractAuditableService implements UserProfileService {
+@AllArgsConstructor
+public class UserProfileServiceImpl implements UserProfileService {
     private final AccountRepository accountRepository;
     private final DepartmentRepository departmentRepository;
     private final UserProfileRepository userProfileRepository;
     private final UserProfileMapper userProfileMapper;
-
-    public UserProfileServiceImpl(
-            AccountRepository accountRepository,
-            DepartmentRepository departmentRepository,
-            UserProfileRepository userProfileRepository,
-            UserProfileMapper userProfileMapper) {
-        this.accountRepository = accountRepository;
-        this.departmentRepository = departmentRepository;
-        this.userProfileRepository = userProfileRepository;
-        this.userProfileMapper = userProfileMapper;
-    }
+    private final SecurityContextService securityContextService;
 
     @Transactional
     @Override
@@ -69,16 +62,13 @@ public class UserProfileServiceImpl extends AbstractAuditableService implements 
         profile.setDepartment(department);
         profile.setHireDate(LocalDate.now());
         profile.setIsActive(true);
-
-        generateCodeIfMissing(profile, CodePrefixes.USER);
-        applyInsertAudit(profile);
         return userProfileRepository.save(profile);
     }
 
     @Override
     public PagedResponse<SelectionOptionResponse> getUserProfileOptionsByFirstName(String firstName, Integer page,
             Integer size, String sortBy, String sortDir) {
-        String companyCode = requireCurrentUserCompanyCode();
+        String companyCode = securityContextService.getCurrentCompanyCode();
         String normalizedFirstName = CustomStringUtils.trimToNull(firstName);
         Pageable pageable = PageableUtils.create(page, size, sortBy, sortDir);
         Page<UserProfile> profiles = userProfileRepository.findOptionsByFilters(companyCode, normalizedFirstName, pageable);
@@ -88,6 +78,6 @@ public class UserProfileServiceImpl extends AbstractAuditableService implements 
 
     @Override
     public List<String> getActiveUserProfileCodesOfCurrentCompany() {
-        return userProfileRepository.findActiveCodesByCompanyCode(requireCurrentUserCompanyCode());
+        return userProfileRepository.findActiveCodesByCompanyCode(securityContextService.getCurrentCompanyCode());
     }
 }

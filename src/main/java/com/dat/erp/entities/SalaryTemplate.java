@@ -4,6 +4,11 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 
+import com.dat.erp.data.EffectivePeriodData;
+import com.dat.erp.data.MonetaryAmountData;
+import com.dat.erp.data.NamedResourceData;
+import com.dat.erp.utils.ErrorUtils;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.OneToMany;
@@ -47,4 +52,33 @@ public class SalaryTemplate extends BaseAuditableEntity {
 
     @OneToMany(mappedBy = "salaryTemplate")
     private List<EmployeeSalary> employeeSalaries;
+
+    public SalaryTemplate(
+            NamedResourceData namedResource,
+            MonetaryAmountData monetaryAmount,
+            EffectivePeriodData effectivePeriod) {
+
+        namedResource = ErrorUtils.requireNonNull(namedResource, "Salary template name data is required");
+        monetaryAmount = ErrorUtils.requireNonNull(monetaryAmount, "Salary template amount data is required");
+        effectivePeriod = ErrorUtils.requireNonNull(effectivePeriod, "Salary template effective period is required");
+
+        this.name = namedResource.getName();
+        this.description = namedResource.getDescription();
+        this.totalAmount = ErrorUtils.requireNonNull(
+                monetaryAmount.getDecimalTotalAmount(),
+                "Salary template total amount is required");
+        this.currency = ErrorUtils.requireNotBlank(
+                monetaryAmount.getCurrency(),
+                "Salary template currency is required");
+        this.effectiveFrom = effectivePeriod.getEffectiveFrom();
+        this.effectiveTo = effectivePeriod.getEffectiveTo();
+    }
+
+    public static SalaryTemplate create(
+            NamedResourceData namedResource,
+            MonetaryAmountData monetaryAmount,
+            EffectivePeriodData effectivePeriod) {
+
+        return new SalaryTemplate(namedResource, monetaryAmount, effectivePeriod);
+    }
 }

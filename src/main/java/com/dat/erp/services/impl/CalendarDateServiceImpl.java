@@ -26,10 +26,9 @@ import com.dat.erp.repositories.customrepositories.CalendarDateRepository;
 import com.dat.erp.services.CalendarDateService;
 import com.dat.erp.services.CodeGenerator;
 import com.dat.erp.services.SecurityContextService;
-import com.dat.erp.services.base.AbstractAuditableService;
 
 @Service
-public class CalendarDateServiceImpl extends AbstractAuditableService implements CalendarDateService {
+public class CalendarDateServiceImpl implements CalendarDateService {
 
     private final CalendarDateRepository calendarDateRepository;
     private final CalendarDateMapper calendarDateMapper;
@@ -41,8 +40,6 @@ public class CalendarDateServiceImpl extends AbstractAuditableService implements
             SecurityContextService securityContextService) {
         this.calendarDateRepository = calendarDateRepository;
         this.calendarDateMapper = calendarDateMapper;
-        this.codeGenerator = codeGenerator;
-        this.securityContextService = securityContextService;
     }
 
     @Override
@@ -52,8 +49,6 @@ public class CalendarDateServiceImpl extends AbstractAuditableService implements
         List<CalendarDate> calendarDates = mapAndValidateCalendarDates(requests, calendar);
         for (CalendarDate calendarDate : calendarDates) {
             calendarDate.setCalendar(calendar);
-            generateCodeIfMissing(calendarDate, CodePrefixes.CALENDAR_DATE);
-            applyInsertAudit(calendarDate);
         }
 
         return calendarDateRepository.saveAll(calendarDates);
@@ -75,14 +70,11 @@ public class CalendarDateServiceImpl extends AbstractAuditableService implements
             if (existingCalendarDate != null) {
                 existingCalendarDate.setDayType(requestedCalendarDate.getDayType());
                 existingCalendarDate.setNote(requestedCalendarDate.getNote());
-                applyUpdateAudit(existingCalendarDate);
                 orderedCalendarDates.add(existingCalendarDate);
                 continue;
             }
 
             requestedCalendarDate.setCalendar(calendar);
-            generateCodeIfMissing(requestedCalendarDate, CodePrefixes.CALENDAR_DATE);
-            applyInsertAudit(requestedCalendarDate);
             calendarDatesToCreate.add(requestedCalendarDate);
             orderedCalendarDates.add(requestedCalendarDate);
         }

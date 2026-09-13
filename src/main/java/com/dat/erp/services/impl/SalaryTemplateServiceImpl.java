@@ -15,7 +15,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.dat.erp.constants.CodePrefixes;
 import com.dat.erp.constants.Messages;
 import com.dat.erp.constants.SalaryCalculateMethod;
 import com.dat.erp.dto.request.SalaryTemplateDetailRequest;
@@ -35,12 +34,13 @@ import com.dat.erp.services.CodeGenerator;
 import com.dat.erp.services.SalaryTemplateDetailService;
 import com.dat.erp.services.SalaryTemplateService;
 import com.dat.erp.services.SecurityContextService;
-import com.dat.erp.services.base.AbstractAuditableService;
 import com.dat.erp.utils.CustomStringUtils;
 import com.dat.erp.utils.PageableUtils;
 
 @Service
-public class SalaryTemplateServiceImpl extends AbstractAuditableService implements SalaryTemplateService {
+public class SalaryTemplateServiceImpl implements SalaryTemplateService {
+
+    private final SecurityContextService securityContextService;
     private static final BigDecimal ONE_HUNDRED = BigDecimal.valueOf(100);
 
     private final SalaryTemplateRepository salaryTemplateRepository;
@@ -52,11 +52,10 @@ public class SalaryTemplateServiceImpl extends AbstractAuditableService implemen
             SalaryTemplateDetailService salaryTemplateDetailService,
             CodeGenerator codeGenerator,
             SecurityContextService securityContextService) {
+        this.securityContextService = securityContextService;
         this.salaryTemplateRepository = salaryTemplateRepository;
         this.salaryTemplateMapper = salaryTemplateMapper;
         this.salaryTemplateDetailService = salaryTemplateDetailService;
-        this.codeGenerator = codeGenerator;
-        this.securityContextService = securityContextService;
     }
 
     @Override
@@ -79,7 +78,7 @@ public class SalaryTemplateServiceImpl extends AbstractAuditableService implemen
                 Messages.ERROR_SALARY_TEMPLATE_TOTAL_AMOUNT_INVALID);
         validateDetails(details);
 
-        String companyCode = requireCurrentUserCompanyCode();
+        String companyCode = securityContextService.getCurrentCompanyCode();
         if (salaryTemplateRepository.existsOverlappingByNameAndCompanyCode(name, companyCode, effectiveFrom,
                 effectiveTo)) {
             throw new ConflictException(Messages.ERROR_SALARY_TEMPLATE_NAME_EXISTS);
@@ -89,9 +88,6 @@ public class SalaryTemplateServiceImpl extends AbstractAuditableService implemen
         template.setName(name);
         template.setCurrency(request.getCurrency() == null ? null : request.getCurrency().trim().toUpperCase());
         template.setTotalAmount(BigDecimal.ZERO);
-
-        generateCodeIfMissing(template, CodePrefixes.SALARY_TEMPLATE);
-        applyInsertAudit(template);
 
         SalaryTemplate saved = salaryTemplateRepository.save(template);
         List<SalaryTemplateDetail> createdDetails = salaryTemplateDetailService.createSalaryTemplateDetails(details, saved);
@@ -108,7 +104,7 @@ public class SalaryTemplateServiceImpl extends AbstractAuditableService implemen
             throw new BadRequestException(Messages.ERROR_SALARY_TEMPLATE_EFFECTIVE_DATES_INVALID);
         }
 
-        String companyCode = requireCurrentUserCompanyCode();
+        String companyCode = securityContextService.getCurrentCompanyCode();
         Pageable pageable = PageableUtils.create(page, size, sortBy, sortDir);
         Page<SalaryTemplate> data = salaryTemplateRepository.searchByConditions(companyCode, name, currency, effectiveFrom,
                 effectiveTo, pageable);
@@ -118,7 +114,7 @@ public class SalaryTemplateServiceImpl extends AbstractAuditableService implemen
     @Override
     public PagedResponse<SelectionOptionResponse> getSalaryTemplateOptions(String name, Integer page, Integer size,
             String sortBy, String sortDir) {
-        String companyCode = requireCurrentUserCompanyCode();
+        String companyCode = securityContextService.getCurrentCompanyCode();
         String normalizedName = CustomStringUtils.trimToNull(name);
         Pageable pageable = PageableUtils.create(page, size, sortBy, sortDir);
 

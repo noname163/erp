@@ -6,4 +6,10 @@ public interface SecurityContextService {
     CustomUserDetails setCurrentUser(String accountCode);
 
     CustomUserDetails getCurrentUser();
+
+    String getCurrentUserCode();
+
+    String getCurrentCompanyCode();
+
+    String getCurrentCompanySecretKey();
 }

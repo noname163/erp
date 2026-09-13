@@ -1,6 +1,7 @@
 package com.dat.erp.dto.response;
 
 import java.time.LocalDateTime;
+import java.time.YearMonth;
 
 import com.dat.erp.constants.PayrollRunStatus;
 
@@ -13,7 +14,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class PayrollRunResponse {
     private String code;
-    private String period;
+    private YearMonth period;
     private PayrollRunStatus status;
     private LocalDateTime runAt;
     private LocalDateTime closeAt;

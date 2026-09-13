@@ -3,12 +3,13 @@ package com.dat.erp.services.payroll.impl;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.YearMonth;
-import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 
 import org.slf4j.Logger;
@@ -20,20 +21,25 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 
-import com.dat.erp.constants.CodePrefixes;
 import com.dat.erp.constants.DayType;
 import com.dat.erp.constants.Messages;
-import com.dat.erp.constants.PayrollRunStatus;
+import com.dat.erp.constants.PayrollRerunMode;
 import com.dat.erp.constants.PayrollStatus;
+import com.dat.erp.dto.request.PayrollRerunRequest;
 import com.dat.erp.dto.response.PagedResponse;
 import com.dat.erp.dto.response.PayrollResultDetailResponse;
 import com.dat.erp.dto.response.PayrollResultListResponse;
 import com.dat.erp.dto.response.salary.DailyWorkForSalaryResponse;
+import com.dat.erp.dto.response.salary.MonthlySalaryCalculationResponse;
+import com.dat.erp.data.MeasuredQuantityData;
+import com.dat.erp.data.MonetaryAmountData;
+import com.dat.erp.data.PayrollTraceData;
 import com.dat.erp.entities.Company;
 import com.dat.erp.entities.DailyWork;
 import com.dat.erp.entities.EmployeeSalary;
 import com.dat.erp.entities.PayrollPolicy;
 import com.dat.erp.entities.PayrollResult;
+import com.dat.erp.entities.PayrollResultDetail;
 import com.dat.erp.entities.PayrollRun;
 import com.dat.erp.entities.UserProfile;
 import com.dat.erp.exceptions.BadRequestException;
@@ -42,23 +48,28 @@ import com.dat.erp.mapper.interfaces.PayrollResultMapper;
 import com.dat.erp.repositories.customrepositories.CompanyRepository;
 import com.dat.erp.repositories.customrepositories.DailyWorkRepository;
 import com.dat.erp.repositories.customrepositories.EmployeeSalaryRepository;
-import com.dat.erp.repositories.customrepositories.PayrollResultRepository;
 import com.dat.erp.repositories.customrepositories.PayrollResultDetailRepository;
-import com.dat.erp.repositories.customrepositories.PayrollRunRepository;
+import com.dat.erp.repositories.customrepositories.PayrollResultRepository;
+import com.dat.erp.repositories.projections.PayrollResultEmployeeCodeProjection;
 import com.dat.erp.repositories.projections.PayrollResultListProjection;
 import com.dat.erp.services.CalendarDateService;
-import com.dat.erp.services.CodeGenerator;
 import com.dat.erp.services.EmployeePayrollPolicyService;
 import com.dat.erp.services.EmployeeSalaryService;
 import com.dat.erp.services.SecurityContextService;
 import com.dat.erp.services.UserProfileService;
-import com.dat.erp.services.base.AbstractAuditableService;
 import com.dat.erp.services.payroll.PayrollResultService;
+import com.dat.erp.services.payroll.PayrollRunService;
+import com.dat.erp.utils.CompanySecretKeyCryptoUtils;
 import com.dat.erp.utils.CustomStringUtils;
 import com.dat.erp.utils.PageableUtils;
 
+import lombok.AllArgsConstructor;
+
 @Service
-public class PayrollResultServiceImpl extends AbstractAuditableService implements PayrollResultService {
+@AllArgsConstructor
+public class PayrollResultServiceImpl implements PayrollResultService {
+
+    private final SecurityContextService securityContextService;
 
     private static final Logger log = LoggerFactory.getLogger(PayrollResultServiceImpl.class);
 
@@ -78,46 +89,17 @@ public class PayrollResultServiceImpl extends AbstractAuditableService implement
     private final CalendarDateService calendarDateService;
     private final EmployeeSalaryRepository employeeSalaryRepository;
     private final DailyWorkRepository dailyWorkRepository;
-    private final PayrollRunRepository payrollRunRepository;
+    private final PayrollRunService payrollRunService;
     private final PayrollResultRepository payrollResultRepository;
     private final PayrollResultDetailRepository payrollResultDetailRepository;
     private final CompanyRepository companyRepository;
     private final EmployeeSalaryService employeeSalaryService;
     private final PayrollResultMapper payrollResultMapper;
 
-    public PayrollResultServiceImpl(
-            UserProfileService userProfileService,
-            EmployeePayrollPolicyService employeePayrollPolicyService,
-            CalendarDateService calendarDateService,
-            EmployeeSalaryRepository employeeSalaryRepository,
-            DailyWorkRepository dailyWorkRepository,
-            PayrollRunRepository payrollRunRepository,
-            PayrollResultRepository payrollResultRepository,
-            PayrollResultDetailRepository payrollResultDetailRepository,
-            CompanyRepository companyRepository,
-            EmployeeSalaryService employeeSalaryService,
-            PayrollResultMapper payrollResultMapper,
-            CodeGenerator codeGenerator,
-            SecurityContextService securityContextService) {
-        this.userProfileService = userProfileService;
-        this.employeePayrollPolicyService = employeePayrollPolicyService;
-        this.calendarDateService = calendarDateService;
-        this.employeeSalaryRepository = employeeSalaryRepository;
-        this.dailyWorkRepository = dailyWorkRepository;
-        this.payrollRunRepository = payrollRunRepository;
-        this.payrollResultRepository = payrollResultRepository;
-        this.payrollResultDetailRepository = payrollResultDetailRepository;
-        this.companyRepository = companyRepository;
-        this.employeeSalaryService = employeeSalaryService;
-        this.payrollResultMapper = payrollResultMapper;
-        this.codeGenerator = codeGenerator;
-        this.securityContextService = securityContextService;
-    }
-
     @Override
     @Transactional(readOnly = true)
     public List<PayrollResultDetailResponse> getPayrollResultDetails(String payrollResultCode) {
-        String companyCode = requireCurrentUserCompanyCode();
+        String companyCode = securityContextService.getCurrentCompanyCode();
         String normalizedPayrollResultCode = CustomStringUtils.normalizeCode(payrollResultCode);
         if (normalizedPayrollResultCode == null) {
             throw new BadRequestException(Messages.ERROR_PAYROLL_RESULT_CODE_INVALID);
@@ -142,7 +124,7 @@ public class PayrollResultServiceImpl extends AbstractAuditableService implement
             Integer size,
             String sortBy,
             String sortDir) {
-        String companyCode = requireCurrentUserCompanyCode();
+        String companyCode = securityContextService.getCurrentCompanyCode();
         String companySecretKey = resolveCompanySecretKey(companyCode);
         String normalizedPayrollRunCode = CustomStringUtils.normalizeCode(payrollRunCode);
         if (normalizedPayrollRunCode == null) {
@@ -176,9 +158,10 @@ public class PayrollResultServiceImpl extends AbstractAuditableService implement
     @Override
     @Transactional
     public void generatePayrollResult(PayrollRun payrollRun) {
-        String companyCode = requireCurrentUserCompanyCode();
+        String companyCode = securityContextService.getCurrentCompanyCode();
+        String companySecretKey = resolveCompanySecretKey(companyCode);
 
-        YearMonth runMonth = resolveRunMonth(payrollRun);
+        YearMonth runMonth = payrollRun.getPeriod();
         LocalDate runDate = runMonth.atEndOfMonth();
         String payrollRunCode = payrollRun == null ? null : payrollRun.getCode();
         log.info("PAYROLL_RESULT action=GENERATE_STARTED companyCode={} payrollRunCode={} period={} runDate={}",
@@ -186,19 +169,22 @@ public class PayrollResultServiceImpl extends AbstractAuditableService implement
 
         List<String> activeEmployeeCodes = userProfileService.getActiveUserProfileCodesOfCurrentCompany();
         if (activeEmployeeCodes == null || activeEmployeeCodes.isEmpty()) {
-            log.warn("PAYROLL_RESULT action=GENERATE_FINISHED result=FAILED reason=NO_ACTIVE_EMPLOYEES companyCode={} payrollRunCode={} period={}",
+            log.warn(
+                    "PAYROLL_RESULT action=GENERATE_FINISHED result=FAILED reason=NO_ACTIVE_EMPLOYEES companyCode={} payrollRunCode={} period={}",
                     companyCode, payrollRunCode, runMonth);
-            finalizePayrollRun(payrollRun, PayrollRunStatus.FAILED);
+            payrollRunService.finalizePayrollRun(payrollRunCode, false);
             return;
         }
-        log.info("PAYROLL_RESULT action=ACTIVE_EMPLOYEES_LOADED companyCode={} payrollRunCode={} period={} employeeCount={}",
+        log.info(
+                "PAYROLL_RESULT action=ACTIVE_EMPLOYEES_LOADED companyCode={} payrollRunCode={} period={} employeeCount={}",
                 companyCode, payrollRunCode, runMonth, activeEmployeeCodes.size());
 
         Map<String, PayrollPolicy> payrollPoliciesByEmployeeCode = employeePayrollPolicyService
                 .getCompanyPoliciesByEmployeeCodesAndDate(activeEmployeeCodes, runDate);
         List<EmployeeSalary> activeEmployeeSalaries = employeeSalaryRepository
                 .findActiveByCompanyCodeAndUserProfileCodesAndDate(companyCode, activeEmployeeCodes, runDate);
-        log.info("PAYROLL_RESULT action=INPUTS_LOADED companyCode={} payrollRunCode={} period={} policyCount={} salaryCount={}",
+        log.info(
+                "PAYROLL_RESULT action=INPUTS_LOADED companyCode={} payrollRunCode={} period={} policyCount={} salaryCount={}",
                 companyCode,
                 payrollRunCode,
                 runMonth,
@@ -220,7 +206,8 @@ public class PayrollResultServiceImpl extends AbstractAuditableService implement
             PayrollPolicy payrollPolicy = payrollPoliciesByEmployeeCode.get(employeeCode);
             if (employeeSalary == null || payrollPolicy == null) {
                 skippedEmployees++;
-                log.warn("PAYROLL_RESULT action=EMPLOYEE_SKIPPED result=FAILED reason=MISSING_INPUT companyCode={} payrollRunCode={} period={} employeeCode={} hasSalary={} hasPolicy={}",
+                log.warn(
+                        "PAYROLL_RESULT action=EMPLOYEE_SKIPPED result=FAILED reason=MISSING_INPUT companyCode={} payrollRunCode={} period={} employeeCode={} hasSalary={} hasPolicy={}",
                         companyCode,
                         payrollRunCode,
                         runMonth,
@@ -235,12 +222,14 @@ public class PayrollResultServiceImpl extends AbstractAuditableService implement
                     employeeSalary,
                     payrollPolicy,
                     totalWorkingDays,
-                    leaveQuantitiesByEmployeeCode.getOrDefault(employeeCode, 0)));
+                    leaveQuantitiesByEmployeeCode.getOrDefault(employeeCode, 0),
+                    companySecretKey));
         }
-        PayrollRunStatus finalStatus = PayrollRunStatus.FAILED;
+        boolean finalStatus = false;
         if (!payrollResults.isEmpty()) {
             List<PayrollResult> savedPayrollResults = payrollResultRepository.saveAll(payrollResults);
-            log.info("PAYROLL_RESULT action=PREVIEW_RESULTS_CREATED result=SUCCESS companyCode={} payrollRunCode={} period={} createdCount={} skippedCount={} totalWorkingDays={}",
+            log.info(
+                    "PAYROLL_RESULT action=PREVIEW_RESULTS_CREATED result=SUCCESS companyCode={} payrollRunCode={} period={} createdCount={} skippedCount={} totalWorkingDays={}",
                     companyCode,
                     payrollRunCode,
                     runMonth,
@@ -248,9 +237,10 @@ public class PayrollResultServiceImpl extends AbstractAuditableService implement
                     skippedEmployees,
                     totalWorkingDays);
             scheduleEmployeeSalaryCalculation(companyCode, activeEmployeeCodes, savedPayrollResults, runDate);
-            finalStatus = PayrollRunStatus.CALCULATED;
+            finalStatus = true;
         } else {
-            log.warn("PAYROLL_RESULT action=GENERATE_FINISHED result=FAILED reason=NO_ELIGIBLE_EMPLOYEES companyCode={} payrollRunCode={} period={} activeEmployeeCount={} skippedCount={}",
+            log.warn(
+                    "PAYROLL_RESULT action=GENERATE_FINISHED result=FAILED reason=NO_ELIGIBLE_EMPLOYEES companyCode={} payrollRunCode={} period={} activeEmployeeCount={} skippedCount={}",
                     companyCode,
                     payrollRunCode,
                     runMonth,
@@ -258,15 +248,9 @@ public class PayrollResultServiceImpl extends AbstractAuditableService implement
                     skippedEmployees);
         }
 
-        finalizePayrollRun(payrollRun, finalStatus);
+        payrollRunService.finalizePayrollRun(payrollRunCode, finalStatus);
         log.info("PAYROLL_RESULT action=RUN_STATUS_UPDATED companyCode={} payrollRunCode={} period={} status={}",
                 companyCode, payrollRunCode, runMonth, finalStatus);
-    }
-
-    private void finalizePayrollRun(PayrollRun payrollRun, PayrollRunStatus finalStatus) {
-        payrollRun.setStatus(finalStatus);
-        applyUpdateAudit(payrollRun);
-        payrollRunRepository.save(payrollRun);
     }
 
     private void scheduleEmployeeSalaryCalculation(
@@ -287,7 +271,8 @@ public class PayrollResultServiceImpl extends AbstractAuditableService implement
 
         if (TransactionSynchronizationManager.isSynchronizationActive()
                 && TransactionSynchronizationManager.isActualTransactionActive()) {
-            log.info("PAYROLL_CALC action=SCHEDULED timing=AFTER_COMMIT companyCode={} payrollRunCode={} period={} employeeCount={} resultCount={}",
+            log.info(
+                    "PAYROLL_CALC action=SCHEDULED timing=AFTER_COMMIT companyCode={} payrollRunCode={} period={} employeeCount={} resultCount={}",
                     companyCodeSnapshot,
                     payrollRunCode,
                     runMonth,
@@ -296,7 +281,8 @@ public class PayrollResultServiceImpl extends AbstractAuditableService implement
             TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
                 @Override
                 public void afterCommit() {
-                    log.info("PAYROLL_CALC action=DISPATCHING timing=AFTER_COMMIT companyCode={} payrollRunCode={} period={} employeeCount={} resultCount={}",
+                    log.info(
+                            "PAYROLL_CALC action=DISPATCHING timing=AFTER_COMMIT companyCode={} payrollRunCode={} period={} employeeCount={} resultCount={}",
                             companyCodeSnapshot,
                             payrollRunCode,
                             runMonth,
@@ -308,7 +294,8 @@ public class PayrollResultServiceImpl extends AbstractAuditableService implement
             return;
         }
 
-        log.info("PAYROLL_CALC action=DISPATCHING timing=IMMEDIATE companyCode={} payrollRunCode={} period={} employeeCount={} resultCount={}",
+        log.info(
+                "PAYROLL_CALC action=DISPATCHING timing=IMMEDIATE companyCode={} payrollRunCode={} period={} employeeCount={} resultCount={}",
                 companyCodeSnapshot,
                 payrollRunCode,
                 runMonth,
@@ -326,18 +313,6 @@ public class PayrollResultServiceImpl extends AbstractAuditableService implement
             return null;
         }
         return payrollResult.getPayrollRun().getCode();
-    }
-
-    private YearMonth resolveRunMonth(PayrollRun payrollRun) {
-        if (payrollRun == null || payrollRun.getPeriod() == null || payrollRun.getPeriod().isBlank()) {
-            throw new BadRequestException(Messages.ERROR_PAYROLL_MONTH_INVALID);
-        }
-
-        try {
-            return YearMonth.parse(payrollRun.getPeriod().trim());
-        } catch (DateTimeParseException ex) {
-            throw new BadRequestException(Messages.ERROR_PAYROLL_MONTH_INVALID);
-        }
     }
 
     private int calculateTotalWorkingDays(Map<DayType, Integer> totalsByDayType) {
@@ -360,11 +335,12 @@ public class PayrollResultServiceImpl extends AbstractAuditableService implement
             YearMonth runMonth) {
         LocalDate fromDate = runMonth.atDay(1);
         LocalDate toDate = runMonth.atEndOfMonth();
-        List<DailyWork> dailyWorks = dailyWorkRepository.findAllForSalaryByCompanyCodeAndEmployeeCodesAndWorkingDateBetween(
-                companyCode,
-                employeeCodes,
-                fromDate,
-                toDate);
+        List<DailyWork> dailyWorks = dailyWorkRepository
+                .findAllForSalaryByCompanyCodeAndEmployeeCodesAndWorkingDateBetween(
+                        companyCode,
+                        employeeCodes,
+                        fromDate,
+                        toDate);
 
         Map<String, Integer> leaveQuantitiesByEmployeeCode = new LinkedHashMap<>();
         for (DailyWork dailyWork : dailyWorks) {
@@ -401,24 +377,28 @@ public class PayrollResultServiceImpl extends AbstractAuditableService implement
             EmployeeSalary employeeSalary,
             PayrollPolicy payrollPolicy,
             int totalWorkingDays,
-            int leaveQuantity) {
+            int leaveQuantity,
+            String companySecretKey) {
         int standardQuantityPerDay = payrollPolicy.getStandardQuantityPerDay() == null
                 ? 0
                 : payrollPolicy.getStandardQuantityPerDay();
         int expectedQuantity = standardQuantityPerDay * totalWorkingDays;
-        PayrollResult payrollResult = PayrollResult.builder()
-                .payrollRun(payrollRun)
-                .employeeSalary(employeeSalary)
-                .expectedAmount(employeeSalary.getTotalAmount())
-                .currency(employeeSalary.getCurrency())
-                .expectedQuantity(expectedQuantity)
-                .unit(payrollPolicy.getUnit())
-                .sourceType(PayrollStatus.RUNNING)
-                .isRetro(false)
-                .retroReason(null)
-                .build();
-        generateCodeIfMissing(payrollResult, CodePrefixes.PAYROLL_RESULT);
-        applyInsertAudit(payrollResult);
+        PayrollResult payrollResult = PayrollResult.create(
+                payrollRun,
+                employeeSalary,
+                MonetaryAmountData.builder()
+                        .expectedAmount(employeeSalary.getTotalAmount())
+                        .actualAmount(CompanySecretKeyCryptoUtils.encrypt("0", companySecretKey))
+                        .currency(employeeSalary.getCurrency())
+                        .build(),
+                MeasuredQuantityData.builder()
+                        .expectedQuantity(expectedQuantity)
+                        .actualQuantity(0)
+                        .systemUnit(payrollPolicy.getUnit())
+                        .build(),
+                PayrollTraceData.builder()
+                        .sourceType(PayrollStatus.RUNNING)
+                        .build());
         return payrollResult;
     }
 
@@ -461,6 +441,119 @@ public class PayrollResultServiceImpl extends AbstractAuditableService implement
             case "createdDate", "createdAt" -> "createdAt";
             default -> "createdAt";
         };
+    }
+
+    @Override
+    public List<PayrollResult> resolveTargetResults(String payrollRunCode, String companyCode,
+            PayrollRerunRequest request, PayrollRerunMode mode) {
+        if (PayrollRerunMode.SELECTED_EMPLOYEES.equals(mode)) {
+            List<String> employeeCodes = request.getEmployeeCodes().stream()
+                    .map(CustomStringUtils::normalizeCode)
+                    .filter(Objects::nonNull)
+                    .distinct()
+                    .toList();
+            return payrollResultRepository.findActiveByRunAndCompanyAndEmployeeCodes(
+                    payrollRunCode, companyCode, employeeCodes);
+        }
+        return payrollResultRepository.findActiveByRunAndCompany(payrollRunCode, companyCode);
+    }
+
+    @Override
+    public String toResultJson(PayrollResult payrollResult) {
+        return "{"
+                + "\"code\":\"" + CustomStringUtils.escapeJson(payrollResult.getCode()) + "\","
+                + "\"expectedAmount\":\"" + CustomStringUtils.escapeJson(payrollResult.getExpectedAmount()) + "\","
+                + "\"actualAmount\":\"" + CustomStringUtils.escapeJson(payrollResult.getActualAmount()) + "\","
+                + "\"expectedQuantity\":" + payrollResult.getExpectedQuantity() + ","
+                + "\"actualQuantity\":" + payrollResult.getActualQuantity() + ","
+                + "\"currency\":\"" + CustomStringUtils.escapeJson(payrollResult.getCurrency()) + "\","
+                + "\"sourceType\":\"" + payrollResult.getSourceType() + "\""
+                + "}";
+    }
+
+    @Override
+    public PayrollResult buildRerunPayrollResult(PayrollRun payrollRun, PayrollResult oldResult,
+            EmployeeSalary activeSalary, MonthlySalaryCalculationResponse calculation, String companySecretKey) {
+        EmployeeSalary payrollEmployeeSalary = activeSalary == null ? oldResult.getEmployeeSalary() : activeSalary;
+        String expectedAmount = activeSalary == null ? oldResult.getExpectedAmount() : activeSalary.getTotalAmount();
+        String currency = activeSalary == null ? oldResult.getCurrency() : activeSalary.getCurrency();
+        Integer actualQuantity = calculation.getActualWorkingHourPerMonth() == null
+                ? oldResult.getActualQuantity()
+                : calculation.getActualWorkingHourPerMonth().intValue();
+
+        PayrollResult payrollResult = PayrollResult.create(
+                payrollRun,
+                payrollEmployeeSalary,
+                MonetaryAmountData.builder()
+                        .expectedAmount(expectedAmount)
+                        .actualAmount(CompanySecretKeyCryptoUtils.encrypt(
+                                calculation.getFinalSalary().toPlainString(), companySecretKey))
+                        .currency(currency)
+                        .build(),
+                MeasuredQuantityData.builder()
+                        .expectedQuantity(oldResult.getExpectedQuantity())
+                        .actualQuantity(actualQuantity)
+                        .systemUnit(oldResult.getUnit())
+                        .build(),
+                PayrollTraceData.builder()
+                        .sourceType(oldResult.getSourceType())
+                        .build());
+        payrollResult.assignRetro();
+        payrollResult.assignRetroReason("Payroll re-run");
+        payrollResultRepository.saveAndFlush(payrollResult);
+        return payrollResult;
+    }
+
+    @Override
+    public PayrollResult saveRerunPayRollResult(PayrollResult payrollResult) {
+        PayrollResult validPayrollResult = Optional.ofNullable(payrollResult)
+                .orElseThrow(() -> new BadRequestException(Messages.ERROR_PAYROLL_RESULT_NULL));
+        return payrollResultRepository.saveAndFlush(validPayrollResult);
+    }
+
+    @Override
+    public void softDeleteOldResult(String payrollRunCode) {
+        PayrollResult oldResult = payrollResultRepository
+                .findByCodeAndCompanyCodeAndIsDeletedFalse(payrollRunCode,
+                        securityContextService.getCurrentCompanyCode())
+                .orElseThrow(() -> new ResourceNotFoundException(Messages.ERROR_PAYROLL_RESULT_NOT_FOUND));
+        List<PayrollResultDetail> oldDetails = payrollResultDetailRepository
+                .findByPayrollResult_CodeAndIsDeletedFalse(payrollRunCode);
+        oldDetails.forEach(detail -> {
+            detail.markDeleted();
+        });
+        if (!oldDetails.isEmpty()) {
+            payrollResultDetailRepository.saveAll(oldDetails);
+        }
+        oldResult.markDeleted();
+        payrollResultRepository.save(oldResult);
+    }
+
+    @Override
+    public Map<String, PayrollResult> mapResultsByEmployeeCodeByPayRollResultCodes(List<String> payrollResultCodes) {
+        Map<String, PayrollResult> resultsByEmployee = new LinkedHashMap<>();
+        List<String> normalizedPayrollResultCodes = payrollResultCodes == null
+                ? List.of()
+                : payrollResultCodes.stream()
+                        .map(CustomStringUtils::normalizeCode)
+                        .filter(Objects::nonNull)
+                        .distinct()
+                        .toList();
+        if (normalizedPayrollResultCodes.isEmpty()) {
+            return resultsByEmployee;
+        }
+
+        List<PayrollResultEmployeeCodeProjection> projections = payrollResultRepository
+                .findEmployeeCodesByPayrollResultCodes(
+                        securityContextService.getCurrentCompanyCode(),
+                        normalizedPayrollResultCodes);
+        for (PayrollResultEmployeeCodeProjection projection : projections) {
+            String employeeCode = CustomStringUtils.normalizeCode(projection.employeeCode());
+            if (employeeCode != null) {
+                resultsByEmployee.putIfAbsent(employeeCode, projection.payrollResult());
+            }
+        }
+        return resultsByEmployee;
     }
 
 }

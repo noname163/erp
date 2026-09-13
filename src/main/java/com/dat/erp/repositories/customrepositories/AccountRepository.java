@@ -45,4 +45,11 @@ public interface AccountRepository extends JpaRepository<Account, Long> {
             where a.code in :codes
             """)
     List<Account> findAllByCodeInWithUserProfile(@Param("codes") Collection<String> codes);
+
+    @Query("""
+            select  c.secretKey 
+            from Company c 
+            where c.companyCode = :companyCode and c.deleted = false
+            """)
+    Optional<String> getCurrentCompanySecretKeyByCompanyCode(@Param("companyCode") String companyCode);
 }

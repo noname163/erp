@@ -11,6 +11,7 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
@@ -27,7 +28,9 @@ import lombok.ToString;
 @EqualsAndHashCode(onlyExplicitlyIncluded = true, callSuper = true)
 @ToString(exclude = { "employeePayrollPolicies" })
 @Entity
-@Table(name = "payroll_policy")
+@Table(name = "payroll_policy", uniqueConstraints = {
+        @UniqueConstraint(name = "uk_payroll_policy_code_company_code", columnNames = { "code", "company_code" })
+})
 public class PayrollPolicy extends BaseAuditableEntity {
 
     @Column(name = "name", nullable = false)

@@ -9,6 +9,7 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
@@ -24,7 +25,9 @@ import lombok.ToString;
 @Builder
 @EqualsAndHashCode(onlyExplicitlyIncluded = true, callSuper = true)
 @Entity
-@Table(name = "department")
+@Table(name = "department", uniqueConstraints = {
+        @UniqueConstraint(name = "uk_department_code_company_code", columnNames = { "code", "company_code" })
+})
 @ToString(exclude = { "userProfiles" })
 public class Department extends BaseAuditableEntity {
     private String name;

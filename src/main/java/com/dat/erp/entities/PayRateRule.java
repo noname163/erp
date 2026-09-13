@@ -14,6 +14,7 @@ import jakarta.persistence.FetchType;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
@@ -30,7 +31,9 @@ import lombok.ToString;
 @EqualsAndHashCode(onlyExplicitlyIncluded = true, callSuper = true)
 @ToString(exclude = "policy")
 @Entity
-@Table(name = "pay_rate_rule")
+@Table(name = "pay_rate_rule", uniqueConstraints = {
+        @UniqueConstraint(name = "uk_pay_rate_rule_code_company_code", columnNames = { "code", "company_code" })
+})
 public class PayRateRule extends BaseAuditableEntity {
 
     @ManyToOne(fetch = FetchType.LAZY)

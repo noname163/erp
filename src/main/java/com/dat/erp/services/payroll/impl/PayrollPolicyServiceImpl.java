@@ -7,7 +7,6 @@ import java.util.List;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.dat.erp.constants.CodePrefixes;
 import com.dat.erp.constants.Messages;
 import com.dat.erp.dto.request.PayrollPolicyRequest;
 import com.dat.erp.dto.response.PayrollPolicyResponse;
@@ -20,12 +19,13 @@ import com.dat.erp.repositories.customrepositories.PayrollPolicyRepository;
 import com.dat.erp.repositories.customrepositories.SystemUnitRepository;
 import com.dat.erp.services.CodeGenerator;
 import com.dat.erp.services.SecurityContextService;
-import com.dat.erp.services.base.AbstractAuditableService;
 import com.dat.erp.services.payroll.PayrollPolicyService;
 import com.dat.erp.utils.CustomStringUtils;
 
 @Service
-public class PayrollPolicyServiceImpl extends AbstractAuditableService implements PayrollPolicyService {
+public class PayrollPolicyServiceImpl implements PayrollPolicyService {
+
+    private final SecurityContextService securityContextService;
 
     private final PayrollPolicyRepository payrollPolicyRepository;
     private final SystemUnitRepository systemUnitRepository;
@@ -36,11 +36,10 @@ public class PayrollPolicyServiceImpl extends AbstractAuditableService implement
             PayrollPolicyMapper payrollPolicyMapper,
             CodeGenerator codeGenerator,
             SecurityContextService securityContextService) {
+        this.securityContextService = securityContextService;
         this.payrollPolicyRepository = payrollPolicyRepository;
         this.systemUnitRepository = systemUnitRepository;
         this.payrollPolicyMapper = payrollPolicyMapper;
-        this.codeGenerator = codeGenerator;
-        this.securityContextService = securityContextService;
     }
 
     @Override
@@ -51,7 +50,7 @@ public class PayrollPolicyServiceImpl extends AbstractAuditableService implement
             throw new BadRequestException(Messages.ERROR_PAYROLL_POLICY_EFFECTIVE_DATES_INVALID);
         }
 
-        String companyCode = requireCurrentUserCompanyCode();
+        String companyCode = securityContextService.getCurrentCompanyCode();
 
         return payrollPolicyMapper.toResponses(
                 payrollPolicyRepository.findByFilters(
@@ -67,7 +66,7 @@ public class PayrollPolicyServiceImpl extends AbstractAuditableService implement
     public PayrollPolicyResponse createPayrollPolicy(PayrollPolicyRequest request) {
         validateRequest(request);
 
-        String companyCode = requireCurrentUserCompanyCode();
+        String companyCode = securityContextService.getCurrentCompanyCode();
 
         String name = request.getName().trim();
         if (payrollPolicyRepository.existsOverlappingByNameAndCompanyCode(name, companyCode,
@@ -92,8 +91,6 @@ public class PayrollPolicyServiceImpl extends AbstractAuditableService implement
                 .effectiveFrom(request.getEffectiveFrom())
                 .effectiveTo(request.getEffectiveTo())
                 .build();
-        generateCodeIfMissing(payrollPolicy, CodePrefixes.PAYROLL_POLICY);
-        applyInsertAudit(payrollPolicy);
 
         return payrollPolicyMapper.toResponse(payrollPolicyRepository.save(payrollPolicy));
     }

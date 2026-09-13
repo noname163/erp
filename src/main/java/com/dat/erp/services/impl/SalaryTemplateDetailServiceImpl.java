@@ -10,7 +10,6 @@ import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 
-import com.dat.erp.constants.CodePrefixes;
 import com.dat.erp.constants.Messages;
 import com.dat.erp.dto.request.SalaryTemplateDetailRequest;
 import com.dat.erp.dto.response.SalaryTemplateDetailListResponse;
@@ -23,16 +22,17 @@ import com.dat.erp.exceptions.ConflictException;
 import com.dat.erp.exceptions.ResourceNotFoundException;
 import com.dat.erp.mapper.interfaces.SalaryTemplateDetailMapper;
 import com.dat.erp.repositories.customrepositories.SalaryRepository;
-import com.dat.erp.repositories.customrepositories.SalaryTemplateRepository;
 import com.dat.erp.repositories.customrepositories.SalaryTemplateDetailRepository;
+import com.dat.erp.repositories.customrepositories.SalaryTemplateRepository;
 import com.dat.erp.repositories.customrepositories.SystemUnitRepository;
 import com.dat.erp.services.CodeGenerator;
 import com.dat.erp.services.SalaryTemplateDetailService;
 import com.dat.erp.services.SecurityContextService;
-import com.dat.erp.services.base.AbstractAuditableService;
 
 @Service
-public class SalaryTemplateDetailServiceImpl extends AbstractAuditableService implements SalaryTemplateDetailService {
+public class SalaryTemplateDetailServiceImpl implements SalaryTemplateDetailService {
+
+    private final SecurityContextService securityContextService;
 
     private final SalaryTemplateDetailRepository salaryTemplateDetailRepository;
     private final SalaryRepository salaryRepository;
@@ -47,13 +47,12 @@ public class SalaryTemplateDetailServiceImpl extends AbstractAuditableService im
             SalaryTemplateDetailMapper salaryTemplateDetailMapper,
             CodeGenerator codeGenerator,
             SecurityContextService securityContextService) {
+        this.securityContextService = securityContextService;
         this.salaryTemplateDetailRepository = salaryTemplateDetailRepository;
         this.salaryRepository = salaryRepository;
         this.systemUnitRepository = systemUnitRepository;
         this.salaryTemplateRepository = salaryTemplateRepository;
         this.salaryTemplateDetailMapper = salaryTemplateDetailMapper;
-        this.codeGenerator = codeGenerator;
-        this.securityContextService = securityContextService;
     }
 
     @Override
@@ -156,9 +155,6 @@ public class SalaryTemplateDetailServiceImpl extends AbstractAuditableService im
                     .sequenceOrder(sequenceOrder)
                     .isFixed(Boolean.TRUE.equals(request.getIsFixed()))
                     .build();
-
-            generateCodeIfMissing(detail, CodePrefixes.SALARY_TEMPLATE_DETAIL);
-            applyInsertAudit(detail);
             details.add(detail);
         }
 
@@ -171,7 +167,7 @@ public class SalaryTemplateDetailServiceImpl extends AbstractAuditableService im
             throw new BadRequestException("salaryTemplateCode is invalid");
         }
 
-        String companyCode = resolveCurrentUserCompanyCode();
+        String companyCode = securityContextService.getCurrentCompanyCode();
         String normalizedCode = salaryTemplateCode.trim();
 
         salaryTemplateRepository.findByCodeAndCompanyCodeAndIsDeletedFalse(normalizedCode, companyCode)

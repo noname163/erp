@@ -3,6 +3,11 @@ package com.dat.erp.entities;
 import java.time.LocalDate;
 import java.util.List;
 
+import com.dat.erp.data.EffectivePeriodData;
+import com.dat.erp.data.NamedResourceData;
+import com.dat.erp.data.OperationalTextData;
+import com.dat.erp.utils.ErrorUtils;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -47,4 +52,35 @@ public class CompanyCalendar extends BaseAuditableEntity {
 
     @OneToMany(mappedBy = "calendar", fetch = FetchType.LAZY)
     private List<CalendarDate> dates;
+
+    public CompanyCalendar(
+            NamedResourceData namedResource,
+            EffectivePeriodData effectivePeriod,
+            OperationalTextData operationalText,
+            String region,
+            String timeZone) {
+
+        namedResource = ErrorUtils.requireNonNull(namedResource, "Company calendar name data is required");
+        effectivePeriod = ErrorUtils.requireNonNull(effectivePeriod, "Company calendar effective period is required");
+        operationalText = ErrorUtils.requireNonNull(operationalText, "Company calendar text data is required");
+
+        this.name = namedResource.getName();
+        this.effectiveFrom = effectivePeriod.getEffectiveFrom();
+        this.effectiveTo = effectivePeriod.getEffectiveTo();
+        this.region = ErrorUtils.requireNotBlank(region, "Region is required");
+        this.timeZone = ErrorUtils.requireNotBlank(timeZone, "Time zone is required");
+        this.note = ErrorUtils.requireNotBlank(
+                operationalText.getNote(),
+                "Company calendar note is required");
+    }
+
+    public static CompanyCalendar create(
+            NamedResourceData namedResource,
+            EffectivePeriodData effectivePeriod,
+            OperationalTextData operationalText,
+            String region,
+            String timeZone) {
+
+        return new CompanyCalendar(namedResource, effectivePeriod, operationalText, region, timeZone);
+    }
 }
