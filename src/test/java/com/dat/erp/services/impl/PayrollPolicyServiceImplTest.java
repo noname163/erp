@@ -75,21 +75,26 @@ class PayrollPolicyServiceImplTest {
         request.setEffectiveTo(LocalDate.of(2026, 12, 31));
 
         Account account = new Account();
-        account.setCode("ACC-001");
-        account.setCompanyCode("CMP-001");
+        com.dat.erp.testutils.EntityTestData.setCode(account, "ACC-001");
+        com.dat.erp.testutils.EntityTestData.setCompanyCode(account, "CMP-001");
         when(securityContextService.getCurrentUser()).thenReturn(new CustomUserDetails(account, null));
+        when(securityContextService.getCurrentCompanyCode()).thenReturn(account.getCompanyCode());
     }
 
     @Test
     void createPayrollPolicy_success() {
         SystemUnit unit = new SystemUnit();
-        unit.setCode("UNT-001");
+        com.dat.erp.testutils.EntityTestData.setCode(unit, "UNT-001");
 
         when(payrollPolicyRepository.existsOverlappingByNameAndCompanyCode("Office Hour Policy", "CMP-001",
                 request.getEffectiveFrom(), request.getEffectiveTo())).thenReturn(false);
         when(systemUnitRepository.findByCodeAndIsDeletedFalse("UNT-001")).thenReturn(Optional.of(unit));
         when(codeGenerator.nextCode("PPL-")).thenReturn("PPL-000001");
-        when(payrollPolicyRepository.save(any(PayrollPolicy.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(payrollPolicyRepository.save(any(PayrollPolicy.class))).thenAnswer(invocation -> {
+            PayrollPolicy saved = invocation.getArgument(0);
+            com.dat.erp.testutils.EntityTestData.setCode(saved, "PPL-000001");
+            return saved;
+        });
 
         PayrollPolicyResponse response = payrollPolicyService.createPayrollPolicy(request);
 
@@ -153,7 +158,7 @@ class PayrollPolicyServiceImplTest {
     @Test
     void getPayrollPolicies_returnsFilteredResults() {
         SystemUnit unit = new SystemUnit();
-        unit.setCode("UNT-001");
+        com.dat.erp.testutils.EntityTestData.setCode(unit, "UNT-001");
 
         PayrollPolicy payrollPolicy = PayrollPolicy.builder()
                 .name("Office Hour Policy")
@@ -165,7 +170,7 @@ class PayrollPolicyServiceImplTest {
                 .effectiveFrom(LocalDate.of(2026, 1, 1))
                 .effectiveTo(LocalDate.of(2026, 12, 31))
                 .build();
-        payrollPolicy.setCode("PPL-000001");
+        com.dat.erp.testutils.EntityTestData.setCode(payrollPolicy, "PPL-000001");
 
         when(payrollPolicyRepository.findByFilters("CMP-001", "Office", LocalDate.of(2026, 1, 1),
                 LocalDate.of(2026, 12, 31), "UNT-001"))

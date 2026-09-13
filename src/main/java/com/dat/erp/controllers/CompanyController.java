@@ -1,6 +1,5 @@
 package com.dat.erp.controllers;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -31,8 +30,11 @@ import jakarta.validation.Valid;
 @RestController
 @RequestMapping("/api/companies")
 public class CompanyController {
-    @Autowired
-    private CompanyService companyService;
+    private final CompanyService companyService;
+
+    CompanyController(CompanyService companyService) {
+        this.companyService = companyService;
+    }
 
     /**
      * Create a new company.

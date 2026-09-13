@@ -18,7 +18,6 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.springframework.data.jpa.domain.Specification;
 
-import com.dat.erp.constants.CodePrefixes;
 import com.dat.erp.dto.request.CreateEmployeeRequest;
 import com.dat.erp.dto.request.EmailRequest;
 import com.dat.erp.dto.request.EmployeeListRequest;
@@ -38,7 +37,6 @@ import com.dat.erp.repositories.customrepositories.DepartmentRepository;
 import com.dat.erp.repositories.customrepositories.RoleRepository;
 import com.dat.erp.repositories.customrepositories.UserProfileRepository;
 import com.dat.erp.repositories.customrepositories.UserSkillRepository;
-import com.dat.erp.services.CodeGenerator;
 import com.dat.erp.services.EmailService;
 import com.dat.erp.services.PasswordGenerator;
 import com.dat.erp.services.SecurityContextService;
@@ -69,8 +67,6 @@ class EmployeeAccountServiceImplTest {
     @Mock
     private SecurityContextService securityContextService;
     @Mock
-    private CodeGenerator codeGenerator;
-    @Mock
     private UserProfileRepository userProfileRepository;
     @Mock
     private UserSkillRepository userSkillRepository;
@@ -92,12 +88,11 @@ class EmployeeAccountServiceImplTest {
                 userProfileService,
                 emailService,
                 passwordGenerator,
-                codeGenerator,
-                securityContextService,
                 employeeAccountMapper,
                 userProfileMapper,
                 userProfileRepository,
-                userSkillRepository);
+                userSkillRepository,
+                securityContextService);
         request = new CreateEmployeeRequest();
         request.setEmail("employee@company.com");
         request.setFirstName("Nguyen");
@@ -111,17 +106,18 @@ class EmployeeAccountServiceImplTest {
     @Test
     void createEmployee_success_persistsAllAndSendsEmail() {
         Account actorAcc = new Account();
-        actorAcc.setCode("ACC-ADMIN");
-        actorAcc.setCompanyCode("CMP-1");
+        com.dat.erp.testutils.EntityTestData.setCode(actorAcc, "ACC-ADMIN");
+        com.dat.erp.testutils.EntityTestData.setCompanyCode(actorAcc, "CMP-1");
         Role adminRole = new Role();
         adminRole.setName("ADMIN");
         actorAcc.setRole(adminRole);
         when(securityContextService.getCurrentUser()).thenReturn(new CustomUserDetails(actorAcc, null));
+        when(securityContextService.getCurrentCompanyCode()).thenReturn(actorAcc.getCompanyCode());
 
         Department department = new Department();
-        department.setCode("DPM-IT");
+        com.dat.erp.testutils.EntityTestData.setCode(department, "DPM-IT");
         department.setName("IT");
-        department.setCompanyCode("CMP-1");
+        com.dat.erp.testutils.EntityTestData.setCompanyCode(department, "CMP-1");
         when(departmentRepository.findByCodeAndCompanyCode("DPM-IT", "CMP-1")).thenReturn(Optional.of(department));
 
         when(accountRepository.findByEmail("employee@company.com")).thenReturn(Optional.empty());
@@ -132,16 +128,15 @@ class EmployeeAccountServiceImplTest {
         when(roleRepository.findByName("EMPLOYEE")).thenReturn(Optional.of(employeeRole));
 
         when(passwordGenerator.generate()).thenReturn("P@ssw0rd!");
-        when(codeGenerator.nextCode(CodePrefixes.ACCOUNT)).thenReturn("ACC-000001");
-
         Account mappedAccount = new Account();
+        com.dat.erp.testutils.EntityTestData.setCode(mappedAccount, "ACC-000001");
         mappedAccount.setEmail("employee@company.com");
         when(employeeAccountMapper.toAccount(request)).thenReturn(mappedAccount);
         when(employeeAccountMapper.toUserProfileCreateRequest(request, "ACC-000001")).thenReturn(new UserProfileCreateRequest());
 
         when(accountRepository.save(any(Account.class))).thenAnswer(inv -> inv.getArgument(0));
         UserProfile savedProfile = new UserProfile();
-        savedProfile.setCode("USR-000001");
+        com.dat.erp.testutils.EntityTestData.setCode(savedProfile, "USR-000001");
         savedProfile.setFirstName("Nguyen");
         savedProfile.setLastName("Van A");
         savedProfile.setAccount(new Account());
@@ -174,17 +169,18 @@ class EmployeeAccountServiceImplTest {
     @Test
     void createEmployee_conflict_whenEmailExists() {
         Account actorAcc = new Account();
-        actorAcc.setCode("ACC-ADMIN");
-        actorAcc.setCompanyCode("CMP-1");
+        com.dat.erp.testutils.EntityTestData.setCode(actorAcc, "ACC-ADMIN");
+        com.dat.erp.testutils.EntityTestData.setCompanyCode(actorAcc, "CMP-1");
         Role role = new Role();
         role.setName("ADMIN");
         actorAcc.setRole(role);
         when(securityContextService.getCurrentUser()).thenReturn(new CustomUserDetails(actorAcc, null));
+        when(securityContextService.getCurrentCompanyCode()).thenReturn(actorAcc.getCompanyCode());
 
         Department department = new Department();
-        department.setCode("DPM-IT");
+        com.dat.erp.testutils.EntityTestData.setCode(department, "DPM-IT");
         department.setName("IT");
-        department.setCompanyCode("CMP-1");
+        com.dat.erp.testutils.EntityTestData.setCompanyCode(department, "CMP-1");
         when(departmentRepository.findByCodeAndCompanyCode("DPM-IT", "CMP-1")).thenReturn(Optional.of(department));
 
         when(accountRepository.findByEmail("employee@company.com")).thenReturn(Optional.of(new Account()));
@@ -197,17 +193,18 @@ class EmployeeAccountServiceImplTest {
     @Test
     void createEmployee_badRequest_whenRoleInvalid() {
         Account actorAcc = new Account();
-        actorAcc.setCode("ACC-ADMIN");
-        actorAcc.setCompanyCode("CMP-1");
+        com.dat.erp.testutils.EntityTestData.setCode(actorAcc, "ACC-ADMIN");
+        com.dat.erp.testutils.EntityTestData.setCompanyCode(actorAcc, "CMP-1");
         Role role = new Role();
         role.setName("ADMIN");
         actorAcc.setRole(role);
         when(securityContextService.getCurrentUser()).thenReturn(new CustomUserDetails(actorAcc, null));
+        when(securityContextService.getCurrentCompanyCode()).thenReturn(actorAcc.getCompanyCode());
 
         Department department = new Department();
-        department.setCode("DPM-IT");
+        com.dat.erp.testutils.EntityTestData.setCode(department, "DPM-IT");
         department.setName("IT");
-        department.setCompanyCode("CMP-1");
+        com.dat.erp.testutils.EntityTestData.setCompanyCode(department, "CMP-1");
         when(departmentRepository.findByCodeAndCompanyCode("DPM-IT", "CMP-1")).thenReturn(Optional.of(department));
 
         when(accountRepository.findByEmail("employee@company.com")).thenReturn(Optional.empty());
@@ -222,15 +219,15 @@ class EmployeeAccountServiceImplTest {
     @Test
     void buildSpecification_humanResourcesScopeIncludesOwnProfile() throws Exception {
         Account hrAccount = new Account();
-        hrAccount.setCode("ACC-HR");
-        hrAccount.setCompanyCode("CMP-1");
+        com.dat.erp.testutils.EntityTestData.setCode(hrAccount, "ACC-HR");
+        com.dat.erp.testutils.EntityTestData.setCompanyCode(hrAccount, "CMP-1");
         Role hrRole = new Role();
         hrRole.setName("HUMAN_RESOURCES");
         hrAccount.setRole(hrRole);
 
         UserProfile currentProfile = new UserProfile();
-        currentProfile.setId(99L);
-        currentProfile.setCode("USR-99");
+        com.dat.erp.testutils.EntityTestData.setId(currentProfile, 99L);
+        com.dat.erp.testutils.EntityTestData.setCode(currentProfile, "USR-99");
 
         CustomUserDetails currentUser = new CustomUserDetails(hrAccount, currentProfile);
         EmployeeListRequest listRequest = EmployeeListRequest.builder()

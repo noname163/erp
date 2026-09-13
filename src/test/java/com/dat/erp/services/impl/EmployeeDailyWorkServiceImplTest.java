@@ -42,7 +42,6 @@ import com.dat.erp.exceptions.ResourceNotFoundException;
 import com.dat.erp.mapper.interfaces.EmployeeDailyWorkMapper;
 import com.dat.erp.repositories.customrepositories.DailyWorkRepository;
 import com.dat.erp.repositories.customrepositories.UserProfileRepository;
-import com.dat.erp.services.CodeGenerator;
 import com.dat.erp.services.SecurityContextService;
 import com.dat.erp.systemconfigs.CustomUserDetails;
 
@@ -53,9 +52,6 @@ class EmployeeDailyWorkServiceImplTest {
 
     @Mock
     private UserProfileRepository userProfileRepository;
-
-    @Mock
-    private CodeGenerator codeGenerator;
 
     @Mock
     private SecurityContextService securityContextService;
@@ -80,14 +76,13 @@ class EmployeeDailyWorkServiceImplTest {
                         trimToNull(projection.getEditedByName()),
                         projection.getOtTime(),
                         projection.getUsedPto(),
-                        trimToNull(projection.getWorkType()));
+                        dayTypeToString(projection.getWorkType()));
             }
         };
         employeeDailyWorkService = new EmployeeDailyWorkServiceImpl(
                 dailyWorkRepository,
                 userProfileRepository,
                 employeeDailyWorkMapper,
-                codeGenerator,
                 securityContextService);
 
         EmployeeDailyWorkRequest request = new EmployeeDailyWorkRequest();
@@ -107,14 +102,15 @@ class EmployeeDailyWorkServiceImplTest {
     @Test
     void createEmployeeDailyWorks_success() {
         Account currentUserAccount = new Account();
-        currentUserAccount.setCode("ACC-1");
-        currentUserAccount.setCompanyCode("CMP-1");
+        com.dat.erp.testutils.EntityTestData.setCode(currentUserAccount, "ACC-1");
+        com.dat.erp.testutils.EntityTestData.setCompanyCode(currentUserAccount, "CMP-1");
         when(securityContextService.getCurrentUser()).thenReturn(new CustomUserDetails(currentUserAccount, null));
+        when(securityContextService.getCurrentCompanyCode()).thenReturn(currentUserAccount.getCompanyCode());
 
         Account employeeAccount = new Account();
-        employeeAccount.setCompanyCode("CMP-1");
+        com.dat.erp.testutils.EntityTestData.setCompanyCode(employeeAccount, "CMP-1");
         UserProfile employee = new UserProfile();
-        employee.setCode("EMP001");
+        com.dat.erp.testutils.EntityTestData.setCode(employee, "EMP001");
         employee.setAccount(employeeAccount);
         employee.setIsActive(true);
         when(userProfileRepository.findAllByCodeInAndIsDeletedFalseWithAccount(anyCollection()))
@@ -124,8 +120,11 @@ class EmployeeDailyWorkServiceImplTest {
                 anyCollection(),
                 anyCollection()))
                 .thenReturn(List.of());
-        when(codeGenerator.nextCode("DWK-")).thenReturn("DWK-000001");
-        when(dailyWorkRepository.saveAll(anyList())).thenAnswer(invocation -> invocation.getArgument(0));
+        when(dailyWorkRepository.saveAll(anyList())).thenAnswer(invocation -> {
+            List<DailyWork> saved = invocation.getArgument(0);
+            com.dat.erp.testutils.EntityTestData.setCode(saved.get(0), "DWK-000001");
+            return saved;
+        });
 
         String result = employeeDailyWorkService.createEmployeeDailyWorks(requests);
 
@@ -155,20 +154,19 @@ class EmployeeDailyWorkServiceImplTest {
         requests = Arrays.asList(requests.get(0), copy);
 
         Account currentUserAccount = new Account();
-        currentUserAccount.setCode("ACC-1");
-        currentUserAccount.setCompanyCode("CMP-1");
+        com.dat.erp.testutils.EntityTestData.setCode(currentUserAccount, "ACC-1");
+        com.dat.erp.testutils.EntityTestData.setCompanyCode(currentUserAccount, "CMP-1");
         when(securityContextService.getCurrentUser()).thenReturn(new CustomUserDetails(currentUserAccount, null));
+        when(securityContextService.getCurrentCompanyCode()).thenReturn(currentUserAccount.getCompanyCode());
 
         Account employeeAccount = new Account();
-        employeeAccount.setCompanyCode("CMP-1");
+        com.dat.erp.testutils.EntityTestData.setCompanyCode(employeeAccount, "CMP-1");
         UserProfile employee = new UserProfile();
-        employee.setCode("EMP001");
+        com.dat.erp.testutils.EntityTestData.setCode(employee, "EMP001");
         employee.setAccount(employeeAccount);
         employee.setIsActive(true);
         when(userProfileRepository.findAllByCodeInAndIsDeletedFalseWithAccount(anyCollection()))
                 .thenReturn(List.of(employee));
-        when(codeGenerator.nextCode("DWK-")).thenReturn("DWK-000001");
-
         ConflictException ex = assertThrows(ConflictException.class,
                 () -> employeeDailyWorkService.createEmployeeDailyWorks(requests));
         assertEquals(Messages.ERROR_DAILY_WORK_ALREADY_EXISTS, ex.getMessage());
@@ -178,14 +176,15 @@ class EmployeeDailyWorkServiceImplTest {
     @Test
     void createEmployeeDailyWorks_conflictWhenAlreadyExistsInDb() {
         Account currentUserAccount = new Account();
-        currentUserAccount.setCode("ACC-1");
-        currentUserAccount.setCompanyCode("CMP-1");
+        com.dat.erp.testutils.EntityTestData.setCode(currentUserAccount, "ACC-1");
+        com.dat.erp.testutils.EntityTestData.setCompanyCode(currentUserAccount, "CMP-1");
         when(securityContextService.getCurrentUser()).thenReturn(new CustomUserDetails(currentUserAccount, null));
+        when(securityContextService.getCurrentCompanyCode()).thenReturn(currentUserAccount.getCompanyCode());
 
         Account employeeAccount = new Account();
-        employeeAccount.setCompanyCode("CMP-1");
+        com.dat.erp.testutils.EntityTestData.setCompanyCode(employeeAccount, "CMP-1");
         UserProfile employee = new UserProfile();
-        employee.setCode("EMP001");
+        com.dat.erp.testutils.EntityTestData.setCode(employee, "EMP001");
         employee.setAccount(employeeAccount);
         employee.setIsActive(true);
         when(userProfileRepository.findAllByCodeInAndIsDeletedFalseWithAccount(anyCollection()))
@@ -207,9 +206,10 @@ class EmployeeDailyWorkServiceImplTest {
     @Test
     void createEmployeeDailyWorks_notFoundWhenEmployeeMissing() {
         Account currentUserAccount = new Account();
-        currentUserAccount.setCode("ACC-1");
-        currentUserAccount.setCompanyCode("CMP-1");
+        com.dat.erp.testutils.EntityTestData.setCode(currentUserAccount, "ACC-1");
+        com.dat.erp.testutils.EntityTestData.setCompanyCode(currentUserAccount, "CMP-1");
         when(securityContextService.getCurrentUser()).thenReturn(new CustomUserDetails(currentUserAccount, null));
+        when(securityContextService.getCurrentCompanyCode()).thenReturn(currentUserAccount.getCompanyCode());
 
         when(userProfileRepository.findAllByCodeInAndIsDeletedFalseWithAccount(anyCollection()))
                 .thenReturn(List.of());
@@ -226,14 +226,15 @@ class EmployeeDailyWorkServiceImplTest {
         requests.get(0).setEndTime(LocalTime.of(9, 0));
 
         Account currentUserAccount = new Account();
-        currentUserAccount.setCode("ACC-1");
-        currentUserAccount.setCompanyCode("CMP-1");
+        com.dat.erp.testutils.EntityTestData.setCode(currentUserAccount, "ACC-1");
+        com.dat.erp.testutils.EntityTestData.setCompanyCode(currentUserAccount, "CMP-1");
         when(securityContextService.getCurrentUser()).thenReturn(new CustomUserDetails(currentUserAccount, null));
+        when(securityContextService.getCurrentCompanyCode()).thenReturn(currentUserAccount.getCompanyCode());
 
         Account employeeAccount = new Account();
-        employeeAccount.setCompanyCode("CMP-1");
+        com.dat.erp.testutils.EntityTestData.setCompanyCode(employeeAccount, "CMP-1");
         UserProfile employee = new UserProfile();
-        employee.setCode("EMP001");
+        com.dat.erp.testutils.EntityTestData.setCode(employee, "EMP001");
         employee.setAccount(employeeAccount);
         employee.setIsActive(true);
         when(userProfileRepository.findAllByCodeInAndIsDeletedFalseWithAccount(anyCollection()))
@@ -253,14 +254,15 @@ class EmployeeDailyWorkServiceImplTest {
     @Test
     void getEmployeeDailyWorksByEmployeeCodes_returnsMappedResponsesByEmployeeCode() {
         Account currentUserAccount = new Account();
-        currentUserAccount.setCode("ACC-1");
-        currentUserAccount.setCompanyCode("CMP-1");
+        com.dat.erp.testutils.EntityTestData.setCode(currentUserAccount, "ACC-1");
+        com.dat.erp.testutils.EntityTestData.setCompanyCode(currentUserAccount, "CMP-1");
         when(securityContextService.getCurrentUser()).thenReturn(new CustomUserDetails(currentUserAccount, null));
+        when(securityContextService.getCurrentCompanyCode()).thenReturn(currentUserAccount.getCompanyCode());
 
         UserProfile employeeOne = new UserProfile();
-        employeeOne.setCode("EMP001");
+        com.dat.erp.testutils.EntityTestData.setCode(employeeOne, "EMP001");
         UserProfile employeeTwo = new UserProfile();
-        employeeTwo.setCode("EMP002");
+        com.dat.erp.testutils.EntityTestData.setCode(employeeTwo, "EMP002");
 
         DailyWork employeeOneNormal = DailyWork.builder()
                 .userProfile(employeeOne)
@@ -299,16 +301,18 @@ class EmployeeDailyWorkServiceImplTest {
     @Test
     void createEmployeeDailyWorks_forbiddenWhenEmployeeCreatesForAnotherEmployee() {
         Account currentUserAccount = new Account();
-        currentUserAccount.setCode("ACC-EMP");
-        currentUserAccount.setCompanyCode("CMP-1");
+        com.dat.erp.testutils.EntityTestData.setCode(currentUserAccount, "ACC-EMP");
+        com.dat.erp.testutils.EntityTestData.setCompanyCode(currentUserAccount, "CMP-1");
         Role employeeRole = new Role();
         employeeRole.setName("EMPLOYEE");
         currentUserAccount.setRole(employeeRole);
 
         UserProfile currentProfile = new UserProfile();
-        currentProfile.setCode("EMP999");
+        com.dat.erp.testutils.EntityTestData.setCode(currentProfile, "EMP999");
 
         when(securityContextService.getCurrentUser()).thenReturn(new CustomUserDetails(currentUserAccount, currentProfile));
+
+        when(securityContextService.getCurrentCompanyCode()).thenReturn(currentUserAccount.getCompanyCode());
 
         ForbiddenException ex = assertThrows(ForbiddenException.class,
                 () -> employeeDailyWorkService.createEmployeeDailyWorks(requests));
@@ -321,16 +325,18 @@ class EmployeeDailyWorkServiceImplTest {
     @Test
     void getEmployeeDailyWorks_employeeWithoutFilterUsesOwnEmployeeCode() {
         Account currentUserAccount = new Account();
-        currentUserAccount.setCode("ACC-EMP");
-        currentUserAccount.setCompanyCode("CMP-1");
+        com.dat.erp.testutils.EntityTestData.setCode(currentUserAccount, "ACC-EMP");
+        com.dat.erp.testutils.EntityTestData.setCompanyCode(currentUserAccount, "CMP-1");
         Role employeeRole = new Role();
         employeeRole.setName("EMPLOYEE");
         currentUserAccount.setRole(employeeRole);
 
         UserProfile currentProfile = new UserProfile();
-        currentProfile.setCode("EMP001");
+        com.dat.erp.testutils.EntityTestData.setCode(currentProfile, "EMP001");
 
         when(securityContextService.getCurrentUser()).thenReturn(new CustomUserDetails(currentUserAccount, currentProfile));
+
+        when(securityContextService.getCurrentCompanyCode()).thenReturn(currentUserAccount.getCompanyCode());
         when(dailyWorkRepository.findEmployeeDailyWorksByFilters(
                 "CMP-1",
                 "EMP001",
@@ -357,16 +363,18 @@ class EmployeeDailyWorkServiceImplTest {
     @Test
     void getEmployeeDailyWorks_forbiddenWhenEmployeeFiltersAnotherEmployee() {
         Account currentUserAccount = new Account();
-        currentUserAccount.setCode("ACC-EMP");
-        currentUserAccount.setCompanyCode("CMP-1");
+        com.dat.erp.testutils.EntityTestData.setCode(currentUserAccount, "ACC-EMP");
+        com.dat.erp.testutils.EntityTestData.setCompanyCode(currentUserAccount, "CMP-1");
         Role employeeRole = new Role();
         employeeRole.setName("EMPLOYEE");
         currentUserAccount.setRole(employeeRole);
 
         UserProfile currentProfile = new UserProfile();
-        currentProfile.setCode("EMP001");
+        com.dat.erp.testutils.EntityTestData.setCode(currentProfile, "EMP001");
 
         when(securityContextService.getCurrentUser()).thenReturn(new CustomUserDetails(currentUserAccount, currentProfile));
+
+        when(securityContextService.getCurrentCompanyCode()).thenReturn(currentUserAccount.getCompanyCode());
 
         ForbiddenException ex = assertThrows(ForbiddenException.class,
                 () -> employeeDailyWorkService.getEmployeeDailyWorks("EMP002", null, null, null, 0, 20, null, "DESC"));

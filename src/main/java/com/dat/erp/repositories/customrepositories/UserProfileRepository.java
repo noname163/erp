@@ -12,13 +12,13 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
-import org.springframework.stereotype.Repository;
+
 
 import com.dat.erp.entities.UserProfile;
 
 import jakarta.persistence.LockModeType;
 
-@Repository
+
 public interface UserProfileRepository extends JpaRepository<UserProfile, Long>, JpaSpecificationExecutor<UserProfile> {
     Optional<UserProfile> findByAccount_Code(String accountCode);
 

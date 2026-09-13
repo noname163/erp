@@ -25,7 +25,6 @@ public class PayrollRunAuditLogServiceImpl implements PayrollRunAuditLogService 
     private final PayrollRunAuditLogRepository payrollRunAuditLogRepository;
     private final SecurityContextService securityContextService;
 
-
     @Override
     public void writeAudit(PayrollRun payrollRun, PayrollRunAuditLogRequest request) {
         PayrollRunAuditLog auditLog = new PayrollRunAuditLog(

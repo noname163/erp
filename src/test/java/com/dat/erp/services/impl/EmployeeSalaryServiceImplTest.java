@@ -101,6 +101,12 @@ class EmployeeSalaryServiceImplTest {
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
+        when(securityContextService.getCurrentCompanySecretKey()).thenReturn("company-secret-key");
+        when(payrollRunRepository.save(any(PayrollRun.class))).thenAnswer(invocation -> {
+            PayrollRun saved = invocation.getArgument(0);
+            com.dat.erp.testutils.EntityTestData.setField(saved, "updatedBy", "ACC-1");
+            return saved;
+        });
 
         request = new EmployeeSalaryRequest();
         request.setUserProfileCode("EMP001");
@@ -113,18 +119,19 @@ class EmployeeSalaryServiceImplTest {
     @Test
     void createEmployeeSalary_success() {
         Account currentUserAccount = new Account();
-        currentUserAccount.setCompanyCode("CMP-1");
+        com.dat.erp.testutils.EntityTestData.setCompanyCode(currentUserAccount, "CMP-1");
         when(securityContextService.getCurrentUser()).thenReturn(new CustomUserDetails(currentUserAccount, null));
+        when(securityContextService.getCurrentCompanyCode()).thenReturn(currentUserAccount.getCompanyCode());
 
         Company company = new Company();
-        company.setCode("CMP-1");
+        com.dat.erp.testutils.EntityTestData.setCode(company, "CMP-1");
         company.setSecretKey("company-secret-key");
         when(companyRepository.findByCode("CMP-1")).thenReturn(Optional.of(company));
 
         Account employeeAccount = new Account();
-        employeeAccount.setCompanyCode("CMP-1");
+        com.dat.erp.testutils.EntityTestData.setCompanyCode(employeeAccount, "CMP-1");
         UserProfile employee = new UserProfile();
-        employee.setCode("EMP001");
+        com.dat.erp.testutils.EntityTestData.setCode(employee, "EMP001");
         employee.setAccount(employeeAccount);
         employee.setIsActive(true);
         when(userProfileRepository.findByCode("EMP001")).thenReturn(Optional.of(employee));
@@ -137,7 +144,7 @@ class EmployeeSalaryServiceImplTest {
         when(codeGenerator.nextCode("ESL-")).thenReturn("ESL-000001");
 
         EmployeeSalary saved = new EmployeeSalary();
-        saved.setCode("ESL-000001");
+        com.dat.erp.testutils.EntityTestData.setCode(saved, "ESL-000001");
         saved.setUserProfile(employee);
         saved.setEffectiveFrom(request.getEffectiveFrom());
         saved.setEffectiveTo(request.getEffectiveTo());
@@ -162,18 +169,19 @@ class EmployeeSalaryServiceImplTest {
     @Test
     void createEmployeeSalary_conflictWhenOverlappingPeriod() {
         Account currentUserAccount = new Account();
-        currentUserAccount.setCompanyCode("CMP-1");
+        com.dat.erp.testutils.EntityTestData.setCompanyCode(currentUserAccount, "CMP-1");
         when(securityContextService.getCurrentUser()).thenReturn(new CustomUserDetails(currentUserAccount, null));
+        when(securityContextService.getCurrentCompanyCode()).thenReturn(currentUserAccount.getCompanyCode());
 
         Company company = new Company();
-        company.setCode("CMP-1");
+        com.dat.erp.testutils.EntityTestData.setCode(company, "CMP-1");
         company.setSecretKey("company-secret-key");
         when(companyRepository.findByCode("CMP-1")).thenReturn(Optional.of(company));
 
         Account employeeAccount = new Account();
-        employeeAccount.setCompanyCode("CMP-1");
+        com.dat.erp.testutils.EntityTestData.setCompanyCode(employeeAccount, "CMP-1");
         UserProfile employee = new UserProfile();
-        employee.setCode("EMP001");
+        com.dat.erp.testutils.EntityTestData.setCode(employee, "EMP001");
         employee.setAccount(employeeAccount);
         employee.setIsActive(true);
         when(userProfileRepository.findByCode("EMP001")).thenReturn(Optional.of(employee));
@@ -190,11 +198,12 @@ class EmployeeSalaryServiceImplTest {
     @Test
     void createEmployeeSalary_notFoundWhenEmployeeMissing() {
         Account currentUserAccount = new Account();
-        currentUserAccount.setCompanyCode("CMP-1");
+        com.dat.erp.testutils.EntityTestData.setCompanyCode(currentUserAccount, "CMP-1");
         when(securityContextService.getCurrentUser()).thenReturn(new CustomUserDetails(currentUserAccount, null));
+        when(securityContextService.getCurrentCompanyCode()).thenReturn(currentUserAccount.getCompanyCode());
 
         Company company = new Company();
-        company.setCode("CMP-1");
+        com.dat.erp.testutils.EntityTestData.setCode(company, "CMP-1");
         company.setSecretKey("company-secret-key");
         when(companyRepository.findByCode("CMP-1")).thenReturn(Optional.of(company));
 
@@ -220,18 +229,19 @@ class EmployeeSalaryServiceImplTest {
     @Test
     void createEmployeeSalary_badRequestWhenEmployeeInactive() {
         Account currentUserAccount = new Account();
-        currentUserAccount.setCompanyCode("CMP-1");
+        com.dat.erp.testutils.EntityTestData.setCompanyCode(currentUserAccount, "CMP-1");
         when(securityContextService.getCurrentUser()).thenReturn(new CustomUserDetails(currentUserAccount, null));
+        when(securityContextService.getCurrentCompanyCode()).thenReturn(currentUserAccount.getCompanyCode());
 
         Company company = new Company();
-        company.setCode("CMP-1");
+        com.dat.erp.testutils.EntityTestData.setCode(company, "CMP-1");
         company.setSecretKey("company-secret-key");
         when(companyRepository.findByCode("CMP-1")).thenReturn(Optional.of(company));
 
         Account employeeAccount = new Account();
-        employeeAccount.setCompanyCode("CMP-1");
+        com.dat.erp.testutils.EntityTestData.setCompanyCode(employeeAccount, "CMP-1");
         UserProfile employee = new UserProfile();
-        employee.setCode("EMP001");
+        com.dat.erp.testutils.EntityTestData.setCode(employee, "EMP001");
         employee.setAccount(employeeAccount);
         employee.setIsActive(false);
         when(userProfileRepository.findByCode("EMP001")).thenReturn(Optional.of(employee));
@@ -245,11 +255,12 @@ class EmployeeSalaryServiceImplTest {
     @Test
     void getEmployeeSalaries_successWithFilters() {
         Account currentUserAccount = new Account();
-        currentUserAccount.setCompanyCode("CMP-1");
+        com.dat.erp.testutils.EntityTestData.setCompanyCode(currentUserAccount, "CMP-1");
         when(securityContextService.getCurrentUser()).thenReturn(new CustomUserDetails(currentUserAccount, null));
+        when(securityContextService.getCurrentCompanyCode()).thenReturn(currentUserAccount.getCompanyCode());
 
         Company company = new Company();
-        company.setCode("CMP-1");
+        com.dat.erp.testutils.EntityTestData.setCode(company, "CMP-1");
         company.setSecretKey("company-secret-key");
         when(companyRepository.findByCode("CMP-1")).thenReturn(Optional.of(company));
 
@@ -258,7 +269,7 @@ class EmployeeSalaryServiceImplTest {
         userProfile1.setLastName("Doe");
 
         EmployeeSalary salary1 = new EmployeeSalary();
-        salary1.setCode("ESL-000001");
+        com.dat.erp.testutils.EntityTestData.setCode(salary1, "ESL-000001");
         salary1.setUserProfile(userProfile1);
         salary1.setEffectiveFrom(LocalDate.of(2025, 1, 1));
         salary1.setEffectiveTo(LocalDate.of(2025, 12, 31));
@@ -270,7 +281,7 @@ class EmployeeSalaryServiceImplTest {
         userProfile2.setLastName("Smith");
 
         EmployeeSalary salary2 = new EmployeeSalary();
-        salary2.setCode("ESL-000002");
+        com.dat.erp.testutils.EntityTestData.setCode(salary2, "ESL-000002");
         salary2.setUserProfile(userProfile2);
         salary2.setEffectiveFrom(LocalDate.of(2025, 2, 1));
         salary2.setEffectiveTo(LocalDate.of(2025, 12, 31));
@@ -319,12 +330,13 @@ class EmployeeSalaryServiceImplTest {
     @Test
     void employeeSalaryCalculation_updatesActualAmountsAndPersistsResults() {
         Account currentUserAccount = new Account();
-        currentUserAccount.setCode("ACC-1");
-        currentUserAccount.setCompanyCode("CMP-1");
+        com.dat.erp.testutils.EntityTestData.setCode(currentUserAccount, "ACC-1");
+        com.dat.erp.testutils.EntityTestData.setCompanyCode(currentUserAccount, "CMP-1");
         when(securityContextService.getCurrentUser()).thenReturn(new CustomUserDetails(currentUserAccount, null));
+        when(securityContextService.getCurrentCompanyCode()).thenReturn(currentUserAccount.getCompanyCode());
 
         Company company = new Company();
-        company.setCode("CMP-1");
+        com.dat.erp.testutils.EntityTestData.setCode(company, "CMP-1");
         company.setSecretKey("company-secret-key");
         when(companyRepository.findByCode("CMP-1")).thenReturn(Optional.of(company));
 
@@ -335,8 +347,11 @@ class EmployeeSalaryServiceImplTest {
                 .thenReturn(monthlySalaryCalculationResponse("EMP001", "1234.5000", "160"));
         when(monthlySalaryCalculationService.calculateEmployeeMonthlySalary("EMP002", YearMonth.of(2025, 3)))
                 .thenReturn(monthlySalaryCalculationResponse("EMP002", "2345.0000", "152"));
-        when(payrollResultRepository.saveAllAndFlush(any()))
-                .thenAnswer(invocation -> invocation.getArgument(0));
+        when(payrollResultRepository.saveAllAndFlush(any())).thenAnswer(invocation -> {
+            List<PayrollResult> saved = invocation.getArgument(0);
+            saved.forEach(result -> com.dat.erp.testutils.EntityTestData.setField(result, "updatedBy", "ACC-1"));
+            return saved;
+        });
 
         employeeSalaryService.employeeSalaryCalculation(
                 "CMP-1",
@@ -361,32 +376,36 @@ class EmployeeSalaryServiceImplTest {
     @Test
     void employeeSalaryCalculation_marksPayrollRunFailedWhenEmployeeCalculationFailsAndContinues() {
         Account currentUserAccount = new Account();
-        currentUserAccount.setCode("ACC-1");
-        currentUserAccount.setCompanyCode("CMP-1");
+        com.dat.erp.testutils.EntityTestData.setCode(currentUserAccount, "ACC-1");
+        com.dat.erp.testutils.EntityTestData.setCompanyCode(currentUserAccount, "CMP-1");
         when(securityContextService.getCurrentUser()).thenReturn(new CustomUserDetails(currentUserAccount, null));
+        when(securityContextService.getCurrentCompanyCode()).thenReturn(currentUserAccount.getCompanyCode());
 
         Company company = new Company();
-        company.setCode("CMP-1");
+        com.dat.erp.testutils.EntityTestData.setCode(company, "CMP-1");
         company.setSecretKey("company-secret-key");
         when(companyRepository.findByCode("CMP-1")).thenReturn(Optional.of(company));
 
-        PayrollRun payrollRun = new PayrollRun();
-        payrollRun.setCode("PRN-1");
-        payrollRun.setStatus(PayrollRunStatus.CALCULATED);
+        PayrollRun payrollRun = com.dat.erp.testutils.EntityTestData.create(PayrollRun.class);
+        com.dat.erp.testutils.EntityTestData.setCode(payrollRun, "PRN-1");
+        com.dat.erp.testutils.EntityTestData.setField(payrollRun, "status", PayrollRunStatus.CALCULATED);
         PayrollResult firstPayrollResult = payrollResult(1L, "EMP001");
-        firstPayrollResult.setCode("PRR-1");
-        firstPayrollResult.setPayrollRun(payrollRun);
+        com.dat.erp.testutils.EntityTestData.setCode(firstPayrollResult, "PRR-1");
+        com.dat.erp.testutils.EntityTestData.setField(firstPayrollResult, "payrollRun", payrollRun);
         PayrollResult secondPayrollResult = payrollResult(2L, "EMP002");
-        secondPayrollResult.setCode("PRR-2");
-        secondPayrollResult.setPayrollRun(payrollRun);
+        com.dat.erp.testutils.EntityTestData.setCode(secondPayrollResult, "PRR-2");
+        com.dat.erp.testutils.EntityTestData.setField(secondPayrollResult, "payrollRun", payrollRun);
 
         doThrow(new BadRequestException("Missing working-hour mapping for dayType null"))
                 .when(monthlySalaryCalculationService)
                 .calculateEmployeeMonthlySalary("EMP001", YearMonth.of(2025, 3));
         when(monthlySalaryCalculationService.calculateEmployeeMonthlySalary("EMP002", YearMonth.of(2025, 3)))
                 .thenReturn(monthlySalaryCalculationResponse("EMP002", "2345.0000", "152"));
-        when(payrollResultRepository.saveAllAndFlush(any()))
-                .thenAnswer(invocation -> invocation.getArgument(0));
+        when(payrollResultRepository.saveAllAndFlush(any())).thenAnswer(invocation -> {
+            List<PayrollResult> saved = invocation.getArgument(0);
+            saved.forEach(result -> com.dat.erp.testutils.EntityTestData.setField(result, "updatedBy", "ACC-1"));
+            return saved;
+        });
 
         employeeSalaryService.employeeSalaryCalculation(
                 "CMP-1",
@@ -411,7 +430,7 @@ class EmployeeSalaryServiceImplTest {
                 () -> employeeSalaryService.employeeSalaryCalculation(
                         "CMP-1",
                         List.of("EMP001"),
-                        List.of(new PayrollResult()),
+                        List.of(com.dat.erp.testutils.EntityTestData.create(PayrollResult.class)),
                         null));
 
         assertEquals(Messages.ERROR_PAYROLL_MONTH_INVALID, ex.getMessage());
@@ -420,14 +439,14 @@ class EmployeeSalaryServiceImplTest {
 
     private PayrollResult payrollResult(Long userProfileId, String userProfileCode) {
         UserProfile userProfile = new UserProfile();
-        userProfile.setId(userProfileId);
-        userProfile.setCode(userProfileCode);
+        com.dat.erp.testutils.EntityTestData.setId(userProfile, userProfileId);
+        com.dat.erp.testutils.EntityTestData.setCode(userProfile, userProfileCode);
 
         EmployeeSalary employeeSalary = new EmployeeSalary();
         employeeSalary.setUserProfile(userProfile);
 
-        PayrollResult payrollResult = new PayrollResult();
-        payrollResult.setEmployeeSalary(employeeSalary);
+        PayrollResult payrollResult = com.dat.erp.testutils.EntityTestData.create(PayrollResult.class);
+        com.dat.erp.testutils.EntityTestData.setField(payrollResult, "employeeSalary", employeeSalary);
         return payrollResult;
     }
 

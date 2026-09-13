@@ -65,7 +65,7 @@ class AuthenticationServiceImplTest {
 
         account = new Account();
         account.setEmail("user@example.com");
-        account.setCode("ACC-1");
+        com.dat.erp.testutils.EntityTestData.setCode(account, "ACC-1");
         account.setPasswordHash("$2a$10$hash");
         account.setRole(Role.builder().type("ADMIN").name("ADMIN").build());
     }

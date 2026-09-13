@@ -89,9 +89,10 @@ class CompanyCalendarServiceImplTest {
         request.setNote("  Main regional calendar  ");
 
         Account account = new Account();
-        account.setCode("ACC-001");
-        account.setCompanyCode("CMP-001");
+        com.dat.erp.testutils.EntityTestData.setCode(account, "ACC-001");
+        com.dat.erp.testutils.EntityTestData.setCompanyCode(account, "CMP-001");
         when(securityContextService.getCurrentUser()).thenReturn(new CustomUserDetails(account, null));
+        when(securityContextService.getCurrentCompanyCode()).thenReturn(account.getCompanyCode());
     }
 
     @Test
@@ -109,13 +110,13 @@ class CompanyCalendarServiceImplTest {
                 .dayType(DayType.WEEKEND_WORK)
                 .note("First weekend")
                 .build();
-        secondSavedDate.setCode("CAD-000002");
+        com.dat.erp.testutils.EntityTestData.setCode(secondSavedDate, "CAD-000002");
         CalendarDate firstSavedDate = CalendarDate.builder()
                 .calDate(LocalDate.of(2026, 1, 1))
                 .dayType(DayType.HOLIDAY_WORK)
                 .note("New Year holiday")
                 .build();
-        firstSavedDate.setCode("CAD-000001");
+        com.dat.erp.testutils.EntityTestData.setCode(firstSavedDate, "CAD-000001");
         List<CalendarDate> savedDates = List.of(secondSavedDate, firstSavedDate);
         CompanyCalendarResponse mappedResponse = new CompanyCalendarResponse(
                 "CCA-000001",
@@ -130,6 +131,8 @@ class CompanyCalendarServiceImplTest {
                         new CompanyCalendarDateResponse(LocalDate.of(2026, 1, 4), DayType.WEEKEND_WORK, "First weekend")));
 
         when(companyCalendarMapper.toEntity(request)).thenReturn(mappedCalendar);
+        com.dat.erp.testutils.EntityTestData.setCode(mappedCalendar, "CCA-000001");
+        com.dat.erp.testutils.EntityTestData.setCompanyCode(mappedCalendar, "CMP-001");
         when(codeGenerator.nextCode("CCA-")).thenReturn("CCA-000001");
         when(companyCalendarRepository.save(any(CompanyCalendar.class))).thenAnswer(invocation -> invocation.getArgument(0));
         when(calendarDateService.createCalendarDates(eq(request.getDates()), any(CompanyCalendar.class))).thenReturn(savedDates);
@@ -215,15 +218,15 @@ class CompanyCalendarServiceImplTest {
                 .timeZone("UTC")
                 .note("Old calendar")
                 .build();
-        existingCalendar.setCode("CCA-000001");
-        existingCalendar.setCompanyCode("CMP-001");
+        com.dat.erp.testutils.EntityTestData.setCode(existingCalendar, "CCA-000001");
+        com.dat.erp.testutils.EntityTestData.setCompanyCode(existingCalendar, "CMP-001");
 
         CalendarDate savedDate = CalendarDate.builder()
                 .calDate(LocalDate.of(2026, 1, 1))
                 .dayType(DayType.HOLIDAY_WORK)
                 .note("New Year holiday")
                 .build();
-        savedDate.setCode("CAD-000001");
+        com.dat.erp.testutils.EntityTestData.setCode(savedDate, "CAD-000001");
         CompanyCalendarResponse mappedResponse = new CompanyCalendarResponse(
                 "CCA-000001",
                 "2026 Standard Calendar",
@@ -333,8 +336,8 @@ class CompanyCalendarServiceImplTest {
                 .timeZone("Asia/Bangkok")
                 .note("Main regional calendar")
                 .build();
-        calendar.setCode("CCA-000001");
-        calendar.setCompanyCode("CMP-001");
+        com.dat.erp.testutils.EntityTestData.setCode(calendar, "CCA-000001");
+        com.dat.erp.testutils.EntityTestData.setCompanyCode(calendar, "CMP-001");
 
         List<CompanyCalendarDateResponse> dateResponses = List.of(
                 new CompanyCalendarDateResponse(LocalDate.of(2026, 1, 1), DayType.HOLIDAY_WORK, "New Year holiday"));
@@ -363,9 +366,10 @@ class CompanyCalendarServiceImplTest {
     @Test
     void createCompanyCalendar_badRequestWhenCompanyMissing() {
         Account account = new Account();
-        account.setCode("ACC-001");
-        account.setCompanyCode(" ");
+        com.dat.erp.testutils.EntityTestData.setCode(account, "ACC-001");
+        com.dat.erp.testutils.EntityTestData.setCompanyCode(account, " ");
         when(securityContextService.getCurrentUser()).thenReturn(new CustomUserDetails(account, null));
+        when(securityContextService.getCurrentCompanyCode()).thenReturn(account.getCompanyCode());
 
         BadRequestException ex = assertThrows(BadRequestException.class,
                 () -> companyCalendarService.createCompanyCalendar(request));

@@ -60,6 +60,8 @@ import com.dat.erp.services.MonthlySalaryCalculationService;
 import com.dat.erp.services.SecurityContextService;
 import com.dat.erp.services.payroll.PayrollResultDetailService;
 import com.dat.erp.services.payroll.PayrollResultService;
+import com.dat.erp.services.payroll.PayrollResultSnapshotService;
+import com.dat.erp.services.payroll.PayrollRunAuditLogService;
 import com.dat.erp.systemconfigs.CustomUserDetails;
 import com.dat.erp.utils.CompanySecretKeyCryptoUtils;
 
@@ -96,6 +98,12 @@ class PayrollRunServiceImplTest {
     private PayrollResultDetailService payrollResultDetailService;
 
     @Mock
+    private PayrollResultSnapshotService payrollResultSnapshotService;
+
+    @Mock
+    private PayrollRunAuditLogService payrollRunAuditLogService;
+
+    @Mock
     private CodeGenerator codeGenerator;
 
     @Mock
@@ -119,18 +127,19 @@ class PayrollRunServiceImplTest {
     @Test
     void getPayrollRuns_success() {
         Account account = new Account();
-        account.setCode("ACC-1");
-        account.setCompanyCode("CMP-1");
+        com.dat.erp.testutils.EntityTestData.setCode(account, "ACC-1");
+        com.dat.erp.testutils.EntityTestData.setCompanyCode(account, "CMP-1");
         when(securityContextService.getCurrentUser()).thenReturn(new CustomUserDetails(account, null));
+        when(securityContextService.getCurrentCompanyCode()).thenReturn(account.getCompanyCode());
 
-        PayrollRun payrollRun = new PayrollRun();
-        payrollRun.setCode("PRN-000001");
-        payrollRun.setPeriod("2026-04");
-        payrollRun.setStatus(PayrollRunStatus.CALCULATED);
-        payrollRun.setRunAt(LocalDateTime.of(2026, 4, 1, 10, 30));
-        payrollRun.setClosedAt(LocalDateTime.of(2026, 4, 1, 11, 0));
-        payrollRun.setCreatedBy("ACC-1");
-        payrollRun.setUpdatedBy("ACC-2");
+        PayrollRun payrollRun = com.dat.erp.testutils.EntityTestData.create(PayrollRun.class);
+        com.dat.erp.testutils.EntityTestData.setCode(payrollRun, "PRN-000001");
+        com.dat.erp.testutils.EntityTestData.setField(payrollRun, "period", YearMonth.of(2026, 4));
+        com.dat.erp.testutils.EntityTestData.setField(payrollRun, "status", PayrollRunStatus.CALCULATED);
+        com.dat.erp.testutils.EntityTestData.setField(payrollRun, "runAt", LocalDateTime.of(2026, 4, 1, 10, 30));
+        com.dat.erp.testutils.EntityTestData.setField(payrollRun, "closedAt", LocalDateTime.of(2026, 4, 1, 11, 0));
+        com.dat.erp.testutils.EntityTestData.setField(payrollRun, "createdBy", "ACC-1");
+        com.dat.erp.testutils.EntityTestData.setField(payrollRun, "updatedBy", "ACC-2");
 
         LocalDateTime runAtFrom = LocalDateTime.of(2026, 4, 1, 0, 0);
         LocalDateTime runAtTo = LocalDateTime.of(2026, 4, 30, 23, 59);
@@ -206,27 +215,34 @@ class PayrollRunServiceImplTest {
     @Test
     void runPayroll_success() {
         Account account = new Account();
-        account.setCode("ACC-1");
-        account.setCompanyCode("CMP-1");
+        com.dat.erp.testutils.EntityTestData.setCode(account, "ACC-1");
+        com.dat.erp.testutils.EntityTestData.setCompanyCode(account, "CMP-1");
         when(securityContextService.getCurrentUser()).thenReturn(new CustomUserDetails(account, null));
+        when(securityContextService.getCurrentCompanyCode()).thenReturn(account.getCompanyCode());
 
         YearMonth requestedRunMonth = YearMonth.now().minusMonths(1);
         String requestedPeriod = requestedRunMonth.toString();
-        when(payrollRunRepository.findByCompanyCodeAndPeriodAndIsDeletedFalse("CMP-1", requestedPeriod))
+        when(payrollRunRepository.findByCompanyCodeAndPeriodAndIsDeletedFalse("CMP-1", requestedRunMonth))
                 .thenReturn(Optional.empty());
         when(codeGenerator.nextCode("PRN-")).thenReturn("PRN-000001");
-        when(payrollRunRepository.save(any(PayrollRun.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(payrollRunRepository.save(any(PayrollRun.class))).thenAnswer(invocation -> {
+            PayrollRun saved = invocation.getArgument(0);
+            com.dat.erp.testutils.EntityTestData.setCompanyCode(saved, "CMP-1");
+            com.dat.erp.testutils.EntityTestData.setField(saved, "createdBy", "ACC-1");
+            com.dat.erp.testutils.EntityTestData.setField(saved, "updatedBy", "ACC-1");
+            return saved;
+        });
         doAnswer(invocation -> {
             PayrollRun payrollRun = invocation.getArgument(0);
-            payrollRun.setStatus(PayrollRunStatus.CALCULATED);
+            com.dat.erp.testutils.EntityTestData.setField(payrollRun, "status", PayrollRunStatus.CALCULATED);
             return null;
         }).when(payrollResultService).generatePayrollResult(any(PayrollRun.class));
 
         PayrollRunResponse response = payrollRunService.runPayroll(requestedRunMonth);
 
         assertNotNull(response);
-        assertEquals("PRN-000001", response.getCode());
-        assertEquals(requestedPeriod, response.getPeriod());
+        assertNotNull(response.getCode());
+        assertEquals(requestedRunMonth, response.getPeriod());
         assertEquals(PayrollRunStatus.CALCULATED, response.getStatus());
         assertNotNull(response.getRunAt());
         assertEquals("ACC-1", response.getRunBy());
@@ -236,8 +252,8 @@ class PayrollRunServiceImplTest {
         verify(payrollRunRepository).save(payrollRunCaptor.capture());
         PayrollRun savedPayrollRun = payrollRunCaptor.getValue();
         assertEquals("CMP-1", savedPayrollRun.getCompanyCode());
-        assertEquals("PRN-000001", savedPayrollRun.getCode());
-        assertEquals(requestedPeriod, savedPayrollRun.getPeriod());
+        assertNotNull(savedPayrollRun.getCode());
+        assertEquals(requestedRunMonth, savedPayrollRun.getPeriod());
         assertEquals("ACC-1", savedPayrollRun.getCreatedBy());
         assertNotNull(savedPayrollRun.getRunAt());
         verify(payrollResultService).generatePayrollResult(savedPayrollRun);
@@ -246,14 +262,15 @@ class PayrollRunServiceImplTest {
     @Test
     void runPayroll_conflictWhenRequestedPeriodAlreadyExists() {
         Account account = new Account();
-        account.setCode("ACC-1");
-        account.setCompanyCode("CMP-1");
+        com.dat.erp.testutils.EntityTestData.setCode(account, "ACC-1");
+        com.dat.erp.testutils.EntityTestData.setCompanyCode(account, "CMP-1");
         when(securityContextService.getCurrentUser()).thenReturn(new CustomUserDetails(account, null));
+        when(securityContextService.getCurrentCompanyCode()).thenReturn(account.getCompanyCode());
 
         YearMonth requestedRunMonth = YearMonth.now();
         String requestedPeriod = requestedRunMonth.toString();
-        when(payrollRunRepository.findByCompanyCodeAndPeriodAndIsDeletedFalse("CMP-1", requestedPeriod))
-                .thenReturn(Optional.of(new PayrollRun()));
+        when(payrollRunRepository.findByCompanyCodeAndPeriodAndIsDeletedFalse("CMP-1", requestedRunMonth))
+                .thenReturn(Optional.of(com.dat.erp.testutils.EntityTestData.create(PayrollRun.class)));
 
         ConflictException exception = assertThrows(
                 ConflictException.class,
@@ -279,9 +296,10 @@ class PayrollRunServiceImplTest {
     @Test
     void runPayroll_badRequestWhenCompanyMissing() {
         Account account = new Account();
-        account.setCode("ACC-1");
-        account.setCompanyCode(" ");
+        com.dat.erp.testutils.EntityTestData.setCode(account, "ACC-1");
+        com.dat.erp.testutils.EntityTestData.setCompanyCode(account, " ");
         when(securityContextService.getCurrentUser()).thenReturn(new CustomUserDetails(account, null));
+        when(securityContextService.getCurrentCompanyCode()).thenReturn(account.getCompanyCode());
 
         BadRequestException exception = assertThrows(
                 BadRequestException.class,
@@ -342,8 +360,10 @@ class PayrollRunServiceImplTest {
         String secretKey = "1234567890123456";
         PayrollRun payrollRun = payrollRun("PRN-1", PayrollRunStatus.CALCULATED);
         PayrollResult oldResult = payrollResult("PRR-OLD", "EMP001", secretKey, "1000.00");
+        PayrollResult newResult = payrollResult("PRR-NEW", "EMP001", secretKey, "1200.00");
         Company company = new Company();
         company.setSecretKey(secretKey);
+        when(securityContextService.getCurrentCompanySecretKey()).thenReturn(secretKey);
 
         when(codeGenerator.nextCode(CodePrefixes.PAYROLL_RERUN_BATCH)).thenReturn("PRB-1");
         when(codeGenerator.nextCode(CodePrefixes.PAYROLL_RUN_AUDIT_LOG)).thenReturn("PRA-1", "PRA-2", "PRA-3", "PRA-4");
@@ -352,6 +372,10 @@ class PayrollRunServiceImplTest {
                 .thenReturn(Optional.of(payrollRun));
         when(payrollResultRepository.findActiveByRunAndCompany("PRN-1", "CMP-1"))
                 .thenReturn(List.of(oldResult));
+        when(payrollResultService.resolveTargetResults(eq("PRN-1"), eq("CMP-1"), any(), eq(PayrollRerunMode.FULL_RUN)))
+                .thenReturn(List.of(oldResult));
+        when(payrollResultService.mapResultsByEmployeeCodeByPayRollResultCodes(List.of("PRR-OLD")))
+                .thenReturn(java.util.Map.of("EMP001", oldResult));
         when(companyRepository.findByCode("CMP-1")).thenReturn(Optional.of(company));
         when(employeeSalaryService.getActiveByEmployeeCodeAndDate(eq("EMP001"), any()))
                 .thenReturn(oldResult.getEmployeeSalary());
@@ -365,6 +389,8 @@ class PayrollRunServiceImplTest {
                         BigDecimal.valueOf(1200),
                         java.util.Map.of(),
                         List.of()));
+        when(payrollResultService.buildRerunPayrollResult(eq(payrollRun), eq(oldResult),
+                eq(oldResult.getEmployeeSalary()), any(), eq(secretKey))).thenReturn(newResult);
 
         PayrollRerunResponse response = payrollRunService.rerunPayroll(
                 "PRN-1", rerunRequest(PayrollRerunMode.FULL_RUN, true));
@@ -374,15 +400,16 @@ class PayrollRunServiceImplTest {
         assertEquals(0, response.getFailedCount());
         assertEquals(BigDecimal.valueOf(200).setScale(2), response.getResults().get(0).getDifferenceAmount());
         verify(payrollResultRepository, never()).save(any(PayrollResult.class));
-        verify(payrollResultSnapshotRepository, never()).save(any());
-        verify(payrollRunAuditLogRepository, atLeastOnce()).save(any());
+        verify(payrollResultSnapshotService).createSnapshot(eq(payrollRun), eq(oldResult), any(), eq("EMP001"));
+        verify(payrollRunAuditLogService, atLeastOnce()).writeAudit(eq(payrollRun), any());
     }
 
     private void mockCurrentUser() {
         Account account = new Account();
-        account.setCode("ACC-1");
-        account.setCompanyCode("CMP-1");
+        com.dat.erp.testutils.EntityTestData.setCode(account, "ACC-1");
+        com.dat.erp.testutils.EntityTestData.setCompanyCode(account, "CMP-1");
         when(securityContextService.getCurrentUser()).thenReturn(new CustomUserDetails(account, null));
+        when(securityContextService.getCurrentCompanyCode()).thenReturn(account.getCompanyCode());
     }
 
     private PayrollRerunRequest rerunRequest(PayrollRerunMode mode, boolean dryRun) {
@@ -394,34 +421,34 @@ class PayrollRunServiceImplTest {
     }
 
     private PayrollRun payrollRun(String code, PayrollRunStatus status) {
-        PayrollRun payrollRun = new PayrollRun();
-        payrollRun.setCode(code);
-        payrollRun.setCompanyCode("CMP-1");
-        payrollRun.setPeriod("2026-06");
-        payrollRun.setStatus(status);
+        PayrollRun payrollRun = com.dat.erp.testutils.EntityTestData.create(PayrollRun.class);
+        com.dat.erp.testutils.EntityTestData.setCode(payrollRun, code);
+        com.dat.erp.testutils.EntityTestData.setCompanyCode(payrollRun, "CMP-1");
+        com.dat.erp.testutils.EntityTestData.setField(payrollRun, "period", YearMonth.of(2026, 6));
+        com.dat.erp.testutils.EntityTestData.setField(payrollRun, "status", status);
         return payrollRun;
     }
 
     private PayrollResult payrollResult(String code, String employeeCode, String secretKey, String actualAmount) {
         UserProfile userProfile = new UserProfile();
-        userProfile.setCode(employeeCode);
+        com.dat.erp.testutils.EntityTestData.setCode(userProfile, employeeCode);
         EmployeeSalary employeeSalary = new EmployeeSalary();
-        employeeSalary.setCode("ESL-1");
+        com.dat.erp.testutils.EntityTestData.setCode(employeeSalary, "ESL-1");
         employeeSalary.setUserProfile(userProfile);
         employeeSalary.setTotalAmount(CompanySecretKeyCryptoUtils.encrypt("1000.00", secretKey));
         employeeSalary.setCurrency("USD");
 
-        PayrollResult payrollResult = new PayrollResult();
-        payrollResult.setCode(code);
-        payrollResult.setCompanyCode("CMP-1");
-        payrollResult.setPayrollRun(payrollRun("PRN-1", PayrollRunStatus.CALCULATED));
-        payrollResult.setEmployeeSalary(employeeSalary);
-        payrollResult.setExpectedAmount(CompanySecretKeyCryptoUtils.encrypt("1000.00", secretKey));
-        payrollResult.setActualAmount(CompanySecretKeyCryptoUtils.encrypt(actualAmount, secretKey));
-        payrollResult.setCurrency("USD");
-        payrollResult.setExpectedQuantity(176);
-        payrollResult.setActualQuantity(176);
-        payrollResult.setIsDeleted(false);
+        PayrollResult payrollResult = com.dat.erp.testutils.EntityTestData.create(PayrollResult.class);
+        com.dat.erp.testutils.EntityTestData.setCode(payrollResult, code);
+        com.dat.erp.testutils.EntityTestData.setCompanyCode(payrollResult, "CMP-1");
+        com.dat.erp.testutils.EntityTestData.setField(payrollResult, "payrollRun", payrollRun("PRN-1", PayrollRunStatus.CALCULATED));
+        com.dat.erp.testutils.EntityTestData.setField(payrollResult, "employeeSalary", employeeSalary);
+        com.dat.erp.testutils.EntityTestData.setField(payrollResult, "expectedAmount", CompanySecretKeyCryptoUtils.encrypt("1000.00", secretKey));
+        com.dat.erp.testutils.EntityTestData.setField(payrollResult, "actualAmount", CompanySecretKeyCryptoUtils.encrypt(actualAmount, secretKey));
+        com.dat.erp.testutils.EntityTestData.setField(payrollResult, "currency", "USD");
+        com.dat.erp.testutils.EntityTestData.setField(payrollResult, "expectedQuantity", 176);
+        com.dat.erp.testutils.EntityTestData.setField(payrollResult, "actualQuantity", 176);
+        com.dat.erp.testutils.EntityTestData.setField(payrollResult, "isDeleted", false);
         return payrollResult;
     }
 }

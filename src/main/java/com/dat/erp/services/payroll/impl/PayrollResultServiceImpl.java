@@ -50,6 +50,7 @@ import com.dat.erp.repositories.customrepositories.DailyWorkRepository;
 import com.dat.erp.repositories.customrepositories.EmployeeSalaryRepository;
 import com.dat.erp.repositories.customrepositories.PayrollResultDetailRepository;
 import com.dat.erp.repositories.customrepositories.PayrollResultRepository;
+import com.dat.erp.repositories.customrepositories.PayrollRunRepository;
 import com.dat.erp.repositories.projections.PayrollResultEmployeeCodeProjection;
 import com.dat.erp.repositories.projections.PayrollResultListProjection;
 import com.dat.erp.services.CalendarDateService;
@@ -58,7 +59,6 @@ import com.dat.erp.services.EmployeeSalaryService;
 import com.dat.erp.services.SecurityContextService;
 import com.dat.erp.services.UserProfileService;
 import com.dat.erp.services.payroll.PayrollResultService;
-import com.dat.erp.services.payroll.PayrollRunService;
 import com.dat.erp.utils.CompanySecretKeyCryptoUtils;
 import com.dat.erp.utils.CustomStringUtils;
 import com.dat.erp.utils.PageableUtils;
@@ -89,7 +89,7 @@ public class PayrollResultServiceImpl implements PayrollResultService {
     private final CalendarDateService calendarDateService;
     private final EmployeeSalaryRepository employeeSalaryRepository;
     private final DailyWorkRepository dailyWorkRepository;
-    private final PayrollRunService payrollRunService;
+    private final PayrollRunRepository payrollRunRepository;
     private final PayrollResultRepository payrollResultRepository;
     private final PayrollResultDetailRepository payrollResultDetailRepository;
     private final CompanyRepository companyRepository;
@@ -159,6 +159,9 @@ public class PayrollResultServiceImpl implements PayrollResultService {
     @Transactional
     public void generatePayrollResult(PayrollRun payrollRun) {
         String companyCode = securityContextService.getCurrentCompanyCode();
+        if (companyCode == null || companyCode.isBlank() || "SYSTEM".equals(companyCode)) {
+            throw new BadRequestException(Messages.ERROR_CURRENT_USER_COMPANY_MISSING);
+        }
         String companySecretKey = resolveCompanySecretKey(companyCode);
 
         YearMonth runMonth = payrollRun.getPeriod();
@@ -172,7 +175,7 @@ public class PayrollResultServiceImpl implements PayrollResultService {
             log.warn(
                     "PAYROLL_RESULT action=GENERATE_FINISHED result=FAILED reason=NO_ACTIVE_EMPLOYEES companyCode={} payrollRunCode={} period={}",
                     companyCode, payrollRunCode, runMonth);
-            payrollRunService.finalizePayrollRun(payrollRunCode, false);
+            finalizePayrollRun(payrollRunCode, companyCode, false);
             return;
         }
         log.info(
@@ -248,7 +251,7 @@ public class PayrollResultServiceImpl implements PayrollResultService {
                     skippedEmployees);
         }
 
-        payrollRunService.finalizePayrollRun(payrollRunCode, finalStatus);
+        finalizePayrollRun(payrollRunCode, companyCode, finalStatus);
         log.info("PAYROLL_RESULT action=RUN_STATUS_UPDATED companyCode={} payrollRunCode={} period={} status={}",
                 companyCode, payrollRunCode, runMonth, finalStatus);
     }
@@ -302,6 +305,10 @@ public class PayrollResultServiceImpl implements PayrollResultService {
                 employeeCodesSnapshot.size(),
                 payrollResultsSnapshot.size());
         task.run();
+    }
+
+    private void finalizePayrollRun(String payrollRunCode, String companyCode, boolean success) {
+        payrollRunRepository.updateStatusBySuccessFlag(payrollRunCode, companyCode, success);
     }
 
     private String resolvePayrollRunCode(List<PayrollResult> payrollResults) {

@@ -48,8 +48,8 @@ class PayrollResultDetailServiceImplTest {
 
     @Test
     void replacePayrollResultDetailsBestEffort_continuesWhenOneDetailFails() {
-        PayrollResult payrollResult = new PayrollResult();
-        payrollResult.setCode("PRR-1");
+        PayrollResult payrollResult = com.dat.erp.testutils.EntityTestData.create(PayrollResult.class);
+        com.dat.erp.testutils.EntityTestData.setCode(payrollResult, "PRR-1");
         PayrollResultDetail failedDetail = detail("PRD-FAIL", BigDecimal.TEN);
         PayrollResultDetail successfulDetail = detail("PRD-OK", BigDecimal.valueOf(20));
 
@@ -76,8 +76,8 @@ class PayrollResultDetailServiceImplTest {
 
     @Test
     void replacePayrollResultDetailsBestEffort_defersUntilCurrentTransactionCommits() {
-        PayrollResult payrollResult = new PayrollResult();
-        payrollResult.setCode("PRR-1");
+        PayrollResult payrollResult = com.dat.erp.testutils.EntityTestData.create(PayrollResult.class);
+        com.dat.erp.testutils.EntityTestData.setCode(payrollResult, "PRR-1");
         PayrollResultDetail detail = detail("PRD-OK", BigDecimal.valueOf(20));
 
         when(payrollResultDetailRepository.findByPayrollResult_CodeAndIsDeletedFalse("PRR-1"))
@@ -103,7 +103,7 @@ class PayrollResultDetailServiceImplTest {
 
     private PayrollResultDetail detail(String code, BigDecimal amount) {
         PayrollResultDetail detail = new PayrollResultDetail();
-        detail.setCode(code);
+        com.dat.erp.testutils.EntityTestData.setCode(detail, code);
         detail.setCalcBasis(PayrollResultCalcBasis.HOURS);
         detail.setAmount(amount);
         detail.setFormulaNote("test detail");

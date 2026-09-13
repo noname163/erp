@@ -1,7 +1,7 @@
 package com.dat.erp.repositories.customrepositories;
 
 import java.time.LocalDateTime;
-import java.time.Month;
+import java.time.YearMonth;
 import java.util.Optional;
 
 import org.springframework.data.domain.Page;
@@ -11,7 +11,7 @@ import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
-import org.springframework.stereotype.Repository;
+
 import org.springframework.transaction.annotation.Transactional;
 
 import com.dat.erp.constants.PayrollRunStatus;
@@ -19,13 +19,13 @@ import com.dat.erp.entities.PayrollRun;
 
 import jakarta.persistence.LockModeType;
 
-@Repository
+
 public interface PayrollRunRepository extends JpaRepository<PayrollRun, Long> {
     @Query("""
             select pr
             from PayrollRun pr
             where pr.companyCode = :companyCode
-              and pr.deleted = false
+              and pr.isDeleted = false
               and pr.status = coalesce(:status, pr.status)
               and coalesce(pr.runAt, :runAtNullValue) >= :runAtFrom
               and coalesce(pr.runAt, :runAtNullValue) <= :runAtTo
@@ -43,7 +43,7 @@ public interface PayrollRunRepository extends JpaRepository<PayrollRun, Long> {
             @Param("closeAtNullValue") LocalDateTime closeAtNullValue,
             Pageable pageable);
 
-    Optional<PayrollRun> findByCompanyCodeAndPeriodAndIsDeletedFalse(String companyCode, Month period);
+    Optional<PayrollRun> findByCompanyCodeAndPeriodAndIsDeletedFalse(String companyCode, YearMonth period);
 
     Optional<PayrollRun> findByCodeAndCompanyCodeAndIsDeletedFalse(String code, String companyCode);
 
@@ -53,7 +53,7 @@ public interface PayrollRunRepository extends JpaRepository<PayrollRun, Long> {
             from PayrollRun pr
             where pr.code = :code
               and pr.companyCode = :companyCode
-              and pr.deleted = false
+              and pr.isDeleted = false
             """)
     Optional<PayrollRun> findLockedByCodeAndCompanyCode(
             @Param("code") String code,
@@ -69,7 +69,7 @@ public interface PayrollRunRepository extends JpaRepository<PayrollRun, Long> {
             end
             where pr.code = :code
               and pr.companyCode = :companyCode
-              and pr.deleted = false
+              and pr.isDeleted = false
             """)
     int updateStatusBySuccessFlag(
             @Param("code") String code,

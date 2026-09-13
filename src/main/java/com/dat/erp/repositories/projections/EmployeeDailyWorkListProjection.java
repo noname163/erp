@@ -3,6 +3,8 @@ package com.dat.erp.repositories.projections;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
+import com.dat.erp.constants.DayType;
+
 public interface EmployeeDailyWorkListProjection {
     String getEmployeeCode();
 
@@ -22,5 +24,5 @@ public interface EmployeeDailyWorkListProjection {
 
     Boolean getUsedPto();
 
-    String getWorkType();
+    DayType getWorkType();
 }

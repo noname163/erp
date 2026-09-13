@@ -1,7 +1,6 @@
 package com.dat.erp.services.payroll.impl;
 
 import java.time.LocalDateTime;
-import java.time.Month;
 import java.time.YearMonth;
 import java.time.ZoneOffset;
 import java.util.List;
@@ -120,12 +119,14 @@ public class PayrollRunServiceImpl implements PayrollRunService {
     public PayrollRunResponse runPayroll(YearMonth runDate) {
         YearMonth requestedRunMonth = validateAndResolveRunMonth(runDate);
         String companyCode = securityContextService.getCurrentCompanyCode();
-        Month period = requestedRunMonth.getMonth();
+        if (companyCode == null || companyCode.isBlank() || "SYSTEM".equals(companyCode)) {
+            throw new BadRequestException(Messages.ERROR_CURRENT_USER_COMPANY_MISSING);
+        }
+        log.info("PAYROLL_RUN action=RUN_REQUESTED companyCode={} period={}", companyCode, requestedRunMonth);
 
-        log.info("PAYROLL_RUN action=RUN_REQUESTED companyCode={} period={}", companyCode, period);
-
-        if (payrollRunRepository.findByCompanyCodeAndPeriodAndIsDeletedFalse(companyCode, period).isPresent()) {
-            log.warn("PAYROLL_RUN action=RUN_REJECTED result=DUPLICATE companyCode={} period={}", companyCode, period);
+        if (payrollRunRepository.findByCompanyCodeAndPeriodAndIsDeletedFalse(companyCode, requestedRunMonth).isPresent()) {
+            log.warn("PAYROLL_RUN action=RUN_REJECTED result=DUPLICATE companyCode={} period={}", companyCode,
+                    requestedRunMonth);
             throw new ConflictException(Messages.ERROR_PAYROLL_RUN_ALREADY_EXISTS);
         }
 
@@ -133,10 +134,10 @@ public class PayrollRunServiceImpl implements PayrollRunService {
         payrollRun.start(LocalDateTime.now(ZoneOffset.UTC));
         PayrollRun savedPayrollRun = payrollRunRepository.save(payrollRun);
         log.info("PAYROLL_RUN action=RUN_CREATED result=SUCCESS companyCode={} payrollRunCode={} period={} status={}",
-                companyCode, savedPayrollRun.getCode(), period, savedPayrollRun.getStatus());
+                companyCode, savedPayrollRun.getCode(), requestedRunMonth, savedPayrollRun.getStatus());
         payrollResultService.generatePayrollResult(savedPayrollRun);
         log.info("PAYROLL_RUN action=RESULT_GENERATION_REQUESTED companyCode={} payrollRunCode={} period={}",
-                companyCode, savedPayrollRun.getCode(), period);
+                companyCode, savedPayrollRun.getCode(), requestedRunMonth);
         return payrollRunMapper.toResponse(savedPayrollRun);
     }
 
@@ -356,7 +357,9 @@ public class PayrollRunServiceImpl implements PayrollRunService {
     }
 
     private void validateRerunRequest(PayrollRerunRequest request) {
-
+        if (request == null || request.getReason() == null || request.getReason().isBlank()) {
+            throw new BadRequestException(Messages.ERROR_PAYROLL_RERUN_REASON_REQUIRED);
+        }
         PayrollRerunMode mode = request.getMode() == null ? PayrollRerunMode.FULL_RUN : request.getMode();
         if (mode == PayrollRerunMode.SELECTED_EMPLOYEES
                 && (request.getEmployeeCodes() == null || request.getEmployeeCodes().isEmpty())) {
@@ -452,9 +455,4 @@ public class PayrollRunServiceImpl implements PayrollRunService {
         return from == null && to != null ? MAX_FILTER_DATE : MIN_FILTER_DATE;
     }
 
-    @Override
-    public void finalizePayrollRun(String payrollCode, boolean isSuccess) {
-        payrollRunRepository.updateStatusBySuccessFlag(payrollCode, securityContextService.getCurrentCompanyCode(),
-                isSuccess);
-    }
 }

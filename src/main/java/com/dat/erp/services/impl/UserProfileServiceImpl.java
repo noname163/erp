@@ -8,7 +8,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.dat.erp.constants.CodePrefixes;
 import com.dat.erp.constants.Messages;
 import com.dat.erp.dto.request.UserProfileCreateRequest;
 import com.dat.erp.dto.response.PagedResponse;
@@ -78,6 +77,10 @@ public class UserProfileServiceImpl implements UserProfileService {
 
     @Override
     public List<String> getActiveUserProfileCodesOfCurrentCompany() {
-        return userProfileRepository.findActiveCodesByCompanyCode(securityContextService.getCurrentCompanyCode());
+        String companyCode = securityContextService.getCurrentCompanyCode();
+        if (companyCode == null || companyCode.isBlank() || "SYSTEM".equals(companyCode)) {
+            throw new BadRequestException(Messages.ERROR_CURRENT_USER_COMPANY_MISSING);
+        }
+        return userProfileRepository.findActiveCodesByCompanyCode(companyCode);
     }
 }

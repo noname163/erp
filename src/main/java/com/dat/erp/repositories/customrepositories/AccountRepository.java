@@ -4,14 +4,12 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
-import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
-import org.springframework.stereotype.Repository;
 
 import com.dat.erp.entities.Account;
 
-@Repository
 public interface AccountRepository extends JpaRepository<Account, Long> {
     Optional<Account> findByEmail(String email);
 
@@ -49,7 +47,7 @@ public interface AccountRepository extends JpaRepository<Account, Long> {
     @Query("""
             select  c.secretKey 
             from Company c 
-            where c.companyCode = :companyCode and c.deleted = false
+            where c.companyCode = :companyCode and c.isDeleted = false
             """)
     Optional<String> getCurrentCompanySecretKeyByCompanyCode(@Param("companyCode") String companyCode);
 }

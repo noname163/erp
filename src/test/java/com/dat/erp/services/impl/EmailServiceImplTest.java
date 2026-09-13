@@ -57,6 +57,7 @@ class EmailServiceImplTest {
         request.setHtmlFilePath("templates/mail/create-account.html");
 
         mappedEmail = new Email();
+        com.dat.erp.testutils.EntityTestData.setCode(mappedEmail, "EML-TEST");
         mappedEmail.setEmailFrom(request.getFrom());
         mappedEmail.setEmailTo(request.getTo());
         mappedEmail.setFullName(request.getFullName());
@@ -129,7 +130,7 @@ class EmailServiceImplTest {
     @Test
     void retryPendingEmails_retryLimitReached_clearsNeedRetryWithoutSending() {
         Email email = new Email();
-        email.setId(1L);
+        com.dat.erp.testutils.EntityTestData.setId(email, 1L);
         email.setNeedRetry(true);
         email.setSent(false);
         email.setRetryTime(3);
@@ -146,7 +147,7 @@ class EmailServiceImplTest {
     @Test
     void retryPendingEmails_success_sendsAndMarksSent() {
         Email email = new Email();
-        email.setId(1L);
+        com.dat.erp.testutils.EntityTestData.setId(email, 1L);
         email.setNeedRetry(true);
         email.setSent(false);
         email.setRetryTime(0);
@@ -174,7 +175,7 @@ class EmailServiceImplTest {
                 systemMailSender, 2, "default-from@example.com");
 
         Email email = new Email();
-        email.setId(1L);
+        com.dat.erp.testutils.EntityTestData.setId(email, 1L);
         email.setNeedRetry(true);
         email.setSent(false);
         email.setRetryTime(1);

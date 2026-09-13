@@ -70,7 +70,7 @@ class CustomStringUtilsTest {
         account.setRole(role);
 
         UserProfile profile = new UserProfile();
-        profile.setCode(profileCode);
+        com.dat.erp.testutils.EntityTestData.setCode(profile, profileCode);
 
         return new CustomUserDetails(account, profile);
     }

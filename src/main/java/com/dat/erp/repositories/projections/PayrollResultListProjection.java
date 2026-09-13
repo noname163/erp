@@ -1,6 +1,7 @@
 package com.dat.erp.repositories.projections;
 
 import java.time.LocalDateTime;
+import java.time.YearMonth;
 
 import com.dat.erp.constants.PayrollStatus;
 
@@ -29,7 +30,7 @@ public interface PayrollResultListProjection {
 
     String getRetroReason();
 
-    String getPeriod();
+    YearMonth getPeriod();
 
     LocalDateTime getCreatedAt();
 

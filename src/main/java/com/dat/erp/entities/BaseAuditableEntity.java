@@ -67,14 +67,14 @@ public abstract class BaseAuditableEntity {
     private String companyCode;
 
     @Column(name = "is_deleted", nullable = false)
-    private boolean deleted = false;
+    private Boolean isDeleted = false;
 
     public void markDeleted() {
-        this.deleted = true;
+        this.isDeleted = true;
     }
 
     public void restore() {
-        this.deleted = false;
+        this.isDeleted = false;
     }
 
     @PrePersist

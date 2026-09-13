@@ -97,8 +97,9 @@ class SalaryTemplateServiceImplTest {
     @Test
     void createSalaryTemplate_success() {
         Account account = new Account();
-        account.setCompanyCode("CMP-1");
+        com.dat.erp.testutils.EntityTestData.setCompanyCode(account, "CMP-1");
         when(securityContextService.getCurrentUser()).thenReturn(new CustomUserDetails(account, null));
+        when(securityContextService.getCurrentCompanyCode()).thenReturn(account.getCompanyCode());
         when(salaryTemplateRepository.existsOverlappingByNameAndCompanyCode(eq("Standard HR Package"), eq("CMP-1"),
                 any(LocalDate.class), any(LocalDate.class))).thenReturn(false);
 
@@ -107,19 +108,19 @@ class SalaryTemplateServiceImplTest {
 
         when(codeGenerator.nextCode("STP-")).thenReturn("STP-000001");
         SalaryTemplate saved = new SalaryTemplate();
-        saved.setCode("STP-000001");
+        com.dat.erp.testutils.EntityTestData.setCode(saved, "STP-000001");
         saved.setName("Standard HR Package");
         saved.setEffectiveFrom(request.getEffectiveFrom());
         saved.setEffectiveTo(request.getEffectiveTo());
         saved.setCurrency("VND");
 
         Salary baseSalary = new Salary();
-        baseSalary.setCode("BASE");
+        com.dat.erp.testutils.EntityTestData.setCode(baseSalary, "BASE");
         baseSalary.setCalculateMethod(com.dat.erp.constants.SalaryCalculateMethod.FIXED);
         baseSalary.setIsDeduct(false);
 
         Salary taxSalary = new Salary();
-        taxSalary.setCode("TAX");
+        com.dat.erp.testutils.EntityTestData.setCode(taxSalary, "TAX");
         taxSalary.setCalculateMethod(com.dat.erp.constants.SalaryCalculateMethod.PERCENT);
         taxSalary.setIsDeduct(true);
 
@@ -154,8 +155,9 @@ class SalaryTemplateServiceImplTest {
     @Test
     void createSalaryTemplate_conflictWhenOverlappingName() {
         Account account = new Account();
-        account.setCompanyCode("CMP-1");
+        com.dat.erp.testutils.EntityTestData.setCompanyCode(account, "CMP-1");
         when(securityContextService.getCurrentUser()).thenReturn(new CustomUserDetails(account, null));
+        when(securityContextService.getCurrentCompanyCode()).thenReturn(account.getCompanyCode());
         when(salaryTemplateRepository.existsOverlappingByNameAndCompanyCode(eq("Standard HR Package"), eq("CMP-1"),
                 any(LocalDate.class), any(LocalDate.class))).thenReturn(true);
 
@@ -180,8 +182,9 @@ class SalaryTemplateServiceImplTest {
     @Test
     void createSalaryTemplate_ignoresClientTotalAndPersistsCalculatedTotal() {
         Account account = new Account();
-        account.setCompanyCode("CMP-1");
+        com.dat.erp.testutils.EntityTestData.setCompanyCode(account, "CMP-1");
         when(securityContextService.getCurrentUser()).thenReturn(new CustomUserDetails(account, null));
+        when(securityContextService.getCurrentCompanyCode()).thenReturn(account.getCompanyCode());
         when(salaryTemplateRepository.existsOverlappingByNameAndCompanyCode(any(), any(), any(), any()))
                 .thenReturn(false);
 
@@ -189,15 +192,15 @@ class SalaryTemplateServiceImplTest {
         when(salaryTemplateMapper.toEntity(request)).thenReturn(entity);
 
         SalaryTemplate saved = new SalaryTemplate();
-        saved.setCode("STP-000002");
+        com.dat.erp.testutils.EntityTestData.setCode(saved, "STP-000002");
         when(salaryTemplateRepository.save(any(SalaryTemplate.class))).thenReturn(saved, saved);
 
         Salary baseSalary = new Salary();
-        baseSalary.setCode("BASE");
+        com.dat.erp.testutils.EntityTestData.setCode(baseSalary, "BASE");
         baseSalary.setCalculateMethod(com.dat.erp.constants.SalaryCalculateMethod.FIXED);
         baseSalary.setIsDeduct(false);
         Salary taxSalary = new Salary();
-        taxSalary.setCode("TAX");
+        com.dat.erp.testutils.EntityTestData.setCode(taxSalary, "TAX");
         taxSalary.setCalculateMethod(com.dat.erp.constants.SalaryCalculateMethod.PERCENT);
         taxSalary.setIsDeduct(true);
 
@@ -220,8 +223,9 @@ class SalaryTemplateServiceImplTest {
     @Test
     void getSalaryTemplates_success() {
         Account account = new Account();
-        account.setCompanyCode("CMP-1");
+        com.dat.erp.testutils.EntityTestData.setCompanyCode(account, "CMP-1");
         when(securityContextService.getCurrentUser()).thenReturn(new CustomUserDetails(account, null));
+        when(securityContextService.getCurrentCompanyCode()).thenReturn(account.getCompanyCode());
 
         SalaryTemplate template = new SalaryTemplate();
         template.setName("Standard HR Package");
@@ -256,11 +260,12 @@ class SalaryTemplateServiceImplTest {
     @Test
     void getSalaryTemplateOptions_success() {
         Account account = new Account();
-        account.setCompanyCode("CMP-1");
+        com.dat.erp.testutils.EntityTestData.setCompanyCode(account, "CMP-1");
         when(securityContextService.getCurrentUser()).thenReturn(new CustomUserDetails(account, null));
+        when(securityContextService.getCurrentCompanyCode()).thenReturn(account.getCompanyCode());
 
         SalaryTemplate template = new SalaryTemplate();
-        template.setCode("STP-1");
+        com.dat.erp.testutils.EntityTestData.setCode(template, "STP-1");
         template.setName("Template A");
 
         when(salaryTemplateRepository.findOptionsByFilters(eq("CMP-1"), isNull(), any()))

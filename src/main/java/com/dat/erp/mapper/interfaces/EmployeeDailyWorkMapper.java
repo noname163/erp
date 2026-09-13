@@ -21,7 +21,7 @@ public interface EmployeeDailyWorkMapper {
     @Mapping(target = "endTime", source = "endTime", qualifiedByName = "toLocalTime")
     @Mapping(target = "createdBy", source = "createdByName", qualifiedByName = "trimToNull")
     @Mapping(target = "editedBy", source = "editedByName", qualifiedByName = "trimToNull")
-    @Mapping(target = "workType", source = "workType", qualifiedByName = "trimToNull")
+    @Mapping(target = "workType", source = "workType", qualifiedByName = "dayTypeToString")
     EmployeeDailyWorkListResponse toListResponse(EmployeeDailyWorkListProjection projection);
 
     default DailyWorkForSalaryResponse toSalaryResponse(DayType dayType, BigDecimal hoursWorked) {
@@ -44,5 +44,10 @@ public interface EmployeeDailyWorkMapper {
         }
         String trimmed = value.trim();
         return trimmed.isBlank() ? null : trimmed;
+    }
+
+    @Named("dayTypeToString")
+    default String dayTypeToString(DayType value) {
+        return value == null ? null : value.name();
     }
 }

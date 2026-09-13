@@ -25,5 +25,4 @@ public interface PayrollRunService {
 
     PayrollRerunResponse rerunPayroll(String payrollRunCode, PayrollRerunRequest request);
 
-    void finalizePayrollRun(String payrollCode, boolean isSuccess);
 }
