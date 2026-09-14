@@ -20,6 +20,7 @@ import com.dat.erp.repositories.projections.PayrollResultListProjection;
 public interface PayrollResultRepository extends JpaRepository<PayrollResult, Long> {
     @Query("""
             select
+                pr.code as payrollResultCode,
                 payrollRun.code as payrollRunCode,
                 st.name as salaryName,
                 pr.expectedAmount as expectedAmount,

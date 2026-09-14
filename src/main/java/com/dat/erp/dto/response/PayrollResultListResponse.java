@@ -12,6 +12,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class PayrollResultListResponse {
+    private String payrollResultCode;
     private String payrollRunCode;
     private String salaryName;
     private String expectedAmount;

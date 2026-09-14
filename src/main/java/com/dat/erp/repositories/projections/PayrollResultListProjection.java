@@ -6,6 +6,7 @@ import java.time.YearMonth;
 import com.dat.erp.constants.PayrollStatus;
 
 public interface PayrollResultListProjection {
+    String getPayrollResultCode();
     String getPayrollRunCode();
 
     String getSalaryName();

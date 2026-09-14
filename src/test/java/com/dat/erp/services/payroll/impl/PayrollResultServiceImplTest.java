@@ -136,6 +136,11 @@ class PayrollResultServiceImplTest {
         String encryptedActualAmount = CompanySecretKeyCryptoUtils.encrypt("1450", "secret-key");
         PayrollResultListProjection projection = new PayrollResultListProjection() {
             @Override
+            public String getPayrollResultCode() {
+                return "PRR-1";
+            }
+
+            @Override
             public String getPayrollRunCode() {
                 return "PRN-1";
             }

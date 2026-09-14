@@ -47,7 +47,7 @@ public interface AccountRepository extends JpaRepository<Account, Long> {
     @Query("""
             select  c.secretKey 
             from Company c 
-            where c.companyCode = :companyCode and c.isDeleted = false
+            where c.code = :companyCode and c.isDeleted = false
             """)
     Optional<String> getCurrentCompanySecretKeyByCompanyCode(@Param("companyCode") String companyCode);
 }
