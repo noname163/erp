@@ -11,8 +11,12 @@ public final class TenantContext {
         CURRENT_COMPANY.set(companyCode);
     }
 
+    public static String getCompanyCode() {
+        return CURRENT_COMPANY.get();
+    }
+
     public static String requireCompanyCode() {
-        String companyCode = CURRENT_COMPANY.get();
+        String companyCode = getCompanyCode();
 
         if (companyCode == null || companyCode.isBlank()) {
             throw new IllegalStateException(
