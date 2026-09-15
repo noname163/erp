@@ -73,6 +73,9 @@ public class PayrollResultServiceImpl implements PayrollResultService {
 
     private static final Logger log = LoggerFactory.getLogger(PayrollResultServiceImpl.class);
 
+    private static final LocalDateTime MIN_FILTER_DATE = LocalDateTime.of(1900, 1, 1, 0, 0);
+    private static final LocalDateTime MAX_FILTER_DATE = LocalDateTime.of(2999, 12, 31, 23, 59, 59);
+
     private static final Set<DayType> WORKING_DAY_TYPES = EnumSet.of(
             DayType.NORMAL,
             DayType.HOLIDAY_WORK,
@@ -130,9 +133,8 @@ public class PayrollResultServiceImpl implements PayrollResultService {
         if (normalizedPayrollRunCode == null) {
             throw new BadRequestException(Messages.ERROR_PAYROLL_RUN_CODE_INVALID);
         }
-        LocalDate targetDate = createdDate == null ? LocalDate.now() : createdDate;
-        LocalDateTime createdAtFrom = targetDate.atStartOfDay();
-        LocalDateTime createdAtTo = targetDate.plusDays(1).atStartOfDay();
+        LocalDateTime createdAtFrom = createdDate == null ? MIN_FILTER_DATE : createdDate.atStartOfDay();
+        LocalDateTime createdAtTo = createdDate == null ? MAX_FILTER_DATE : createdDate.plusDays(1).atStartOfDay();
         String scopedEmployeeCode = CustomStringUtils.resolveScopedEmployeeCode(
                 securityContextService.getCurrentUser(),
                 employeeCode);

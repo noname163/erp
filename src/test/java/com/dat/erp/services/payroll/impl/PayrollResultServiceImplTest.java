@@ -120,7 +120,7 @@ class PayrollResultServiceImplTest {
     }
 
     @Test
-    void getPayrollResults_successWithDefaultCreatedDate() {
+    void getPayrollResults_successWithoutCreatedDateFilter() {
         Account currentUserAccount = new Account();
         com.dat.erp.testutils.EntityTestData.setCode(currentUserAccount, "ACC-1");
         com.dat.erp.testutils.EntityTestData.setCompanyCode(currentUserAccount, "CMP-1");
@@ -216,12 +216,11 @@ class PayrollResultServiceImplTest {
             }
         };
 
-        LocalDate today = LocalDate.now();
         when(payrollResultRepository.searchByConditions(
                 eq("CMP-1"),
                 eq("PRN-1"),
-                eq(today.atStartOfDay()),
-                eq(today.plusDays(1).atStartOfDay()),
+                eq(LocalDateTime.of(1900, 1, 1, 0, 0)),
+                eq(LocalDateTime.of(2999, 12, 31, 23, 59, 59)),
                 eq(PayrollStatus.RUNNING),
                 eq("USR-1"),
                 any()))
