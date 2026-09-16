@@ -48,7 +48,7 @@ class SystemUnitServiceImplTest {
     @Test
     void getSystemUnitOptionsByCompanyCode_success() {
         SystemUnit unit = new SystemUnit();
-        unit.setCode("UNT-000001");
+        com.dat.erp.testutils.EntityTestData.setCode(unit, "UNT-000001");
         unit.setName("DAY");
 
         when(systemUnitRepository.findOptionsByFilters(eq("CMP-1"), eq(SystemUnitType.DURATION), any()))

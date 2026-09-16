@@ -74,13 +74,14 @@ class DepartmentServiceImplTest {
         when(departmentMapper.toEntity(request)).thenReturn(department);
         when(departmentRepository.existsByNameAndCompanyCode("HR", "CMP-1")).thenReturn(false);
         when(codeGenerator.nextCode("DPM-")).thenReturn("DPM-000001");
+        com.dat.erp.testutils.EntityTestData.setCode(department, "DPM-000001");
 
         Account account = new Account();
-        account.setCode("USR-1");
-        account.setCompanyCode("CMP-1");
+        com.dat.erp.testutils.EntityTestData.setCode(account, "USR-1");
+        com.dat.erp.testutils.EntityTestData.setCompanyCode(account, "CMP-1");
         doReturn(new CustomUserDetails(account, null)).when(securityContextService).getCurrentUser();
 
-        department.setCompanyCode("CMP-1");
+        com.dat.erp.testutils.EntityTestData.setCompanyCode(department, "CMP-1");
 
         String code = departmentService.createDepartment(request);
 
@@ -93,7 +94,7 @@ class DepartmentServiceImplTest {
     void testCreateDepartment_ConflictByName() {
         when(departmentMapper.toEntity(request)).thenReturn(department);
         when(departmentRepository.existsByNameAndCompanyCode("HR", "CMP-1")).thenReturn(true);
-        department.setCompanyCode("CMP-1");
+        com.dat.erp.testutils.EntityTestData.setCompanyCode(department, "CMP-1");
 
         ConflictException ex = assertThrows(ConflictException.class,
                 () -> departmentService.createDepartment(request));
@@ -121,7 +122,7 @@ class DepartmentServiceImplTest {
     @Test
     void testCreateDefaultDepartment_WhenExists_ReturnsExistingCode() {
         Department existing = new Department();
-        existing.setCode("DPM-EXISTING");
+        com.dat.erp.testutils.EntityTestData.setCode(existing, "DPM-EXISTING");
         when(departmentRepository.findByNameAndCompanyCode(eq("HR"), eq("CMP-1")))
                 .thenReturn(java.util.Optional.of(existing));
 

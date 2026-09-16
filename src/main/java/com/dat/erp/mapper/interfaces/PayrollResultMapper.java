@@ -1,5 +1,7 @@
 package com.dat.erp.mapper.interfaces;
 
+import java.time.YearMonth;
+
 import org.mapstruct.Context;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
@@ -22,7 +24,7 @@ public interface PayrollResultMapper {
     @Mapping(target = "currency", source = "currency", qualifiedByName = "trimToNull")
     @Mapping(target = "unitName", source = "unitName", qualifiedByName = "trimToNull")
     @Mapping(target = "retroReason", source = "retroReason", qualifiedByName = "trimToNull")
-    @Mapping(target = "period", source = "period", qualifiedByName = "trimToNull")
+    @Mapping(target = "period", source = "period", qualifiedByName = "yearMonthToString")
     @Mapping(target = "employeeCode", source = "employeeCode", qualifiedByName = "trimToNull")
     PayrollResultListResponse toListResponse(PayrollResultListProjection projection, @Context String companySecretKey);
 
@@ -40,5 +42,10 @@ public interface PayrollResultMapper {
         }
         String trimmed = value.trim();
         return trimmed.isBlank() ? null : trimmed;
+    }
+
+    @Named("yearMonthToString")
+    default String yearMonthToString(YearMonth value) {
+        return value == null ? null : value.toString();
     }
 }

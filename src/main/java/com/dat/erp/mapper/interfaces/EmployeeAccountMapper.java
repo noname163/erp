@@ -18,7 +18,7 @@ public interface EmployeeAccountMapper {
     @Mapping(target = "createdBy", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
     @Mapping(target = "updatedBy", ignore = true)
-    @Mapping(target = "deleted", ignore = true)
+    @Mapping(target = "isDeleted", ignore = true)
     @Mapping(target = "passwordHash", ignore = true)
     @Mapping(target = "isActive", ignore = true)
     @Mapping(target = "lastLogin", ignore = true)

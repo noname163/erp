@@ -90,19 +90,19 @@ class SalaryTemplateDetailServiceImplTest {
         requests = Arrays.asList(base, allowance);
 
         salaryTemplate = new SalaryTemplate();
-        salaryTemplate.setCode("STP-1");
+        com.dat.erp.testutils.EntityTestData.setCode(salaryTemplate, "STP-1");
     }
 
     @Test
     void createSalaryTemplateDetails_success() {
         Salary baseSalary = new Salary();
-        baseSalary.setCode("BASE");
+        com.dat.erp.testutils.EntityTestData.setCode(baseSalary, "BASE");
         Salary allowanceSalary = new Salary();
-        allowanceSalary.setCode("ALLOWANCE");
+        com.dat.erp.testutils.EntityTestData.setCode(allowanceSalary, "ALLOWANCE");
         when(salaryRepository.findAllByCodeIn(anyCollection())).thenReturn(List.of(baseSalary, allowanceSalary));
 
         SystemUnit month = new SystemUnit();
-        month.setCode("MONTH");
+        com.dat.erp.testutils.EntityTestData.setCode(month, "MONTH");
         when(systemUnitRepository.findAllByCodeIn(anyCollection())).thenReturn(List.of(month));
 
         when(codeGenerator.nextCode("STD-")).thenReturn("STD-000001", "STD-000002");
@@ -125,11 +125,11 @@ class SalaryTemplateDetailServiceImplTest {
     @Test
     void createSalaryTemplateDetails_badRequestWhenSalaryCodeInvalid() {
         Salary allowanceSalary = new Salary();
-        allowanceSalary.setCode("ALLOWANCE");
+        com.dat.erp.testutils.EntityTestData.setCode(allowanceSalary, "ALLOWANCE");
         when(salaryRepository.findAllByCodeIn(anyCollection())).thenReturn(List.of(allowanceSalary));
 
         SystemUnit month = new SystemUnit();
-        month.setCode("MONTH");
+        com.dat.erp.testutils.EntityTestData.setCode(month, "MONTH");
         when(systemUnitRepository.findAllByCodeIn(anyCollection())).thenReturn(List.of(month));
 
         BadRequestException ex = assertThrows(BadRequestException.class,
@@ -142,9 +142,9 @@ class SalaryTemplateDetailServiceImplTest {
     @Test
     void createSalaryTemplateDetails_badRequestWhenUnitCodeInvalid() {
         Salary baseSalary = new Salary();
-        baseSalary.setCode("BASE");
+        com.dat.erp.testutils.EntityTestData.setCode(baseSalary, "BASE");
         Salary allowanceSalary = new Salary();
-        allowanceSalary.setCode("ALLOWANCE");
+        com.dat.erp.testutils.EntityTestData.setCode(allowanceSalary, "ALLOWANCE");
         when(salaryRepository.findAllByCodeIn(anyCollection())).thenReturn(List.of(baseSalary, allowanceSalary));
         when(systemUnitRepository.findAllByCodeIn(anyCollection())).thenReturn(List.of());
 
@@ -169,16 +169,17 @@ class SalaryTemplateDetailServiceImplTest {
     @Test
     void getSalaryTemplateDetails_success() {
         Account account = new Account();
-        account.setCompanyCode("CMP-1");
+        com.dat.erp.testutils.EntityTestData.setCompanyCode(account, "CMP-1");
         when(securityContextService.getCurrentUser()).thenReturn(new CustomUserDetails(account, null));
+        when(securityContextService.getCurrentCompanyCode()).thenReturn(account.getCompanyCode());
 
         SalaryTemplate template = new SalaryTemplate();
-        template.setCode("STP-1");
+        com.dat.erp.testutils.EntityTestData.setCode(template, "STP-1");
         when(salaryTemplateRepository.findByCodeAndCompanyCodeAndIsDeletedFalse("STP-1", "CMP-1"))
                 .thenReturn(Optional.of(template));
 
         Salary salary = new Salary();
-        salary.setCode("SAL-1");
+        com.dat.erp.testutils.EntityTestData.setCode(salary, "SAL-1");
         salary.setName("Base Salary");
         SystemUnit unit = new SystemUnit();
         unit.setName("Month");
@@ -218,8 +219,9 @@ class SalaryTemplateDetailServiceImplTest {
     @Test
     void getSalaryTemplateDetails_notFound() {
         Account account = new Account();
-        account.setCompanyCode("CMP-1");
+        com.dat.erp.testutils.EntityTestData.setCompanyCode(account, "CMP-1");
         when(securityContextService.getCurrentUser()).thenReturn(new CustomUserDetails(account, null));
+        when(securityContextService.getCurrentCompanyCode()).thenReturn(account.getCompanyCode());
         when(salaryTemplateRepository.findByCodeAndCompanyCodeAndIsDeletedFalse("STP-404", "CMP-1"))
                 .thenReturn(Optional.empty());
 

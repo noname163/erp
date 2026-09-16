@@ -9,17 +9,18 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
-import org.springframework.stereotype.Repository;
+
 
 import com.dat.erp.constants.PayrollStatus;
 import com.dat.erp.entities.PayrollResult;
 import com.dat.erp.repositories.projections.PayrollResultEmployeeCodeProjection;
 import com.dat.erp.repositories.projections.PayrollResultListProjection;
 
-@Repository
+
 public interface PayrollResultRepository extends JpaRepository<PayrollResult, Long> {
     @Query("""
             select
+                pr.code as payrollResultCode,
                 payrollRun.code as payrollRunCode,
                 st.name as salaryName,
                 pr.expectedAmount as expectedAmount,
@@ -30,7 +31,7 @@ public interface PayrollResultRepository extends JpaRepository<PayrollResult, Lo
                 pr.actualQuantity as actualQuantity,
                 unit.name as unitName,
                 pr.sourceType as sourceType,
-                pr.isRetro as isRetro,
+                pr.retro as isRetro,
                 pr.retroReason as retroReason,
                 payrollRun.period as period,
                 pr.createdAt as createdAt,

@@ -9,12 +9,12 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
-import org.springframework.stereotype.Repository;
+
 
 import com.dat.erp.entities.DailyWork;
 import com.dat.erp.repositories.projections.EmployeeDailyWorkListProjection;
 
-@Repository
+
 public interface DailyWorkRepository extends JpaRepository<DailyWork, Long> {
     boolean existsByUserProfile_CodeAndWorkingDateAndIsDeletedFalse(String userProfileCode,
             java.time.LocalDate workingDate);

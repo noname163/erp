@@ -1,7 +1,7 @@
 package com.dat.erp.services.impl;
 
-import java.time.LocalDate;
 import java.time.DateTimeException;
+import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.Comparator;
 import java.util.List;
@@ -11,13 +11,12 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.dat.erp.constants.CodePrefixes;
 import com.dat.erp.constants.Messages;
 import com.dat.erp.dto.request.CompanyCalendarRequest;
 import com.dat.erp.dto.response.CompanyCalendarDateResponse;
 import com.dat.erp.dto.response.CompanyCalendarListResponse;
-import com.dat.erp.dto.response.PagedResponse;
 import com.dat.erp.dto.response.CompanyCalendarResponse;
+import com.dat.erp.dto.response.PagedResponse;
 import com.dat.erp.entities.CalendarDate;
 import com.dat.erp.entities.CompanyCalendar;
 import com.dat.erp.exceptions.BadRequestException;
@@ -25,7 +24,6 @@ import com.dat.erp.exceptions.ResourceNotFoundException;
 import com.dat.erp.mapper.interfaces.CompanyCalendarMapper;
 import com.dat.erp.repositories.customrepositories.CompanyCalendarRepository;
 import com.dat.erp.services.CalendarDateService;
-import com.dat.erp.services.CodeGenerator;
 import com.dat.erp.services.CompanyCalendarService;
 import com.dat.erp.services.SecurityContextService;
 import com.dat.erp.utils.CustomStringUtils;
@@ -57,7 +55,10 @@ public class CompanyCalendarServiceImpl  implements CompanyCalendarService {
         LocalDate effectiveTo = request.getEffectiveTo();
         validateEffectiveDates(effectiveFrom, effectiveTo);
 
-        securityContextService.getCurrentCompanyCode();
+        String companyCode = securityContextService.getCurrentCompanyCode();
+        if (companyCode == null || companyCode.isBlank() || "SYSTEM".equals(companyCode)) {
+            throw new BadRequestException(Messages.ERROR_CURRENT_USER_COMPANY_MISSING);
+        }
 
         CompanyCalendar calendar = companyCalendarMapper.toEntity(request);
         validateCalendar(calendar);

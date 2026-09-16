@@ -9,7 +9,6 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
-import com.dat.erp.constants.CodePrefixes;
 import com.dat.erp.constants.CommonStatus;
 import com.dat.erp.constants.Messages;
 import com.dat.erp.dto.request.DepartmentRequest;
@@ -20,7 +19,6 @@ import com.dat.erp.entities.Department;
 import com.dat.erp.exceptions.ConflictException;
 import com.dat.erp.mapper.interfaces.DepartmentMapper;
 import com.dat.erp.repositories.customrepositories.DepartmentRepository;
-import com.dat.erp.services.CodeGenerator;
 import com.dat.erp.services.DepartmentService;
 import com.dat.erp.services.SecurityContextService;
 import com.dat.erp.utils.PageableUtils;

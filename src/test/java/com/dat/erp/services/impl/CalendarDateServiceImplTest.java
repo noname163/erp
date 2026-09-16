@@ -6,7 +6,6 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -17,8 +16,8 @@ import java.util.Map;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.ArgumentMatchers;
 import org.mockito.ArgumentCaptor;
+import org.mockito.ArgumentMatchers;
 import org.mockito.Captor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
@@ -74,8 +73,8 @@ class CalendarDateServiceImplTest {
                 .effectiveFrom(LocalDate.of(2026, 1, 1))
                 .effectiveTo(LocalDate.of(2026, 1, 31))
                 .build();
-        calendar.setCode("CCA-000001");
-        calendar.setCompanyCode("CMP-001");
+        com.dat.erp.testutils.EntityTestData.setCode(calendar, "CCA-000001");
+        com.dat.erp.testutils.EntityTestData.setCompanyCode(calendar, "CMP-001");
 
         CompanyCalendarDateRequest firstDate = new CompanyCalendarDateRequest();
         firstDate.setCalDate(LocalDate.of(2026, 1, 1));
@@ -89,9 +88,10 @@ class CalendarDateServiceImplTest {
         requests = List.of(firstDate, secondDate);
 
         Account account = new Account();
-        account.setCode("ACC-001");
-        account.setCompanyCode("CMP-001");
+        com.dat.erp.testutils.EntityTestData.setCode(account, "ACC-001");
+        com.dat.erp.testutils.EntityTestData.setCompanyCode(account, "CMP-001");
         when(securityContextService.getCurrentUser()).thenReturn(new CustomUserDetails(account, null));
+        when(securityContextService.getCurrentCompanyCode()).thenReturn(account.getCompanyCode());
     }
 
     @Test
@@ -99,6 +99,10 @@ class CalendarDateServiceImplTest {
         List<CalendarDate> mappedDates = List.of(
                 CalendarDate.builder().calDate(LocalDate.of(2026, 1, 1)).dayType(DayType.HOLIDAY_WORK).note("New Year holiday").build(),
                 CalendarDate.builder().calDate(LocalDate.of(2026, 1, 4)).dayType(DayType.WEEKEND_WORK).note("First weekend").build());
+        com.dat.erp.testutils.EntityTestData.setCode(mappedDates.get(0), "CAD-000001");
+        com.dat.erp.testutils.EntityTestData.setCode(mappedDates.get(1), "CAD-000002");
+        com.dat.erp.testutils.EntityTestData.setCompanyCode(mappedDates.get(0), "CMP-001");
+        com.dat.erp.testutils.EntityTestData.setCompanyCode(mappedDates.get(1), "CMP-001");
         when(calendarDateMapper.toEntities(requests)).thenReturn(mappedDates);
         when(codeGenerator.nextCode("CAD-")).thenReturn("CAD-000001", "CAD-000002");
         when(calendarDateRepository.saveAll(ArgumentMatchers.<List<CalendarDate>>any()))
@@ -183,20 +187,21 @@ class CalendarDateServiceImplTest {
                 .dayType(DayType.NORMAL)
                 .note("Back to work")
                 .build();
+        com.dat.erp.testutils.EntityTestData.setCode(newRequestedDate, "CAD-000003");
         CalendarDate existingDateToUpdate = CalendarDate.builder()
                 .calDate(LocalDate.of(2026, 1, 1))
                 .dayType(DayType.HOLIDAY_WORK)
                 .note("Old note")
                 .build();
-        existingDateToUpdate.setCode("CAD-000001");
-        existingDateToUpdate.setCompanyCode("CMP-001");
+        com.dat.erp.testutils.EntityTestData.setCode(existingDateToUpdate, "CAD-000001");
+        com.dat.erp.testutils.EntityTestData.setCompanyCode(existingDateToUpdate, "CMP-001");
         CalendarDate existingDateToDelete = CalendarDate.builder()
                 .calDate(LocalDate.of(2026, 1, 4))
                 .dayType(DayType.WEEKEND_WORK)
                 .note("Remove this date")
                 .build();
-        existingDateToDelete.setCode("CAD-000002");
-        existingDateToDelete.setCompanyCode("CMP-001");
+        com.dat.erp.testutils.EntityTestData.setCode(existingDateToDelete, "CAD-000002");
+        com.dat.erp.testutils.EntityTestData.setCompanyCode(existingDateToDelete, "CMP-001");
 
         when(calendarDateMapper.toEntities(requests)).thenReturn(List.of(updatedRequestedDate, newRequestedDate));
         when(calendarDateRepository.findByCalendarCodeAndCompanyCode("CCA-000001", "CMP-001"))

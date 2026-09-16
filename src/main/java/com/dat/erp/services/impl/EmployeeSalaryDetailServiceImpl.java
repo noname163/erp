@@ -12,7 +12,6 @@ import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.dat.erp.constants.CodePrefixes;
 import com.dat.erp.constants.Messages;
 import com.dat.erp.dto.request.EmployeeSalaryDetailRequest;
 import com.dat.erp.entities.EmployeeSalary;

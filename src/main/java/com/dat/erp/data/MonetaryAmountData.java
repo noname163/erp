@@ -29,10 +29,10 @@ public class MonetaryAmountData {
             BigDecimal decimalTotalAmount,
             String currency) {
 
-        this.amount = requireNumericStringIfPresent(amount, "Amount must be numeric");
-        this.expectedAmount = requireNumericStringIfPresent(expectedAmount, "Expected amount must be numeric");
-        this.actualAmount = requireNumericStringIfPresent(actualAmount, "Actual amount must be numeric");
-        this.totalAmount = requireNumericStringIfPresent(totalAmount, "Total amount must be numeric");
+        this.amount = requireValueIfPresent(amount, "Amount must not be blank");
+        this.expectedAmount = requireValueIfPresent(expectedAmount, "Expected amount must not be blank");
+        this.actualAmount = requireValueIfPresent(actualAmount, "Actual amount must not be blank");
+        this.totalAmount = requireValueIfPresent(totalAmount, "Total amount must not be blank");
         this.decimalAmount = requireNonNegativeIfPresent(decimalAmount, "Amount must not be negative");
         this.decimalTotalAmount = requireNonNegativeIfPresent(decimalTotalAmount, "Total amount must not be negative");
         this.currency = currency == null ? null : ErrorUtils.requireNotBlank(currency, "Currency must not be blank");
@@ -48,7 +48,7 @@ public class MonetaryAmountData {
         }
     }
 
-    private static String requireNumericStringIfPresent(
+    private static String requireValueIfPresent(
             String value,
             String message) {
 
@@ -56,16 +56,7 @@ public class MonetaryAmountData {
             return null;
         }
 
-        String normalized = ErrorUtils.requireNotBlank(value, message);
-        try {
-            BigDecimal parsed = new BigDecimal(normalized);
-            if (parsed.signum() < 0) {
-                throw new BadRequestException(message.replace("numeric", "not be negative"));
-            }
-        } catch (NumberFormatException exception) {
-            throw new BadRequestException(message);
-        }
-        return normalized;
+        return ErrorUtils.requireNotBlank(value, message);
     }
 
     private static BigDecimal requireNonNegativeIfPresent(

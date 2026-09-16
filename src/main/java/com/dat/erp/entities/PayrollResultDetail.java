@@ -3,6 +3,7 @@ package com.dat.erp.entities;
 import java.math.BigDecimal;
 
 import com.dat.erp.constants.PayrollResultCalcBasis;
+import com.dat.erp.utils.UuidV7;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -13,19 +14,13 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
-import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
 
 @Getter
 @Setter
-@NoArgsConstructor
-@AllArgsConstructor
-@Builder
 @EqualsAndHashCode(onlyExplicitlyIncluded = true, callSuper = true)
 @ToString(exclude = "payrollResult")
 @Entity
@@ -33,6 +28,10 @@ import lombok.ToString;
         @UniqueConstraint(name = "uk_payroll_result_detail_code_company_code", columnNames = { "code", "company_code" })
 })
 public class PayrollResultDetail extends BaseAuditableEntity {
+
+    public PayrollResultDetail() {
+        assignCode("PRD" + UuidV7.generate());
+    }
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "payroll_result_code", referencedColumnName = "code", nullable = false)

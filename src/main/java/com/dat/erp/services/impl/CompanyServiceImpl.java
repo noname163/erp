@@ -4,13 +4,11 @@ import java.util.UUID;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.dat.erp.constants.CodePrefixes;
 import com.dat.erp.constants.Messages;
 import com.dat.erp.dto.request.CompanyRequest;
 import com.dat.erp.dto.response.CompanyResponse;

@@ -9,6 +9,8 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 
+import com.dat.erp.contexts.TenantContext;
+
 import java.util.concurrent.Executor;
 
 @Configuration
@@ -35,27 +37,39 @@ public class AsyncConfig {
         executor.setMaxPoolSize(10);
         executor.setQueueCapacity(200);
         executor.setThreadNamePrefix(threadNamePrefix);
-        executor.setTaskDecorator(securityContextTaskDecorator());
+        executor.setTaskDecorator(contextTaskDecorator());
         executor.initialize();
         return executor;
     }
 
-    private TaskDecorator securityContextTaskDecorator() {
+    private TaskDecorator contextTaskDecorator() {
         return runnable -> {
             SecurityContext callerContext = SecurityContextHolder.createEmptyContext();
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
             callerContext.setAuthentication(authentication);
+            String callerCompanyCode = TenantContext.getCompanyCode();
 
             return () -> {
                 SecurityContext previousContext = SecurityContextHolder.getContext();
+                String previousCompanyCode = TenantContext.getCompanyCode();
                 try {
                     SecurityContextHolder.setContext(callerContext);
+                    setTenantContext(callerCompanyCode);
                     runnable.run();
                 } finally {
                     SecurityContextHolder.setContext(previousContext);
+                    setTenantContext(previousCompanyCode);
                 }
             };
         };
+    }
+
+    private void setTenantContext(String companyCode) {
+        if (companyCode == null || companyCode.isBlank()) {
+            TenantContext.clear();
+            return;
+        }
+        TenantContext.setCompanyCode(companyCode);
     }
 }
 

@@ -86,17 +86,18 @@ class EmployeePayrollPolicyServiceImplTest {
         batchRequest.setEffectiveTo(LocalDate.of(2026, 4, 22));
 
         userProfile = new UserProfile();
-        userProfile.setCode("USR-001");
-        userProfile.setCompanyCode("CMP-001");
+        com.dat.erp.testutils.EntityTestData.setCode(userProfile, "USR-001");
+        com.dat.erp.testutils.EntityTestData.setCompanyCode(userProfile, "CMP-001");
 
         payrollPolicy = new PayrollPolicy();
-        payrollPolicy.setCode("PPL-001");
-        payrollPolicy.setCompanyCode("CMP-001");
+        com.dat.erp.testutils.EntityTestData.setCode(payrollPolicy, "PPL-001");
+        com.dat.erp.testutils.EntityTestData.setCompanyCode(payrollPolicy, "CMP-001");
 
         Account account = new Account();
-        account.setCode("ACC-001");
-        account.setCompanyCode("CMP-001");
+        com.dat.erp.testutils.EntityTestData.setCode(account, "ACC-001");
+        com.dat.erp.testutils.EntityTestData.setCompanyCode(account, "CMP-001");
         when(securityContextService.getCurrentUser()).thenReturn(new CustomUserDetails(account, null));
+        when(securityContextService.getCurrentCompanyCode()).thenReturn(account.getCompanyCode());
     }
 
     @Test
@@ -106,7 +107,11 @@ class EmployeePayrollPolicyServiceImplTest {
         when(employeePayrollPolicyRepository.findActiveOverlapUserProfileCodes("CMP-001", List.of("USR-001"),
                 request.getEffectiveFrom(), request.getEffectiveTo())).thenReturn(List.of());
         when(codeGenerator.nextCode("EPP-")).thenReturn("EPP-000001");
-        when(employeePayrollPolicyRepository.save(any(EmployeePayrollPolicy.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(employeePayrollPolicyRepository.save(any(EmployeePayrollPolicy.class))).thenAnswer(invocation -> {
+            EmployeePayrollPolicy saved = invocation.getArgument(0);
+            com.dat.erp.testutils.EntityTestData.setCode(saved, "EPP-000001");
+            return saved;
+        });
 
         EmployeePayrollPolicyResponse response = employeePayrollPolicyService.createEmployeePayrollPolicy(request);
 
@@ -144,8 +149,8 @@ class EmployeePayrollPolicyServiceImplTest {
                 .effectiveTo(request.getEffectiveTo())
                 .isActive(true)
                 .build();
-        employeePayrollPolicy.setCode("EPP-000001");
-        employeePayrollPolicy.setCompanyCode("CMP-001");
+        com.dat.erp.testutils.EntityTestData.setCode(employeePayrollPolicy, "EPP-000001");
+        com.dat.erp.testutils.EntityTestData.setCompanyCode(employeePayrollPolicy, "CMP-001");
 
         when(employeePayrollPolicyRepository.findByCodeAndIsDeletedFalse("EPP-000001"))
                 .thenReturn(Optional.of(employeePayrollPolicy));
@@ -181,8 +186,8 @@ class EmployeePayrollPolicyServiceImplTest {
     @Test
     void applyPayrollPolicyToEmployees_success() {
         UserProfile secondUserProfile = new UserProfile();
-        secondUserProfile.setCode("USR-002");
-        secondUserProfile.setCompanyCode("CMP-001");
+        com.dat.erp.testutils.EntityTestData.setCode(secondUserProfile, "USR-002");
+        com.dat.erp.testutils.EntityTestData.setCompanyCode(secondUserProfile, "CMP-001");
 
         when(payrollPolicyRepository.findByCodeAndIsDeletedFalse("PPL-001")).thenReturn(Optional.of(payrollPolicy));
         when(userProfileRepository.findAllByCodeInAndIsDeletedFalseForUpdate(List.of("USR-001", "USR-002")))
@@ -205,8 +210,8 @@ class EmployeePayrollPolicyServiceImplTest {
     @Test
     void applyPayrollPolicyToEmployees_conflictWhenAnyEmployeeOverlaps() {
         UserProfile secondUserProfile = new UserProfile();
-        secondUserProfile.setCode("USR-002");
-        secondUserProfile.setCompanyCode("CMP-001");
+        com.dat.erp.testutils.EntityTestData.setCode(secondUserProfile, "USR-002");
+        com.dat.erp.testutils.EntityTestData.setCompanyCode(secondUserProfile, "CMP-001");
 
         when(payrollPolicyRepository.findByCodeAndIsDeletedFalse("PPL-001")).thenReturn(Optional.of(payrollPolicy));
         when(userProfileRepository.findAllByCodeInAndIsDeletedFalseForUpdate(List.of("USR-001", "USR-002")))
@@ -225,12 +230,12 @@ class EmployeePayrollPolicyServiceImplTest {
     @Test
     void getCompanyPoliciesByEmployeeCodesAndDate_returnsPolicyMapByEmployeeCode() {
         UserProfile secondUserProfile = new UserProfile();
-        secondUserProfile.setCode("USR-002");
-        secondUserProfile.setCompanyCode("CMP-001");
+        com.dat.erp.testutils.EntityTestData.setCode(secondUserProfile, "USR-002");
+        com.dat.erp.testutils.EntityTestData.setCompanyCode(secondUserProfile, "CMP-001");
 
         PayrollPolicy secondPayrollPolicy = new PayrollPolicy();
-        secondPayrollPolicy.setCode("PPL-002");
-        secondPayrollPolicy.setCompanyCode("CMP-001");
+        com.dat.erp.testutils.EntityTestData.setCode(secondPayrollPolicy, "PPL-002");
+        com.dat.erp.testutils.EntityTestData.setCompanyCode(secondPayrollPolicy, "CMP-001");
 
         EmployeePayrollPolicy firstEmployeePolicy = EmployeePayrollPolicy.builder()
                 .userProfile(userProfile)

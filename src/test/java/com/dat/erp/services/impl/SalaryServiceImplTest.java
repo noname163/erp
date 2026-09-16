@@ -74,8 +74,9 @@ class SalaryServiceImplTest {
     @Test
     void createSalaries_success() {
         Account account = new Account();
-        account.setCompanyCode("CMP-1");
+        com.dat.erp.testutils.EntityTestData.setCompanyCode(account, "CMP-1");
         when(securityContextService.getCurrentUser()).thenReturn(new CustomUserDetails(account, null));
+        when(securityContextService.getCurrentCompanyCode()).thenReturn(account.getCompanyCode());
 
         when(salaryRepository.findExistingUpperCaseNamesByCompanyCodeAndIsDeletedFalse("CMP-1",
                 List.of("BASE", "LATE_DEDUCTION"))).thenReturn(List.of());
@@ -87,12 +88,12 @@ class SalaryServiceImplTest {
         when(codeGenerator.nextCode("SAL-")).thenReturn("SAL-000001", "SAL-000002");
 
         Salary baseSaved = new Salary();
-        baseSaved.setCode("SAL-000001");
+        com.dat.erp.testutils.EntityTestData.setCode(baseSaved, "SAL-000001");
         baseSaved.setName("BASE");
         baseSaved.setCalculateMethod(SalaryCalculateMethod.PLUS);
         baseSaved.setIsDeduct(false);
         Salary deductSaved = new Salary();
-        deductSaved.setCode("SAL-000002");
+        com.dat.erp.testutils.EntityTestData.setCode(deductSaved, "SAL-000002");
         deductSaved.setName("LATE_DEDUCTION");
         deductSaved.setCalculateMethod(SalaryCalculateMethod.MINUS);
         deductSaved.setIsDeduct(true);
@@ -113,8 +114,9 @@ class SalaryServiceImplTest {
     @Test
     void createSalaries_conflictWhenNameExistsInDb() {
         Account account = new Account();
-        account.setCompanyCode("CMP-1");
+        com.dat.erp.testutils.EntityTestData.setCompanyCode(account, "CMP-1");
         when(securityContextService.getCurrentUser()).thenReturn(new CustomUserDetails(account, null));
+        when(securityContextService.getCurrentCompanyCode()).thenReturn(account.getCompanyCode());
 
         when(salaryRepository.findExistingUpperCaseNamesByCompanyCodeAndIsDeletedFalse("CMP-1",
                 List.of("BASE"))).thenReturn(List.of("BASE"));
@@ -151,11 +153,12 @@ class SalaryServiceImplTest {
     @Test
     void getSalaryOptionsByCompanyCode_success() {
         Account account = new Account();
-        account.setCompanyCode("CMP-1");
+        com.dat.erp.testutils.EntityTestData.setCompanyCode(account, "CMP-1");
         when(securityContextService.getCurrentUser()).thenReturn(new CustomUserDetails(account, null));
+        when(securityContextService.getCurrentCompanyCode()).thenReturn(account.getCompanyCode());
 
         Salary salary = new Salary();
-        salary.setCode("SAL-000001");
+        com.dat.erp.testutils.EntityTestData.setCode(salary, "SAL-000001");
         salary.setName("BASE");
 
         when(salaryRepository.findOptionsByFilters(eq("CMP-1"), isNull(), any()))

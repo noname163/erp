@@ -83,28 +83,34 @@ class EmployeeSalaryDetailServiceImplTest {
     @Test
     void createEmployeeSalaryDetails_success() {
         Account currentUserAccount = new Account();
-        currentUserAccount.setCode("ACC-1");
-        currentUserAccount.setCompanyCode("CMP-1");
+        com.dat.erp.testutils.EntityTestData.setCode(currentUserAccount, "ACC-1");
+        com.dat.erp.testutils.EntityTestData.setCompanyCode(currentUserAccount, "CMP-1");
         when(securityContextService.getCurrentUser()).thenReturn(new CustomUserDetails(currentUserAccount, null));
+        when(securityContextService.getCurrentCompanyCode()).thenReturn(currentUserAccount.getCompanyCode());
 
         UserProfile userProfile = new UserProfile();
-        userProfile.setCode("EMP001");
+        com.dat.erp.testutils.EntityTestData.setCode(userProfile, "EMP001");
         EmployeeSalary employeeSalary = new EmployeeSalary();
-        employeeSalary.setCode("ESL-1");
-        employeeSalary.setCompanyCode("CMP-1");
+        com.dat.erp.testutils.EntityTestData.setCode(employeeSalary, "ESL-1");
+        com.dat.erp.testutils.EntityTestData.setCompanyCode(employeeSalary, "CMP-1");
         employeeSalary.setUserProfile(userProfile);
         when(employeeSalaryRepository.findByCodeAndIsDeletedFalse("ESL-1")).thenReturn(Optional.of(employeeSalary));
 
         when(employeeSalaryDetailRepository.findExistingSalaryCodes(eq("ESL-1"), anyCollection())).thenReturn(List.of());
 
         Salary baseSalary = new Salary();
-        baseSalary.setCode("BASE");
+        com.dat.erp.testutils.EntityTestData.setCode(baseSalary, "BASE");
         Salary allowanceSalary = new Salary();
-        allowanceSalary.setCode("ALLOWANCE");
+        com.dat.erp.testutils.EntityTestData.setCode(allowanceSalary, "ALLOWANCE");
         when(salaryRepository.findAllByCodeIn(anyCollection())).thenReturn(List.of(baseSalary, allowanceSalary));
 
         when(codeGenerator.nextCode("ESD-")).thenReturn("ESD-000001", "ESD-000002");
-        when(employeeSalaryDetailRepository.saveAll(anyList())).thenAnswer(invocation -> invocation.getArgument(0));
+        when(employeeSalaryDetailRepository.saveAll(anyList())).thenAnswer(invocation -> {
+            List<EmployeeSalaryDetail> saved = invocation.getArgument(0);
+            com.dat.erp.testutils.EntityTestData.setCode(saved.get(0), "ESD-000001");
+            com.dat.erp.testutils.EntityTestData.setCode(saved.get(1), "ESD-000002");
+            return saved;
+        });
 
         String result = employeeSalaryDetailService.createEmployeeSalaryDetails(requests, employeeSalary.getCode());
 
@@ -131,13 +137,14 @@ class EmployeeSalaryDetailServiceImplTest {
         requests = Arrays.asList(requests.get(0), duplicate);
 
         Account currentUserAccount = new Account();
-        currentUserAccount.setCode("ACC-1");
-        currentUserAccount.setCompanyCode("CMP-1");
+        com.dat.erp.testutils.EntityTestData.setCode(currentUserAccount, "ACC-1");
+        com.dat.erp.testutils.EntityTestData.setCompanyCode(currentUserAccount, "CMP-1");
         when(securityContextService.getCurrentUser()).thenReturn(new CustomUserDetails(currentUserAccount, null));
+        when(securityContextService.getCurrentCompanyCode()).thenReturn(currentUserAccount.getCompanyCode());
 
         EmployeeSalary employeeSalary = new EmployeeSalary();
-        employeeSalary.setCode("ESL-1");
-        employeeSalary.setCompanyCode("CMP-1");
+        com.dat.erp.testutils.EntityTestData.setCode(employeeSalary, "ESL-1");
+        com.dat.erp.testutils.EntityTestData.setCompanyCode(employeeSalary, "CMP-1");
         employeeSalary.setUserProfile(new UserProfile());
         when(employeeSalaryRepository.findByCodeAndIsDeletedFalse("ESL-1")).thenReturn(Optional.of(employeeSalary));
 
@@ -155,13 +162,14 @@ class EmployeeSalaryDetailServiceImplTest {
         requests.get(1).setDependenceCode("BONUS");
 
         Account currentUserAccount = new Account();
-        currentUserAccount.setCode("ACC-1");
-        currentUserAccount.setCompanyCode("CMP-1");
+        com.dat.erp.testutils.EntityTestData.setCode(currentUserAccount, "ACC-1");
+        com.dat.erp.testutils.EntityTestData.setCompanyCode(currentUserAccount, "CMP-1");
         when(securityContextService.getCurrentUser()).thenReturn(new CustomUserDetails(currentUserAccount, null));
+        when(securityContextService.getCurrentCompanyCode()).thenReturn(currentUserAccount.getCompanyCode());
 
         EmployeeSalary employeeSalary = new EmployeeSalary();
-        employeeSalary.setCode("ESL-1");
-        employeeSalary.setCompanyCode("CMP-1");
+        com.dat.erp.testutils.EntityTestData.setCode(employeeSalary, "ESL-1");
+        com.dat.erp.testutils.EntityTestData.setCompanyCode(employeeSalary, "CMP-1");
         employeeSalary.setUserProfile(new UserProfile());
         when(employeeSalaryRepository.findByCodeAndIsDeletedFalse("ESL-1")).thenReturn(Optional.of(employeeSalary));
 
@@ -176,23 +184,24 @@ class EmployeeSalaryDetailServiceImplTest {
         requests.get(1).setDependenceCode("BASE");
 
         Account currentUserAccount = new Account();
-        currentUserAccount.setCode("ACC-1");
-        currentUserAccount.setCompanyCode("CMP-1");
+        com.dat.erp.testutils.EntityTestData.setCode(currentUserAccount, "ACC-1");
+        com.dat.erp.testutils.EntityTestData.setCompanyCode(currentUserAccount, "CMP-1");
         when(securityContextService.getCurrentUser()).thenReturn(new CustomUserDetails(currentUserAccount, null));
+        when(securityContextService.getCurrentCompanyCode()).thenReturn(currentUserAccount.getCompanyCode());
 
         UserProfile userProfile = new UserProfile();
-        userProfile.setCode("EMP001");
+        com.dat.erp.testutils.EntityTestData.setCode(userProfile, "EMP001");
         EmployeeSalary employeeSalary = new EmployeeSalary();
-        employeeSalary.setCode("ESL-1");
-        employeeSalary.setCompanyCode("CMP-1");
+        com.dat.erp.testutils.EntityTestData.setCode(employeeSalary, "ESL-1");
+        com.dat.erp.testutils.EntityTestData.setCompanyCode(employeeSalary, "CMP-1");
         employeeSalary.setUserProfile(userProfile);
         when(employeeSalaryRepository.findByCodeAndIsDeletedFalse("ESL-1")).thenReturn(Optional.of(employeeSalary));
         when(employeeSalaryDetailRepository.findExistingSalaryCodes(eq("ESL-1"), anyCollection())).thenReturn(List.of());
 
         Salary baseSalary = new Salary();
-        baseSalary.setCode("BASE");
+        com.dat.erp.testutils.EntityTestData.setCode(baseSalary, "BASE");
         Salary allowanceSalary = new Salary();
-        allowanceSalary.setCode("ALLOWANCE");
+        com.dat.erp.testutils.EntityTestData.setCode(allowanceSalary, "ALLOWANCE");
         when(salaryRepository.findAllByCodeIn(anyCollection())).thenReturn(List.of(baseSalary, allowanceSalary));
 
         when(codeGenerator.nextCode("ESD-")).thenReturn("ESD-000001", "ESD-000002");
@@ -208,9 +217,10 @@ class EmployeeSalaryDetailServiceImplTest {
     @Test
     void createEmployeeSalaryDetails_notFoundWhenEmployeeSalaryMissing() {
         Account currentUserAccount = new Account();
-        currentUserAccount.setCode("ACC-1");
-        currentUserAccount.setCompanyCode("CMP-1");
+        com.dat.erp.testutils.EntityTestData.setCode(currentUserAccount, "ACC-1");
+        com.dat.erp.testutils.EntityTestData.setCompanyCode(currentUserAccount, "CMP-1");
         when(securityContextService.getCurrentUser()).thenReturn(new CustomUserDetails(currentUserAccount, null));
+        when(securityContextService.getCurrentCompanyCode()).thenReturn(currentUserAccount.getCompanyCode());
 
         when(employeeSalaryRepository.findByCodeAndIsDeletedFalse("ESL-1")).thenReturn(Optional.empty());
 
@@ -223,13 +233,14 @@ class EmployeeSalaryDetailServiceImplTest {
     @Test
     void createEmployeeSalaryDetails_badRequestWhenCompanyMismatch() {
         Account currentUserAccount = new Account();
-        currentUserAccount.setCode("ACC-1");
-        currentUserAccount.setCompanyCode("CMP-1");
+        com.dat.erp.testutils.EntityTestData.setCode(currentUserAccount, "ACC-1");
+        com.dat.erp.testutils.EntityTestData.setCompanyCode(currentUserAccount, "CMP-1");
         when(securityContextService.getCurrentUser()).thenReturn(new CustomUserDetails(currentUserAccount, null));
+        when(securityContextService.getCurrentCompanyCode()).thenReturn(currentUserAccount.getCompanyCode());
 
         EmployeeSalary employeeSalary = new EmployeeSalary();
-        employeeSalary.setCode("ESL-1");
-        employeeSalary.setCompanyCode("CMP-2");
+        com.dat.erp.testutils.EntityTestData.setCode(employeeSalary, "ESL-1");
+        com.dat.erp.testutils.EntityTestData.setCompanyCode(employeeSalary, "CMP-2");
         employeeSalary.setUserProfile(new UserProfile());
         when(employeeSalaryRepository.findByCodeAndIsDeletedFalse("ESL-1")).thenReturn(Optional.of(employeeSalary));
 

@@ -133,14 +133,15 @@ class MonthlySalaryCalculationServiceImplTest {
                         employeePayrollPolicyService, payRateRuleRepository, employeeProductionResultRepository,
                         employeeKpiResultRepository)));
         Account account = new Account();
-        account.setCompanyCode("CMP-1");
+        com.dat.erp.testutils.EntityTestData.setCompanyCode(account, "CMP-1");
         when(securityContextService.getCurrentUser()).thenReturn(new CustomUserDetails(account, null));
+        when(securityContextService.getCurrentCompanyCode()).thenReturn(account.getCompanyCode());
 
         EmployeeSalary employeeSalary = new EmployeeSalary();
-        employeeSalary.setCode("ESL-1");
+        com.dat.erp.testutils.EntityTestData.setCode(employeeSalary, "ESL-1");
         employeeSalary.setCurrency("MMK");
         UserProfile userProfile = new UserProfile();
-        userProfile.setCode("EMP001");
+        com.dat.erp.testutils.EntityTestData.setCode(userProfile, "EMP001");
         employeeSalary.setUserProfile(userProfile);
         when(employeeSalaryRepository.findFirstActiveByEmployeeCodeAndCompanyCodeAndDate("EMP001", "CMP-1",
                 LocalDate.of(2026, 3, 31))).thenReturn(Optional.of(employeeSalary));
@@ -367,11 +368,11 @@ class MonthlySalaryCalculationServiceImplTest {
 
     private EmployeeSalary employeeSalary(SalaryBasisType salaryBasisType) {
         EmployeeSalary employeeSalary = new EmployeeSalary();
-        employeeSalary.setCode("ESL-1");
+        com.dat.erp.testutils.EntityTestData.setCode(employeeSalary, "ESL-1");
         employeeSalary.setCurrency("MMK");
         employeeSalary.setSalaryBasisType(salaryBasisType);
         UserProfile userProfile = new UserProfile();
-        userProfile.setCode("EMP001");
+        com.dat.erp.testutils.EntityTestData.setCode(userProfile, "EMP001");
         employeeSalary.setUserProfile(userProfile);
         return employeeSalary;
     }
@@ -386,7 +387,7 @@ class MonthlySalaryCalculationServiceImplTest {
     private EmployeeSalaryDetail detail(String code, SalaryCalculateMethod method, String dependenceCode, DayType dayType,
             String amount, boolean isDeduct, boolean isFixed) {
         Salary salary = new Salary();
-        salary.setCode(code);
+        com.dat.erp.testutils.EntityTestData.setCode(salary, code);
         salary.setCalculateMethod(method);
         salary.setIsDeduct(isDeduct);
 
@@ -397,7 +398,7 @@ class MonthlySalaryCalculationServiceImplTest {
         detail.setIsFixed(isFixed);
         if (dependenceCode != null) {
             Salary dependenceSalary = new Salary();
-            dependenceSalary.setCode(dependenceCode);
+            com.dat.erp.testutils.EntityTestData.setCode(dependenceSalary, dependenceCode);
             detail.setDependenceCode(dependenceSalary);
         }
         return detail;

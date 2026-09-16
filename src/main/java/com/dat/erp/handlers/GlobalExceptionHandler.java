@@ -111,7 +111,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(Exception.class) // fallback
     public ResponseEntity<ProblemDetailsResponse> handleGeneric(Exception ex, WebRequest request) {
-        log.warn("Authorization denied: {} at {}", ex.getMessage(), request.getDescription(false));
+        log.error("Unhandled exception at {}", request.getDescription(false), ex);
         ProblemDetailsResponse problem = new ProblemDetailsResponse(
                 URI.create("https://example.com/errors/internal"),
                 "Internal Server Error",

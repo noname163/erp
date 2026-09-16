@@ -17,7 +17,7 @@ public interface UserIdentityMapper {
     @Mapping(target = "createdBy", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
     @Mapping(target = "updatedBy", ignore = true)
-    @Mapping(target = "deleted", ignore = true)
+    @Mapping(target = "isDeleted", ignore = true)
     @Mapping(target = "userProfile", ignore = true)
     @Mapping(target = "idType", constant = "GENDER")
     @Mapping(target = "idValue", source = "gender")

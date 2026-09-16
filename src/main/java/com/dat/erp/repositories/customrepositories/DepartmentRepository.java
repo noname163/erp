@@ -5,13 +5,13 @@ import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
-import org.springframework.stereotype.Repository;
+
 import org.springframework.data.repository.query.Param;
 
 import com.dat.erp.constants.CommonStatus;
 import com.dat.erp.entities.Department;
 
-@Repository
+
 public interface DepartmentRepository extends JpaRepository<Department, Long> {
     Optional<Department> findByCode(String code);
 

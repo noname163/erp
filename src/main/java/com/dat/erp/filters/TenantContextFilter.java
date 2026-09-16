@@ -2,23 +2,21 @@ package com.dat.erp.filters;
 
 import java.io.IOException;
 
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import com.dat.erp.contexts.TenantContext;
-import com.dat.erp.services.SecurityContextService;
+import com.dat.erp.systemconfigs.CustomUserDetails;
 
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import lombok.RequiredArgsConstructor;
 
 @Component
-@RequiredArgsConstructor
 public class TenantContextFilter extends OncePerRequestFilter {
-
-    private final SecurityContextService securityContextService;
 
     @Override
     protected void doFilterInternal(
@@ -28,7 +26,11 @@ public class TenantContextFilter extends OncePerRequestFilter {
             throws ServletException, IOException {
 
         try {
-            var currentUser = securityContextService.getCurrentUser();
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            CustomUserDetails currentUser = authentication != null
+                    && authentication.getPrincipal() instanceof CustomUserDetails principal
+                            ? principal
+                            : null;
 
             if (currentUser != null
                     && currentUser.getAccount() != null) {

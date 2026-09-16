@@ -43,10 +43,10 @@ class SecurityContextServiceImplTest {
     @Test
     void setCurrentUser_setsAuthenticationAndReturnsDetails() {
         Account account = new Account();
-        account.setCode("ACC-1");
+        com.dat.erp.testutils.EntityTestData.setCode(account, "ACC-1");
 
         UserProfile profile = new UserProfile();
-        profile.setCode("USR-1");
+        com.dat.erp.testutils.EntityTestData.setCode(profile, "USR-1");
         account.setUserProfile(profile);
 
         when(accountRepository.findByCodeWithRoleAndUserProfileAndDepartment("ACC-1")).thenReturn(Optional.of(account));

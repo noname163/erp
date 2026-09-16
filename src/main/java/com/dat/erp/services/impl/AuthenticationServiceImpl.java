@@ -2,7 +2,6 @@ package com.dat.erp.services.impl;
 
 import java.time.LocalDateTime;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -10,10 +9,10 @@ import com.dat.erp.constants.Messages;
 import com.dat.erp.dto.request.LoginRequest;
 import com.dat.erp.dto.request.ResetPasswordRequest;
 import com.dat.erp.dto.response.LoginResponse;
-import com.dat.erp.exceptions.BadRequestException;
-import com.dat.erp.exceptions.UnauthorizedException;
 import com.dat.erp.entities.Account;
 import com.dat.erp.entities.UserProfile;
+import com.dat.erp.exceptions.BadRequestException;
+import com.dat.erp.exceptions.UnauthorizedException;
 import com.dat.erp.repositories.customrepositories.AccountRepository;
 import com.dat.erp.services.AuthenticationService;
 import com.dat.erp.services.SecurityContextService;
@@ -23,15 +22,14 @@ import com.dat.erp.utils.CryptoUtils;
 import com.dat.erp.utils.JwtUtils;
 
 import jakarta.servlet.http.HttpServletResponse;
+import lombok.AllArgsConstructor;
 
 @Service
+@AllArgsConstructor
 public class AuthenticationServiceImpl implements AuthenticationService {
-    @Autowired
-    private AccountRepository accountRepository;
-    @Autowired
-    private JwtUtils jwtUtils;
-    @Autowired
-    private SecurityContextService securityContextService;
+    private final AccountRepository accountRepository;
+    private final JwtUtils jwtUtils;
+    private final SecurityContextService securityContextService;
 
     @Override
     public LoginResponse login(LoginRequest request, HttpServletResponse response) {

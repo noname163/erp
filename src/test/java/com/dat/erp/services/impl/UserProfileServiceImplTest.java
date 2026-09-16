@@ -63,11 +63,12 @@ class UserProfileServiceImplTest {
     @Test
     void getUserProfileOptionsByFirstName_success() {
         Account account = new Account();
-        account.setCompanyCode("CMP-1");
+        com.dat.erp.testutils.EntityTestData.setCompanyCode(account, "CMP-1");
         when(securityContextService.getCurrentUser()).thenReturn(new CustomUserDetails(account, null));
+        when(securityContextService.getCurrentCompanyCode()).thenReturn(account.getCompanyCode());
 
         UserProfile profile = new UserProfile();
-        profile.setCode("USR-1");
+        com.dat.erp.testutils.EntityTestData.setCode(profile, "USR-1");
         profile.setFirstName("John");
         profile.setLastName("Smith");
 
@@ -92,8 +93,9 @@ class UserProfileServiceImplTest {
     @Test
     void getUserProfileOptionsByFirstName_withFilter() {
         Account account = new Account();
-        account.setCompanyCode("CMP-1");
+        com.dat.erp.testutils.EntityTestData.setCompanyCode(account, "CMP-1");
         when(securityContextService.getCurrentUser()).thenReturn(new CustomUserDetails(account, null));
+        when(securityContextService.getCurrentCompanyCode()).thenReturn(account.getCompanyCode());
 
         when(userProfileRepository.findOptionsByFilters(eq("CMP-1"), eq("Ann"), any()))
                 .thenReturn(new PageImpl<>(List.of(), PageRequest.of(0, 20), 0));
@@ -109,8 +111,9 @@ class UserProfileServiceImplTest {
     @Test
     void getActiveUserProfileCodesOfCurrentCompany_success() {
         Account account = new Account();
-        account.setCompanyCode("CMP-1");
+        com.dat.erp.testutils.EntityTestData.setCompanyCode(account, "CMP-1");
         when(securityContextService.getCurrentUser()).thenReturn(new CustomUserDetails(account, null));
+        when(securityContextService.getCurrentCompanyCode()).thenReturn(account.getCompanyCode());
         when(userProfileRepository.findActiveCodesByCompanyCode("CMP-1")).thenReturn(List.of("USR-1", "USR-2"));
 
         List<String> result = userProfileService.getActiveUserProfileCodesOfCurrentCompany();
@@ -122,8 +125,9 @@ class UserProfileServiceImplTest {
     @Test
     void getActiveUserProfileCodesOfCurrentCompany_missingCompany_throwsBadRequest() {
         Account account = new Account();
-        account.setCompanyCode(" ");
+        com.dat.erp.testutils.EntityTestData.setCompanyCode(account, " ");
         when(securityContextService.getCurrentUser()).thenReturn(new CustomUserDetails(account, null));
+        when(securityContextService.getCurrentCompanyCode()).thenReturn(account.getCompanyCode());
 
         BadRequestException exception = assertThrows(BadRequestException.class,
                 () -> userProfileService.getActiveUserProfileCodesOfCurrentCompany());

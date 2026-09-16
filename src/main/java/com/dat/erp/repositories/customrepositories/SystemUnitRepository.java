@@ -9,12 +9,12 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
-import org.springframework.stereotype.Repository;
+
 
 import com.dat.erp.constants.SystemUnitType;
 import com.dat.erp.entities.SystemUnit;
 
-@Repository
+
 public interface SystemUnitRepository extends JpaRepository<SystemUnit, Long> {
     Optional<SystemUnit> findByCode(String code);
 
