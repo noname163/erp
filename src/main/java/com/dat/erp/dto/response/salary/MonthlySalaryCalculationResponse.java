@@ -20,6 +20,7 @@ public class MonthlySalaryCalculationResponse {
     private BigDecimal actualWorkingHourPerMonth;
     private BigDecimal standardMoneyPerHour;
     private BigDecimal finalSalary;
+    private com.dat.erp.dto.response.MonthlyPayslipResponse payslip;
     private BigDecimal paidLeaveHours;
     private BigDecimal unpaidLeaveHours;
     private BigDecimal lateEarlyDeductionHours;

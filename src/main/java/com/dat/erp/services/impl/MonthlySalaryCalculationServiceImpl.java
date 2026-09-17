@@ -56,6 +56,7 @@ public class MonthlySalaryCalculationServiceImpl implements MonthlySalaryCalcula
                 basisResult.salaryBasisType(), basisResult.basisUnit(), basisResult.expectedBasisValue(),
                 basisResult.actualBasisValue(), basisResult.standardMoneyPerUnit(),
                 Collections.unmodifiableMap(basisResult.actualBasisValuesByType()));
+        response.setPayslip(context.getPayslip());
         response.setPaidLeaveHours(context.getPaidLeaveHours());
         response.setUnpaidLeaveHours(context.getUnpaidLeaveHours());
         response.setLateEarlyDeductionHours(context.getLateEarlyDeductionHours());

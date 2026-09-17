@@ -42,6 +42,20 @@ public class PayrollResult extends BaseAuditableEntity {
     @JoinColumn(name = "employee_salary_code", referencedColumnName = "code", nullable = false)
     private EmployeeSalary employeeSalary;
 
+    @Column(name = "payslip_snapshot", columnDefinition = "text")
+    private String payslipSnapshot;
+
+    @Column(name = "calculation_error", length = 1000)
+    private String calculationError;
+
+    public void recordCalculationError(String error) { this.calculationError = error; }
+
+    public void savePayslip(com.dat.erp.dto.response.MonthlyPayslipResponse payslip, String secret) {
+        this.calculationError = null;
+        if (payslip != null) this.payslipSnapshot = com.dat.erp.utils.CompanySecretKeyCryptoUtils.encrypt(
+                com.dat.erp.utils.PayslipJson.write(payslip), secret);
+    }
+
     @Column(name = "expected_amount")
     private String expectedAmount;
 

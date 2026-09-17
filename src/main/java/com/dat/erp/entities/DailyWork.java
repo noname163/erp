@@ -83,6 +83,12 @@ public class DailyWork extends BaseAuditableEntity {
     @Column(name = "early_leave_minutes")
     private Integer earlyLeaveMinutes;
 
+    @Column(name = "night_hours")
+    private BigDecimal nightHours;
+
+    @Column(name = "night_overtime_hours")
+    private BigDecimal nightOvertimeHours;
+
     @Column(name = "overtime_hours")
     private BigDecimal overtimeHours;
 

@@ -107,9 +107,23 @@ public class PayrollResultServiceImpl implements PayrollResultService {
         if (normalizedPayrollResultCode == null) {
             throw new BadRequestException(Messages.ERROR_PAYROLL_RESULT_CODE_INVALID);
         }
-        payrollResultRepository.findByCodeAndCompanyCodeAndIsDeletedFalse(normalizedPayrollResultCode, companyCode)
+        PayrollResult scopedResult = payrollResultRepository.findByCodeAndCompanyCodeAndIsDeletedFalse(normalizedPayrollResultCode, companyCode)
                 .orElseThrow(() -> new ResourceNotFoundException(
                         String.format(Messages.ERROR_PAYROLL_RESULT_NOT_FOUND, normalizedPayrollResultCode)));
+        if (scopedResult.getEmployeeSalary() != null && scopedResult.getEmployeeSalary().getUserProfile() != null) {
+            CustomStringUtils.resolveScopedEmployeeCode(securityContextService.getCurrentUser(),
+                    scopedResult.getEmployeeSalary().getUserProfile().getCode());
+        }
+        if (scopedResult.getPayslipSnapshot() != null) {
+            var payslip = com.dat.erp.utils.PayslipJson.read(CompanySecretKeyCryptoUtils.decrypt(scopedResult.getPayslipSnapshot(), resolveCompanySecretKey(companyCode)), com.dat.erp.dto.response.MonthlyPayslipResponse.class);
+            return payslip.getLines().stream().map(line -> {
+                PayrollResultDetailResponse response = new PayrollResultDetailResponse();
+                response.setCategory(line.kind()); response.setLabel(line.label()); response.setQuantity(line.quantity());
+                response.setRate(line.rate()); response.setMultiplierApplied(line.multiplier()); response.setAmount(line.amount());
+                response.setCurrency(line.currency()); response.setFormulaNote(line.formula());
+                return response;
+            }).toList();
+        }
         return payrollResultDetailRepository.findByPayrollResult_CodeAndIsDeletedFalse(normalizedPayrollResultCode)
                 .stream()
                 .map(payrollResultMapper::toDetailResponse)
@@ -476,6 +490,7 @@ public class PayrollResultServiceImpl implements PayrollResultService {
                 + "\"expectedQuantity\":" + payrollResult.getExpectedQuantity() + ","
                 + "\"actualQuantity\":" + payrollResult.getActualQuantity() + ","
                 + "\"currency\":\"" + CustomStringUtils.escapeJson(payrollResult.getCurrency()) + "\","
+                + "\"payslipSnapshot\":\"" + CustomStringUtils.escapeJson(payrollResult.getPayslipSnapshot()) + "\","
                 + "\"sourceType\":\"" + payrollResult.getSourceType() + "\""
                 + "}";
     }
@@ -507,9 +522,9 @@ public class PayrollResultServiceImpl implements PayrollResultService {
                 PayrollTraceData.builder()
                         .sourceType(oldResult.getSourceType())
                         .build());
+        payrollResult.savePayslip(calculation.getPayslip(), companySecretKey);
         payrollResult.assignRetro();
         payrollResult.assignRetroReason("Payroll re-run");
-        payrollResultRepository.saveAndFlush(payrollResult);
         return payrollResult;
     }
 

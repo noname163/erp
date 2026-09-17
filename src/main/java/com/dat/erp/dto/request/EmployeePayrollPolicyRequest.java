@@ -17,6 +17,5 @@ public class EmployeePayrollPolicyRequest {
     @NotNull(message = "effectiveFrom is required")
     private LocalDate effectiveFrom;
 
-    @NotNull(message = "effectiveTo is required")
     private LocalDate effectiveTo;
 }

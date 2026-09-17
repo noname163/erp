@@ -27,6 +27,7 @@ public class CalculateSalaryDetailsStep implements MonthlySalaryCalculationStep 
 
     @Override
     public void execute(MonthlySalaryCalculationContext context) {
+        if (context.getPayslip() != null) return;
         List<MonthlySalaryDetailAuditResponse> auditTrail = new ArrayList<>();
         BigDecimal finalSalary;
         SalaryBasisType salaryBasisType = context.getSalaryBasisType();

@@ -317,6 +317,7 @@ public class EmployeeSalaryServiceImpl implements EmployeeSalaryService {
                         calculation.getActualWorkingHourPerMonth() == null
                                 ? payrollResult.getActualQuantity()
                                 : calculation.getActualWorkingHourPerMonth().intValue());
+                payrollResult.savePayslip(calculation.getPayslip(), companySecretKey);
                 updatedPayrollResults.add(payrollResult);
                 calculationsByPayrollResult.put(payrollResult, calculation);
                 successCount++;
@@ -330,6 +331,8 @@ public class EmployeeSalaryServiceImpl implements EmployeeSalaryService {
                         calculation.getActualWorkingHourPerMonth(),
                         calculation.getAuditTrail() == null ? 1 : calculation.getAuditTrail().size() + 1);
             } catch (Exception ex) {
+                payrollResult.recordCalculationError(ex instanceof BadRequestException ? ex.getMessage() : "Payroll calculation failed. Review the employee payroll configuration and server logs.");
+                payrollResultRepository.save(payrollResult);
                 failureCount++;
                 log.warn(
                         "PAYROLL_CALC action=EMPLOYEE_CALCULATED result=FAILED companyCode={} payrollRunCode={} period={} employeeCode={} payrollResultCode={} error={}",
@@ -405,6 +408,7 @@ public class EmployeeSalaryServiceImpl implements EmployeeSalaryService {
 
     private void replacePayrollResultDetails(PayrollResult payrollResult,
             MonthlySalaryCalculationResponse calculation) {
+        if (calculation.getPayslip() != null) return; // The complete snapshot is saved atomically with the result.
         List<PayrollResultDetail> details = new ArrayList<>();
         details.add(buildSummaryDetail(payrollResult, calculation));
         if (calculation.getPaidLeaveHours() != null && calculation.getPaidLeaveHours().compareTo(BigDecimal.ZERO) > 0) {
