@@ -48,7 +48,6 @@ import com.dat.erp.exceptions.ForbiddenException;
 import com.dat.erp.mapper.interfaces.PayrollResultMapper;
 import com.dat.erp.repositories.customrepositories.CompanyRepository;
 import com.dat.erp.repositories.customrepositories.DailyWorkRepository;
-import com.dat.erp.repositories.customrepositories.EmployeeSalaryRepository;
 import com.dat.erp.repositories.customrepositories.PayrollResultRepository;
 import com.dat.erp.repositories.customrepositories.PayrollResultDetailRepository;
 import com.dat.erp.repositories.customrepositories.PayrollRunRepository;
@@ -71,9 +70,6 @@ class PayrollResultServiceImplTest {
 
     @Mock
     private CalendarDateService calendarDateService;
-
-    @Mock
-    private EmployeeSalaryRepository employeeSalaryRepository;
 
     @Mock
     private DailyWorkRepository dailyWorkRepository;
@@ -109,7 +105,6 @@ class PayrollResultServiceImplTest {
                 userProfileService,
                 employeePayrollPolicyService,
                 calendarDateService,
-                employeeSalaryRepository,
                 dailyWorkRepository,
                 payrollRunRepository,
                 payrollResultRepository,
@@ -451,10 +446,10 @@ class PayrollResultServiceImplTest {
                 .currency("USD")
                 .build();
 
-        when(employeeSalaryRepository.findActiveByCompanyCodeAndUserProfileCodesAndDate("CMP-1",
+        when(employeeSalaryService.getActiveByEmployeeCodesAndDate("CMP-1",
                 List.of("USR-1", "USR-2"),
                 runDate))
-                        .thenReturn(List.of(firstSalary, secondSalary));
+                        .thenReturn(Map.of("USR-1", firstSalary, "USR-2", secondSalary));
 
         when(payrollRunRepository.save(any(PayrollRun.class))).thenAnswer(invocation -> invocation.getArgument(0));
         when(payrollResultRepository.saveAll(any())).thenAnswer(invocation -> invocation.getArgument(0));
@@ -539,7 +534,6 @@ class PayrollResultServiceImplTest {
 
         assertEquals(Messages.ERROR_CURRENT_USER_COMPANY_MISSING, exception.getMessage());
         verifyNoInteractions(userProfileService, employeePayrollPolicyService, calendarDateService,
-                employeeSalaryRepository,
                 dailyWorkRepository, payrollRunRepository, payrollResultRepository, companyRepository, employeeSalaryService);
     }
 }

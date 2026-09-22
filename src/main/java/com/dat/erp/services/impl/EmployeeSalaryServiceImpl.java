@@ -503,4 +503,30 @@ public class EmployeeSalaryServiceImpl implements EmployeeSalaryService {
                 .orElseThrow(() -> new ResourceNotFoundException(
                         Messages.ERROR_EMPLOYEE_SALARY_NOT_FOUND_WITH_CODE + employeeCode));
     }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Map<String, EmployeeSalary> getActiveByEmployeeCodesAndDate(
+            String companyCode,
+            List<String> employeeCodes,
+            LocalDate runDate) {
+        if (employeeCodes == null || employeeCodes.isEmpty()) {
+            return Map.of();
+        }
+
+        Map<String, EmployeeSalary> salariesByEmployeeCode = new LinkedHashMap<>();
+        List<EmployeeSalary> employeeSalaries = employeeSalaryRepository
+                .findActiveByCompanyCodeAndUserProfileCodesAndDate(companyCode, employeeCodes, runDate);
+        for (EmployeeSalary employeeSalary : employeeSalaries) {
+            if (employeeSalary == null) {
+                continue;
+            }
+            UserProfile userProfile = employeeSalary.getUserProfile();
+            if (userProfile == null || userProfile.getCode() == null) {
+                continue;
+            }
+            salariesByEmployeeCode.putIfAbsent(userProfile.getCode(), employeeSalary);
+        }
+        return salariesByEmployeeCode;
+    }
 }

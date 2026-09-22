@@ -47,7 +47,6 @@ import com.dat.erp.exceptions.ResourceNotFoundException;
 import com.dat.erp.mapper.interfaces.PayrollResultMapper;
 import com.dat.erp.repositories.customrepositories.CompanyRepository;
 import com.dat.erp.repositories.customrepositories.DailyWorkRepository;
-import com.dat.erp.repositories.customrepositories.EmployeeSalaryRepository;
 import com.dat.erp.repositories.customrepositories.PayrollResultDetailRepository;
 import com.dat.erp.repositories.customrepositories.PayrollResultRepository;
 import com.dat.erp.repositories.customrepositories.PayrollRunRepository;
@@ -90,7 +89,6 @@ public class PayrollResultServiceImpl implements PayrollResultService {
     private final UserProfileService userProfileService;
     private final EmployeePayrollPolicyService employeePayrollPolicyService;
     private final CalendarDateService calendarDateService;
-    private final EmployeeSalaryRepository employeeSalaryRepository;
     private final DailyWorkRepository dailyWorkRepository;
     private final PayrollRunRepository payrollRunRepository;
     private final PayrollResultRepository payrollResultRepository;
@@ -173,6 +171,8 @@ public class PayrollResultServiceImpl implements PayrollResultService {
 
     @Override
     @Transactional
+    //TODO this function should run in batch by get data of PayrollRun from database
+    //TODO reduce the transaction, it too long
     public void generatePayrollResult(PayrollRun payrollRun) {
         String companyCode = securityContextService.getCurrentCompanyCode();
         if (companyCode == null || companyCode.isBlank() || "SYSTEM".equals(companyCode)) {
@@ -182,10 +182,11 @@ public class PayrollResultServiceImpl implements PayrollResultService {
 
         YearMonth runMonth = payrollRun.getPeriod();
         LocalDate runDate = runMonth.atEndOfMonth();
+        //TODO this code not correct, it should fail when payrollRun is null and check this logic in begining of function
         String payrollRunCode = payrollRun == null ? null : payrollRun.getCode();
         log.info("PAYROLL_RESULT action=GENERATE_STARTED companyCode={} payrollRunCode={} period={} runDate={}",
                 companyCode, payrollRunCode, runMonth, runDate);
-
+        //TODO when changed generatePayrollResult function into batch run or event processing using getActiveUserProfileCodesByCompanyCode
         List<String> activeEmployeeCodes = userProfileService.getActiveUserProfileCodesOfCurrentCompany();
         if (activeEmployeeCodes == null || activeEmployeeCodes.isEmpty()) {
             log.warn(
@@ -197,32 +198,32 @@ public class PayrollResultServiceImpl implements PayrollResultService {
         log.info(
                 "PAYROLL_RESULT action=ACTIVE_EMPLOYEES_LOADED companyCode={} payrollRunCode={} period={} employeeCount={}",
                 companyCode, payrollRunCode, runMonth, activeEmployeeCodes.size());
-
+        //TODO this function should received the company code
         Map<String, PayrollPolicy> payrollPoliciesByEmployeeCode = employeePayrollPolicyService
                 .getCompanyPoliciesByEmployeeCodesAndDate(activeEmployeeCodes, runDate);
-        List<EmployeeSalary> activeEmployeeSalaries = employeeSalaryRepository
-                .findActiveByCompanyCodeAndUserProfileCodesAndDate(companyCode, activeEmployeeCodes, runDate);
+
+        Map<String, EmployeeSalary> salaryByEmployeeCode = employeeSalaryService
+                .getActiveByEmployeeCodesAndDate(companyCode, activeEmployeeCodes, runDate);
         log.info(
                 "PAYROLL_RESULT action=INPUTS_LOADED companyCode={} payrollRunCode={} period={} policyCount={} salaryCount={}",
                 companyCode,
                 payrollRunCode,
                 runMonth,
                 payrollPoliciesByEmployeeCode == null ? 0 : payrollPoliciesByEmployeeCode.size(),
-                activeEmployeeSalaries == null ? 0 : activeEmployeeSalaries.size());
-
+                salaryByEmployeeCode.size());
+        // TODO totalWorkingDays of what? employees or company
         int totalWorkingDays = calculateTotalWorkingDays(
                 calendarDateService.getCalendarDateTotalsByCompanyCodeAndMonth(companyCode, runMonth));
         Map<String, Integer> leaveQuantitiesByEmployeeCode = loadLeaveQuantitiesByEmployeeCode(
                 companyCode,
                 activeEmployeeCodes,
                 runMonth);
-        Map<String, EmployeeSalary> salaryByEmployeeCode = mapSalariesByEmployeeCode(activeEmployeeSalaries);
-
         List<PayrollResult> payrollResults = new ArrayList<>();
         int skippedEmployees = 0;
         for (String employeeCode : activeEmployeeCodes) {
             EmployeeSalary employeeSalary = salaryByEmployeeCode.get(employeeCode);
             PayrollPolicy payrollPolicy = payrollPoliciesByEmployeeCode.get(employeeCode);
+            // Salary and payroll policy are both required to generate a payroll result.
             if (employeeSalary == null || payrollPolicy == null) {
                 skippedEmployees++;
                 log.warn(
@@ -272,6 +273,7 @@ public class PayrollResultServiceImpl implements PayrollResultService {
                 companyCode, payrollRunCode, runMonth, finalStatus);
     }
 
+    //TODO considered tranform this function into event handling
     private void scheduleEmployeeSalaryCalculation(
             String companyCode,
             List<String> employeeCodes,
@@ -352,6 +354,7 @@ public class PayrollResultServiceImpl implements PayrollResultService {
         return totalWorkingDays;
     }
 
+    //TODO move this to DailyWorkService
     private Map<String, Integer> loadLeaveQuantitiesByEmployeeCode(
             String companyCode,
             List<String> employeeCodes,
@@ -383,18 +386,6 @@ public class PayrollResultServiceImpl implements PayrollResultService {
         return leaveQuantitiesByEmployeeCode;
     }
 
-    private Map<String, EmployeeSalary> mapSalariesByEmployeeCode(List<EmployeeSalary> employeeSalaries) {
-        Map<String, EmployeeSalary> salaryByEmployeeCode = new LinkedHashMap<>();
-        for (EmployeeSalary employeeSalary : employeeSalaries) {
-            UserProfile userProfile = employeeSalary.getUserProfile();
-            if (userProfile == null || userProfile.getCode() == null) {
-                continue;
-            }
-            salaryByEmployeeCode.putIfAbsent(userProfile.getCode(), employeeSalary);
-        }
-        return salaryByEmployeeCode;
-    }
-
     private PayrollResult buildPayrollResult(
             PayrollRun payrollRun,
             EmployeeSalary employeeSalary,
@@ -405,6 +396,7 @@ public class PayrollResultServiceImpl implements PayrollResultService {
         int standardQuantityPerDay = payrollPolicy.getStandardQuantityPerDay() == null
                 ? 0
                 : payrollPolicy.getStandardQuantityPerDay();
+        //TODO standardQuantityPerDay is required
         int expectedQuantity = standardQuantityPerDay * totalWorkingDays;
         PayrollResult payrollResult = PayrollResult.create(
                 payrollRun,
@@ -432,6 +424,7 @@ public class PayrollResultServiceImpl implements PayrollResultService {
                 .getTotalWorkHours();
     }
 
+    //TODO this should be common function in utils class
     private String resolveCompanySecretKey(String companyCode) {
         Company company = companyRepository.findByCode(companyCode)
                 .orElseThrow(() -> new ResourceNotFoundException(
