@@ -42,6 +42,7 @@ public class MonthlySalaryCalculationContext {
     private BigDecimal actualWorkingHourPerMonth;
     private BigDecimal standardMoneyPerHour;
     private BigDecimal finalSalary;
+    private com.dat.erp.dto.response.MonthlyPayslipResponse payslip;
     private List<MonthlySalaryDetailAuditResponse> auditTrail;
     private SalaryBasisCalculationResult salaryBasisCalculationResult;
 

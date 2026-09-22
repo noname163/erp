@@ -45,6 +45,7 @@ import com.dat.erp.services.payroll.PayrollResultService;
 import com.dat.erp.services.payroll.PayrollResultSnapshotService;
 import com.dat.erp.services.payroll.PayrollRunAuditLogService;
 import com.dat.erp.services.payroll.PayrollRunService;
+import com.dat.erp.services.payroll.RequiresNewTransactionExecutor;
 import com.dat.erp.utils.CustomStringUtils;
 import com.dat.erp.utils.PageableUtils;
 import com.dat.erp.utils.UuidV7;
@@ -74,6 +75,7 @@ public class PayrollRunServiceImpl implements PayrollRunService {
     private final PayrollResultDetailService payrollResultDetailService;
     private final PayrollRunAuditLogService payrollRunAuditLogService;
     private final PayrollResultDetailCalculationMapper payrollResultDetailCalculationMapper;
+    private final RequiresNewTransactionExecutor requiresNewTransactionExecutor;
 
     @Override
     @Transactional(readOnly = true)
@@ -224,31 +226,8 @@ public class PayrollRunServiceImpl implements PayrollRunService {
     private RerunEmployeeResult rerunEmployee(RerunContext context, String employeeCode, PayrollResult oldResult) {
         long startedAt = System.currentTimeMillis();
         try {
-            writeRerunAudit(context, PayrollRunAuditActionType.EMPLOYEE_RERUN_STARTED, employeeCode, oldResult, null,
-                    PayrollRunAuditStatus.STARTED, null);
-            if (context.request().isDryRun()) {
-                payrollResultSnapshotService.createSnapshot(
-                        context.payrollRun(),
-                        oldResult,
-                        context.rerunBatchCode(),
-                        employeeCode);
-            }
-
-            MonthlySalaryCalculationResponse calculation = monthlySalaryCalculationService
-                    .calculateEmployeeMonthlySalary(employeeCode, context.payrollRun().getPeriod());
-            PayrollResult newResult = buildNewRerunResult(context, employeeCode, oldResult, calculation);
-            if (!context.request().isDryRun()) {
-                newResult = persistRerunResult(newResult, oldResult, calculation);
-            }
-
-            PayrollRerunEmployeeResultResponse employeeResponse = PayrollRerunEmployeeResultResponse
-                    .buildEmployeeResponse(employeeCode, oldResult, newResult, context.companySecretKey());
-            writeRerunAudit(context, PayrollRunAuditActionType.EMPLOYEE_RERUN_SUCCESS, employeeCode, oldResult,
-                    context.request().isDryRun() ? null : newResult, PayrollRunAuditStatus.SUCCESS, null);
-            logRerun("EMPLOYEE_RERUN_SUCCESS", "SUCCESS", context.payrollRunCode(), context.rerunBatchCode(),
-                    employeeCode, context.reason(), employeeResponse.getOldActualAmount(),
-                    employeeResponse.getNewActualAmount(), null, System.currentTimeMillis() - startedAt);
-            return RerunEmployeeResult.success(employeeResponse);
+            return requiresNewTransactionExecutor.execute(
+                    () -> rerunEmployeeInIsolatedTransaction(context, employeeCode, oldResult, startedAt));
         } catch (Exception ex) {
             writeRerunAudit(context, PayrollRunAuditActionType.EMPLOYEE_RERUN_FAILED, employeeCode, oldResult, null,
                     PayrollRunAuditStatus.FAILED, ex.getMessage());
@@ -257,6 +236,38 @@ public class PayrollRunServiceImpl implements PayrollRunService {
                     System.currentTimeMillis() - startedAt);
             return RerunEmployeeResult.failure(new PayrollRerunErrorResponse(employeeCode, ex.getMessage()));
         }
+    }
+
+    private RerunEmployeeResult rerunEmployeeInIsolatedTransaction(
+            RerunContext context,
+            String employeeCode,
+            PayrollResult oldResult,
+            long startedAt) {
+        writeRerunAudit(context, PayrollRunAuditActionType.EMPLOYEE_RERUN_STARTED, employeeCode, oldResult, null,
+                PayrollRunAuditStatus.STARTED, null);
+        if (context.request().isDryRun()) {
+            payrollResultSnapshotService.createSnapshot(
+                    context.payrollRun(),
+                    oldResult,
+                    context.rerunBatchCode(),
+                    employeeCode);
+        }
+
+        MonthlySalaryCalculationResponse calculation = monthlySalaryCalculationService
+                .calculateEmployeeMonthlySalary(employeeCode, context.payrollRun().getPeriod());
+        PayrollResult newResult = buildNewRerunResult(context, employeeCode, oldResult, calculation);
+        if (!context.request().isDryRun()) {
+            newResult = persistRerunResult(newResult, oldResult, calculation);
+        }
+
+        PayrollRerunEmployeeResultResponse employeeResponse = PayrollRerunEmployeeResultResponse
+                .buildEmployeeResponse(employeeCode, oldResult, newResult, context.companySecretKey());
+        writeRerunAudit(context, PayrollRunAuditActionType.EMPLOYEE_RERUN_SUCCESS, employeeCode, oldResult,
+                context.request().isDryRun() ? null : newResult, PayrollRunAuditStatus.SUCCESS, null);
+        logRerun("EMPLOYEE_RERUN_SUCCESS", "SUCCESS", context.payrollRunCode(), context.rerunBatchCode(),
+                employeeCode, context.reason(), employeeResponse.getOldActualAmount(),
+                employeeResponse.getNewActualAmount(), null, System.currentTimeMillis() - startedAt);
+        return RerunEmployeeResult.success(employeeResponse);
     }
 
     private PayrollResult buildNewRerunResult(

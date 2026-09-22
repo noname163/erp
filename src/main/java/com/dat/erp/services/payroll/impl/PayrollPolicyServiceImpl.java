@@ -64,7 +64,9 @@ public class PayrollPolicyServiceImpl implements PayrollPolicyService {
     @Override
     @Transactional
     public PayrollPolicyResponse createPayrollPolicy(PayrollPolicyRequest request) {
+        if (request != null && request.getEffectiveTo() == null) request.setEffectiveTo(LocalDate.of(9999, 12, 31));
         validateRequest(request);
+        if (request.getStatutorySettings() != null) request.getStatutorySettings().validateOverrides();
 
         String companyCode = securityContextService.getCurrentCompanyCode();
 
@@ -83,6 +85,7 @@ public class PayrollPolicyServiceImpl implements PayrollPolicyService {
 
         PayrollPolicy payrollPolicy = PayrollPolicy.builder()
                 .name(name)
+                .statutorySettings(request.getStatutorySettings() == null ? new com.dat.erp.data.PayrollStatutorySettings() : request.getStatutorySettings())
                 .standardQuantityPerDay(request.getStandardQuantityPerDay())
                 .unit(unit)
                 .standardStartTime(request.getStandardStartTime())

@@ -8,6 +8,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -28,6 +29,7 @@ import org.mockito.Spy;
 import org.mapstruct.factory.Mappers;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.transaction.UnexpectedRollbackException;
 
 import com.dat.erp.constants.CodePrefixes;
 import com.dat.erp.constants.Messages;
@@ -62,6 +64,7 @@ import com.dat.erp.services.payroll.PayrollResultDetailService;
 import com.dat.erp.services.payroll.PayrollResultService;
 import com.dat.erp.services.payroll.PayrollResultSnapshotService;
 import com.dat.erp.services.payroll.PayrollRunAuditLogService;
+import com.dat.erp.services.payroll.RequiresNewTransactionExecutor;
 import com.dat.erp.systemconfigs.CustomUserDetails;
 import com.dat.erp.utils.CompanySecretKeyCryptoUtils;
 
@@ -109,6 +112,9 @@ class PayrollRunServiceImplTest {
     @Mock
     private SecurityContextService securityContextService;
 
+    @Mock
+    private RequiresNewTransactionExecutor requiresNewTransactionExecutor;
+
     @Spy
     private PayrollRunMapper payrollRunMapper = Mappers.getMapper(PayrollRunMapper.class);
 
@@ -122,6 +128,10 @@ class PayrollRunServiceImplTest {
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
+        when(requiresNewTransactionExecutor.execute(any())).thenAnswer(invocation -> {
+            java.util.function.Supplier<?> work = invocation.getArgument(0);
+            return work.get();
+        });
     }
 
     @Test
@@ -401,6 +411,34 @@ class PayrollRunServiceImplTest {
         assertEquals(BigDecimal.valueOf(200).setScale(2), response.getResults().get(0).getDifferenceAmount());
         verify(payrollResultRepository, never()).save(any(PayrollResult.class));
         verify(payrollResultSnapshotService).createSnapshot(eq(payrollRun), eq(oldResult), any(), eq("EMP001"));
+        verify(payrollRunAuditLogService, atLeastOnce()).writeAudit(eq(payrollRun), any());
+    }
+
+    @Test
+    void rerunPayroll_reportsEmployeeRollbackWithoutRollingBackWholeRequest() {
+        mockCurrentUser();
+        String secretKey = "1234567890123456";
+        PayrollRun payrollRun = payrollRun("PRN-1", PayrollRunStatus.CALCULATED);
+        PayrollResult oldResult = payrollResult("PRR-OLD", "EMP001", secretKey, "1000.00");
+        when(securityContextService.getCurrentCompanySecretKey()).thenReturn(secretKey);
+        when(payrollRunRepository.findLockedByCodeAndCompanyCode("PRN-1", "CMP-1"))
+                .thenReturn(Optional.of(payrollRun));
+        when(payrollResultService.resolveTargetResults(eq("PRN-1"), eq("CMP-1"), any(),
+                eq(PayrollRerunMode.FULL_RUN))).thenReturn(List.of(oldResult));
+        when(payrollResultService.mapResultsByEmployeeCodeByPayRollResultCodes(List.of("PRR-OLD")))
+                .thenReturn(java.util.Map.of("EMP001", oldResult));
+        doThrow(new UnexpectedRollbackException("employee calculation rolled back"))
+                .when(requiresNewTransactionExecutor).execute(any());
+
+        PayrollRerunResponse response = payrollRunService.rerunPayroll(
+                "PRN-1", rerunRequest(PayrollRerunMode.FULL_RUN, false));
+
+        assertEquals(PayrollRunStatus.FAILED, response.getStatus());
+        assertEquals(0, response.getSuccessCount());
+        assertEquals(1, response.getFailedCount());
+        assertEquals("EMP001", response.getErrors().get(0).getEmployeeCode());
+        assertEquals("employee calculation rolled back", response.getErrors().get(0).getMessage());
+        verify(payrollRunRepository).save(payrollRun);
         verify(payrollRunAuditLogService, atLeastOnce()).writeAudit(eq(payrollRun), any());
     }
 

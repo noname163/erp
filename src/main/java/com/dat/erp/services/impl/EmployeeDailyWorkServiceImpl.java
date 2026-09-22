@@ -139,15 +139,22 @@ public class EmployeeDailyWorkServiceImpl implements EmployeeDailyWorkService {
 
             LocalDateTime startDateTime = LocalDateTime.of(workingDate, request.getStartTime());
             LocalDateTime endDateTime = LocalDateTime.of(workingDate, request.getEndTime());
-            if (!endDateTime.isAfter(startDateTime)) {
-                throw new BadRequestException(Messages.ERROR_DAILY_WORK_START_END_TIME_INVALID);
-            }
+            if (request.getEndTime().equals(request.getStartTime())) throw new BadRequestException(Messages.ERROR_DAILY_WORK_START_END_TIME_INVALID);
+            if (endDateTime.isBefore(startDateTime)) endDateTime = endDateTime.plusDays(1);
 
             Integer otTime = request.getOtTime();
 
             BigDecimal hoursWorked = calculateHoursWorked(startDateTime, endDateTime, otTime);
 
+            BigDecimal nightHours = request.getNightHours() == null ? BigDecimal.ZERO : request.getNightHours();
+            BigDecimal nightOt = request.getNightOvertimeHours() == null ? BigDecimal.ZERO : request.getNightOvertimeHours();
+            if (nightHours.signum() < 0 || nightHours.compareTo(hoursWorked) > 0 || nightOt.signum() < 0
+                    || nightOt.multiply(BigDecimal.valueOf(60)).compareTo(BigDecimal.valueOf(otTime == null ? 0 : otTime)) > 0) {
+                throw new BadRequestException("Night hours must be a subset of regular hours; night overtime must be a subset of overtime");
+            }
             DailyWork dailyWork = DailyWork.builder()
+                    .nightHours(request.getNightHours())
+                    .nightOvertimeHours(request.getNightOvertimeHours())
                     .userProfile(userProfile)
                     .workingDate(workingDate)
                     .startTime(startDateTime)
@@ -211,10 +218,8 @@ public class EmployeeDailyWorkServiceImpl implements EmployeeDailyWorkService {
         long minutes = Duration.between(startDateTime, endDateTime).toMinutes();
         BigDecimal baseHours = BigDecimal.valueOf(minutes)
                 .divide(BigDecimal.valueOf(60), 2, RoundingMode.HALF_UP);
-        if (otTime == null || otTime == 0) {
-            return baseHours;
-        }
-        return baseHours.add(BigDecimal.valueOf(otTime));
+        // Start/end describe the regular shift. OT is recorded separately in minutes.
+        return baseHours;
     }
 
     private static String resolveSortBy(String sortBy) {

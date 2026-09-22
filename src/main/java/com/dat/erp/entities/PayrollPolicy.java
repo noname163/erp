@@ -33,6 +33,9 @@ import lombok.ToString;
 })
 public class PayrollPolicy extends BaseAuditableEntity {
 
+    @jakarta.persistence.Embedded
+    private com.dat.erp.data.PayrollStatutorySettings statutorySettings;
+
     @Column(name = "name", nullable = false)
     private String name;
 

@@ -15,6 +15,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.YearMonth;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -435,6 +436,40 @@ class EmployeeSalaryServiceImplTest {
 
         assertEquals(Messages.ERROR_PAYROLL_MONTH_INVALID, ex.getMessage());
         verify(payrollResultRepository, never()).saveAll(any());
+    }
+
+    @Test
+    void getActiveByEmployeeCodesAndDate_returnsSalariesIndexedByEmployeeCode() {
+        LocalDate runDate = LocalDate.of(2025, 3, 31);
+        UserProfile firstEmployee = new UserProfile();
+        com.dat.erp.testutils.EntityTestData.setCode(firstEmployee, "EMP001");
+        UserProfile secondEmployee = new UserProfile();
+        com.dat.erp.testutils.EntityTestData.setCode(secondEmployee, "EMP002");
+
+        EmployeeSalary firstSalary = EmployeeSalary.builder().userProfile(firstEmployee).build();
+        EmployeeSalary duplicateFirstSalary = EmployeeSalary.builder().userProfile(firstEmployee).build();
+        EmployeeSalary secondSalary = EmployeeSalary.builder().userProfile(secondEmployee).build();
+        EmployeeSalary salaryWithoutEmployee = EmployeeSalary.builder().build();
+        when(employeeSalaryRepository.findActiveByCompanyCodeAndUserProfileCodesAndDate(
+                "CMP-1", List.of("EMP001", "EMP002"), runDate))
+                .thenReturn(List.of(firstSalary, duplicateFirstSalary, secondSalary, salaryWithoutEmployee));
+
+        Map<String, EmployeeSalary> result = employeeSalaryService.getActiveByEmployeeCodesAndDate(
+                "CMP-1", List.of("EMP001", "EMP002"), runDate);
+
+        assertEquals(2, result.size());
+        assertEquals(firstSalary, result.get("EMP001"));
+        assertEquals(secondSalary, result.get("EMP002"));
+    }
+
+    @Test
+    void getActiveByEmployeeCodesAndDate_returnsEmptyMapForNoEmployeeCodes() {
+        Map<String, EmployeeSalary> result = employeeSalaryService.getActiveByEmployeeCodesAndDate(
+                "CMP-1", List.of(), LocalDate.of(2025, 3, 31));
+
+        assertEquals(Map.of(), result);
+        verify(employeeSalaryRepository, never())
+                .findActiveByCompanyCodeAndUserProfileCodesAndDate(any(), any(), any());
     }
 
     private PayrollResult payrollResult(Long userProfileId, String userProfileCode) {

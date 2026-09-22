@@ -178,6 +178,16 @@ public class EmployeePayrollPolicyServiceImpl implements EmployeePayrollPolicySe
 
     private void ensureNoActiveOverlap(String companyCode, List<String> userProfileCodes, LocalDate effectiveFrom,
             LocalDate effectiveTo) {
+        // Replacing an open-ended assignment closes it the day before the new version.
+        List<EmployeePayrollPolicy> current = employeePayrollPolicyRepository.findActivePoliciesByEmployeeCodesAndDate(companyCode, userProfileCodes, effectiveFrom);
+        if (current != null) {
+            for (EmployeePayrollPolicy previous : current) {
+                if (LocalDate.of(9999, 12, 31).equals(previous.getEffectiveTo()) && previous.getEffectiveFrom().isBefore(effectiveFrom)) {
+                    previous.setEffectiveTo(effectiveFrom.minusDays(1));
+                    employeePayrollPolicyRepository.saveAndFlush(previous);
+                }
+            }
+        }
         List<String> overlappingUserProfileCodes = employeePayrollPolicyRepository.findActiveOverlapUserProfileCodes(
                 companyCode, userProfileCodes, effectiveFrom, effectiveTo);
         if (!overlappingUserProfileCodes.isEmpty()) {
@@ -198,6 +208,7 @@ public class EmployeePayrollPolicyServiceImpl implements EmployeePayrollPolicySe
     }
 
     private void validateRequest(EmployeePayrollPolicyRequest request) {
+        if (request != null && request.getEffectiveTo() == null) request.setEffectiveTo(LocalDate.of(9999, 12, 31));
         if (request == null || request.getEffectiveFrom() == null || request.getEffectiveTo() == null
                 || request.getEffectiveFrom().isAfter(request.getEffectiveTo())) {
             throw new BadRequestException(Messages.ERROR_EMPLOYEE_PAYROLL_POLICY_EFFECTIVE_DATES_INVALID);
@@ -211,6 +222,7 @@ public class EmployeePayrollPolicyServiceImpl implements EmployeePayrollPolicySe
     }
 
     private void validateRequest(EmployeePayrollPolicyBatchRequest request) {
+        if (request != null && request.getEffectiveTo() == null) request.setEffectiveTo(LocalDate.of(9999, 12, 31));
         if (request == null || request.getEffectiveFrom() == null || request.getEffectiveTo() == null
                 || request.getEffectiveFrom().isAfter(request.getEffectiveTo())) {
             throw new BadRequestException(Messages.ERROR_EMPLOYEE_PAYROLL_POLICY_EFFECTIVE_DATES_INVALID);

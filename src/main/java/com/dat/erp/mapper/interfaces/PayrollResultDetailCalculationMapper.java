@@ -18,6 +18,7 @@ public class PayrollResultDetailCalculationMapper {
     public List<PayrollResultDetail> toDetails(
             PayrollResult payrollResult,
             MonthlySalaryCalculationResponse calculation) {
+        if (calculation.getPayslip() != null) return List.of();
         List<PayrollResultDetail> details = new ArrayList<>();
         details.add(toSummaryDetail(payrollResult, calculation));
         if (calculation.getPaidLeaveHours() != null && calculation.getPaidLeaveHours().signum() > 0) {

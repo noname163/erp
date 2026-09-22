@@ -13,6 +13,8 @@ import lombok.NoArgsConstructor;
 public class PayrollPolicyResponse {
     private String code;
     private String name;
+    @jakarta.validation.Valid
+    private com.dat.erp.data.PayrollStatutorySettings statutorySettings;
     private Integer standardQuantityPerDay;
     private String unitCode;
     private LocalTime standardStartTime;

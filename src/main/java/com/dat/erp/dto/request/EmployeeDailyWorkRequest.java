@@ -43,4 +43,9 @@ public class EmployeeDailyWorkRequest {
 
     @PositiveOrZero(message = "otTime must be >= 0")
     private Integer otTime;
+
+    @PositiveOrZero
+    private java.math.BigDecimal nightHours;
+    @PositiveOrZero
+    private java.math.BigDecimal nightOvertimeHours;
 }

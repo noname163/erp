@@ -223,7 +223,7 @@ class EmployeeDailyWorkServiceImplTest {
     @Test
     void createEmployeeDailyWorks_badRequestWhenStartEndInvalid() {
         requests.get(0).setStartTime(LocalTime.of(18, 0));
-        requests.get(0).setEndTime(LocalTime.of(9, 0));
+        requests.get(0).setEndTime(LocalTime.of(18, 0));
 
         Account currentUserAccount = new Account();
         com.dat.erp.testutils.EntityTestData.setCode(currentUserAccount, "ACC-1");

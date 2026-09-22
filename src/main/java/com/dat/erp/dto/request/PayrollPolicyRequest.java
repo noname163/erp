@@ -16,6 +16,8 @@ public class PayrollPolicyRequest {
     @NotBlank(message = "name is required")
     @Size(max = 255, message = "name must be at most 255 characters")
     private String name;
+    @jakarta.validation.Valid
+    private com.dat.erp.data.PayrollStatutorySettings statutorySettings;
 
     @Positive(message = "standardQuantityPerDay must be a positive integer")
     private Integer standardQuantityPerDay;
@@ -34,6 +36,5 @@ public class PayrollPolicyRequest {
     @NotNull(message = "effectiveFrom is required")
     private LocalDate effectiveFrom;
 
-    @NotNull(message = "effectiveTo is required")
     private LocalDate effectiveTo;
 }

@@ -9,6 +9,11 @@ import lombok.Data;
 @Data
 public class PayrollResultDetailResponse {
     private String code;
+    private String category;
+    private String label;
+    private BigDecimal quantity;
+    private BigDecimal rate;
+    private String currency;
     private PayrollResultCalcBasis calcBasis;
     private BigDecimal basisDays;
     private BigDecimal paidDays;

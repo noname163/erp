@@ -3,6 +3,7 @@ package com.dat.erp.services;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 
 import com.dat.erp.dto.request.EmployeeSalaryRequest;
 import com.dat.erp.dto.response.EmployeeSalaryListResponse;
@@ -22,4 +23,9 @@ public interface EmployeeSalaryService {
             LocalDate runDate);
 
     EmployeeSalary getActiveByEmployeeCodeAndDate(String employeeCode, LocalDate runDate);
+
+    Map<String, EmployeeSalary> getActiveByEmployeeCodesAndDate(
+            String companyCode,
+            List<String> employeeCodes,
+            LocalDate runDate);
 }
