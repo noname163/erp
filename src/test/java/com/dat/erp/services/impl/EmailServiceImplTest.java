@@ -57,7 +57,6 @@ class EmailServiceImplTest {
         request.setHtmlFilePath("templates/mail/create-account.html");
 
         mappedEmail = new Email();
-        com.dat.erp.testutils.EntityTestData.setCode(mappedEmail, "EML-TEST");
         mappedEmail.setEmailFrom(request.getFrom());
         mappedEmail.setEmailTo(request.getTo());
         mappedEmail.setFullName(request.getFullName());
@@ -86,7 +85,8 @@ class EmailServiceImplTest {
         assertThat(finalSaved.getErrorMessage()).isNull();
         assertThat(finalSaved.getRetryTime()).isEqualTo(0);
         assertThat(finalSaved.getSubject()).isEqualTo("Create account");
-        assertThat(finalSaved.getCode()).startsWith("EML-");
+        assertThat(finalSaved.getCode()).matches(
+                "EML-[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}");
     }
 
     @Test
