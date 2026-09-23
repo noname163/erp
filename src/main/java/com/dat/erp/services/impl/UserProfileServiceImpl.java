@@ -8,6 +8,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.dat.erp.constants.CodePrefixes;
 import com.dat.erp.constants.Messages;
 import com.dat.erp.dto.request.UserProfileCreateRequest;
 import com.dat.erp.dto.response.PagedResponse;
@@ -20,6 +21,7 @@ import com.dat.erp.mapper.interfaces.UserProfileMapper;
 import com.dat.erp.repositories.customrepositories.AccountRepository;
 import com.dat.erp.repositories.customrepositories.DepartmentRepository;
 import com.dat.erp.repositories.customrepositories.UserProfileRepository;
+import com.dat.erp.services.CodeGenerator;
 import com.dat.erp.services.SecurityContextService;
 import com.dat.erp.services.UserProfileService;
 import com.dat.erp.utils.CustomStringUtils;
@@ -34,6 +36,7 @@ public class UserProfileServiceImpl implements UserProfileService {
     private final DepartmentRepository departmentRepository;
     private final UserProfileRepository userProfileRepository;
     private final UserProfileMapper userProfileMapper;
+    private final CodeGenerator codeGenerator;
     private final SecurityContextService securityContextService;
 
     @Transactional
@@ -57,6 +60,8 @@ public class UserProfileServiceImpl implements UserProfileService {
                         String.format(Messages.ERROR_DEPARTMENT_NOT_FOUND_WITH_CODE, request.getDepartmentCode())));
 
         UserProfile profile = userProfileMapper.toUserProfile(request);
+        profile.initializeCode(codeGenerator.nextCode(CodePrefixes.USER));
+        profile.assignCompanyCode(companyCode);
         profile.setAccount(account);
         profile.setDepartment(department);
         profile.setHireDate(LocalDate.now());

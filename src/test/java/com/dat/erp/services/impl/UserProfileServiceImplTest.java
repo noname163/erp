@@ -3,6 +3,7 @@ package com.dat.erp.services.impl;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
@@ -10,7 +11,9 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
+import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -21,16 +24,20 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import com.dat.erp.constants.CodePrefixes;
 import com.dat.erp.constants.Messages;
+import com.dat.erp.dto.request.UserProfileCreateRequest;
 import com.dat.erp.dto.response.PagedResponse;
 import com.dat.erp.dto.response.SelectionOptionResponse;
 import com.dat.erp.entities.Account;
+import com.dat.erp.entities.Department;
 import com.dat.erp.entities.UserProfile;
 import com.dat.erp.exceptions.BadRequestException;
 import com.dat.erp.mapper.interfaces.UserProfileMapper;
 import com.dat.erp.repositories.customrepositories.AccountRepository;
 import com.dat.erp.repositories.customrepositories.DepartmentRepository;
 import com.dat.erp.repositories.customrepositories.UserProfileRepository;
+import com.dat.erp.services.CodeGenerator;
 import com.dat.erp.services.SecurityContextService;
 import com.dat.erp.systemconfigs.CustomUserDetails;
 
@@ -49,6 +56,9 @@ class UserProfileServiceImplTest {
     private UserProfileMapper userProfileMapper;
 
     @Mock
+    private CodeGenerator codeGenerator;
+
+    @Mock
     private SecurityContextService securityContextService;
 
     @InjectMocks
@@ -58,6 +68,36 @@ class UserProfileServiceImplTest {
     void setUp() {
         MockitoAnnotations.openMocks(this);
         ReflectionTestUtils.setField(userProfileService, "securityContextService", securityContextService);
+    }
+
+    @Test
+    void createUserProfile_assignsGeneratedCodeAndAccountCompanyBeforeSaving() {
+        UserProfileCreateRequest request = new UserProfileCreateRequest();
+        request.setAccountCode("ACC-1");
+        request.setDepartmentCode("DPM-1");
+
+        Account account = new Account();
+        com.dat.erp.testutils.EntityTestData.setCompanyCode(account, "CMP-1");
+        Department department = new Department();
+        UserProfile mappedProfile = new UserProfile();
+
+        when(accountRepository.findByCode("ACC-1")).thenReturn(Optional.of(account));
+        when(departmentRepository.findByCodeAndCompanyCode("DPM-1", "CMP-1"))
+                .thenReturn(Optional.of(department));
+        when(userProfileMapper.toUserProfile(request)).thenReturn(mappedProfile);
+        when(codeGenerator.nextCode(CodePrefixes.USER)).thenReturn("USR-000001");
+        when(userProfileRepository.save(mappedProfile)).thenAnswer(invocation -> invocation.getArgument(0));
+
+        UserProfile result = userProfileService.createUserProfile(request);
+
+        assertEquals("USR-000001", result.getCode());
+        assertEquals("CMP-1", result.getCompanyCode());
+        assertEquals(account, result.getAccount());
+        assertEquals(department, result.getDepartment());
+        assertEquals(LocalDate.now(), result.getHireDate());
+        assertTrue(result.getIsActive());
+        verify(codeGenerator).nextCode(CodePrefixes.USER);
+        verify(userProfileRepository).save(mappedProfile);
     }
 
     @Test
