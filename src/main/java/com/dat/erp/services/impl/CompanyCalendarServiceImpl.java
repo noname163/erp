@@ -144,7 +144,7 @@ public class CompanyCalendarServiceImpl  implements CompanyCalendarService {
     }
 
     private void validateEffectiveDates(LocalDate effectiveFrom, LocalDate effectiveTo) {
-        if (effectiveFrom == null || effectiveTo == null || effectiveFrom.isAfter(effectiveTo)) {
+        if (effectiveFrom == null || effectiveTo == null) {
             throw new BadRequestException(Messages.ERROR_COMPANY_CALENDAR_EFFECTIVE_DATES_INVALID);
         }
     }
