@@ -10,6 +10,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import com.dat.erp.constants.CommonStatus;
+import com.dat.erp.constants.CodePrefixes;
 import com.dat.erp.constants.Messages;
 import com.dat.erp.dto.request.DepartmentRequest;
 import com.dat.erp.dto.response.PagedResponse;
@@ -20,6 +21,7 @@ import com.dat.erp.exceptions.ConflictException;
 import com.dat.erp.mapper.interfaces.DepartmentMapper;
 import com.dat.erp.repositories.customrepositories.DepartmentRepository;
 import com.dat.erp.services.DepartmentService;
+import com.dat.erp.services.CodeGenerator;
 import com.dat.erp.services.SecurityContextService;
 import com.dat.erp.utils.PageableUtils;
 
@@ -33,6 +35,7 @@ public class DepartmentServiceImpl implements DepartmentService {
     private final DepartmentRepository departmentRepository;
     private final DepartmentMapper departmentMapper;
     private final SecurityContextService securityContextService;
+    private final CodeGenerator codeGenerator;
 
     @Override
     public String createDepartment(DepartmentRequest departmentRequest) {
@@ -82,10 +85,16 @@ public class DepartmentServiceImpl implements DepartmentService {
 
     private Department setAuditDepartmentInfo(DepartmentRequest departmentRequest) {
         Department department = departmentMapper.toEntity(departmentRequest);
+        String companyCode = departmentRequest.getCompanyCode();
+        if (companyCode == null || companyCode.isBlank()) {
+            companyCode = securityContextService.getCurrentCompanyCode();
+        }
+        department.assignCompanyCode(companyCode);
         if (department.getName() != null
                 && departmentRepository.existsByNameAndCompanyCode(department.getName(), department.getCompanyCode())) {
             throw new ConflictException(Messages.ERROR_DEPARTMENT_NAME_EXISTS);
         }
+        department.initializeCode(codeGenerator.nextCode(CodePrefixes.DEPARTMENT));
         department.setStatus(CommonStatus.ACTIVATE);
         return department;
     }
