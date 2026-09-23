@@ -9,6 +9,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.dat.erp.constants.CodePrefixes;
 import com.dat.erp.constants.Messages;
 import com.dat.erp.dto.request.CompanyRequest;
 import com.dat.erp.dto.response.CompanyResponse;
@@ -18,6 +19,7 @@ import com.dat.erp.exceptions.ConflictException;
 import com.dat.erp.mapper.interfaces.CompanyMapper;
 import com.dat.erp.repositories.customrepositories.CompanyRepository;
 import com.dat.erp.services.CompanyService;
+import com.dat.erp.services.CodeGenerator;
 import com.dat.erp.services.SecurityContextService;
 import com.dat.erp.utils.PageableUtils;
 
@@ -36,6 +38,7 @@ public class CompanyServiceImpl implements CompanyService {
 
     private final SecurityContextService securityContextService;
 
+    private final CodeGenerator codeGenerator;
 
     @Transactional
     @Override
@@ -50,6 +53,7 @@ public class CompanyServiceImpl implements CompanyService {
                     throw new ConflictException(Messages.ERROR_COMPANY_TAX_NUMBER_EXISTS);
                 });
         company.setSecretKey(UUID.randomUUID().toString());
+        company.initializeCode(codeGenerator.nextCode(CodePrefixes.COMPANY));
         companyRepository.save(company);
 
         String actorCode = securityContextService.getCurrentUserCode();

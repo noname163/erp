@@ -82,7 +82,6 @@ class CompanyServiceImplTest {
         when(companyRepository.findByEmail("admin@openai.com")).thenReturn(Optional.empty());
         when(companyRepository.findByTaxNumber("123456789")).thenReturn(Optional.empty());
         when(codeGenerator.nextCode(CodePrefixes.COMPANY)).thenReturn("CMP-000001");
-        com.dat.erp.testutils.EntityTestData.setCode(company, "CMP-000001");
 
         Account account = new Account();
         com.dat.erp.testutils.EntityTestData.setCode(account, "ACC-ADMIN");

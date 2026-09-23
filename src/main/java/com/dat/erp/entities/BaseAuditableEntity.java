@@ -100,6 +100,20 @@ public abstract class BaseAuditableEntity {
         this.code = code;
     }
 
+    public final void initializeCode(String code) {
+        assignCode(code);
+    }
+
+    public final void assignCompanyCode(String companyCode) {
+        if (this.companyCode != null && !this.companyCode.isBlank()) {
+            throw new IllegalStateException("Entity company code has already been assigned");
+        }
+        if (companyCode == null || companyCode.isBlank()) {
+            throw new IllegalArgumentException("Entity company code must not be blank");
+        }
+        this.companyCode = companyCode;
+    }
+
     protected BaseAuditableEntity(
             String code,
             String companyCode) {
