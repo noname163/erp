@@ -10,6 +10,7 @@ import java.util.function.Function;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.dat.erp.constants.CodePrefixes;
 import com.dat.erp.constants.Messages;
 import com.dat.erp.dto.request.EmployeePayrollPolicyBatchRequest;
 import com.dat.erp.dto.request.EmployeePayrollPolicyRequest;
@@ -39,6 +40,7 @@ public class EmployeePayrollPolicyServiceImpl implements EmployeePayrollPolicySe
     private final UserProfileRepository userProfileRepository;
     private final PayrollPolicyRepository payrollPolicyRepository;
     private final EmployeePayrollPolicyMapper employeePayrollPolicyMapper;
+    private final CodeGenerator codeGenerator;
 
     public EmployeePayrollPolicyServiceImpl(
             EmployeePayrollPolicyRepository employeePayrollPolicyRepository,
@@ -52,6 +54,7 @@ public class EmployeePayrollPolicyServiceImpl implements EmployeePayrollPolicySe
         this.userProfileRepository = userProfileRepository;
         this.payrollPolicyRepository = payrollPolicyRepository;
         this.employeePayrollPolicyMapper = employeePayrollPolicyMapper;
+        this.codeGenerator = codeGenerator;
     }
 
     @Override
@@ -204,6 +207,7 @@ public class EmployeePayrollPolicyServiceImpl implements EmployeePayrollPolicySe
                 .effectiveTo(effectiveTo)
                 .isActive(true)
                 .build();
+        employeePayrollPolicy.initializeCode(codeGenerator.nextCode(CodePrefixes.EMPLOYEE_PAYROLL_POLICY));
         return employeePayrollPolicy;
     }
 

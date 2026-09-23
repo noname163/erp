@@ -13,6 +13,7 @@ import java.util.Set;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.dat.erp.constants.CodePrefixes;
 import com.dat.erp.constants.DayType;
 import com.dat.erp.constants.Messages;
 import com.dat.erp.dto.request.CompanyCalendarDateRequest;
@@ -31,6 +32,7 @@ public class CalendarDateServiceImpl implements CalendarDateService {
 
     private final CalendarDateRepository calendarDateRepository;
     private final CalendarDateMapper calendarDateMapper;
+    private final CodeGenerator codeGenerator;
 
     public CalendarDateServiceImpl(
             CalendarDateRepository calendarDateRepository,
@@ -39,6 +41,7 @@ public class CalendarDateServiceImpl implements CalendarDateService {
             SecurityContextService securityContextService) {
         this.calendarDateRepository = calendarDateRepository;
         this.calendarDateMapper = calendarDateMapper;
+        this.codeGenerator = codeGenerator;
     }
 
     @Override
@@ -48,6 +51,7 @@ public class CalendarDateServiceImpl implements CalendarDateService {
         List<CalendarDate> calendarDates = mapAndValidateCalendarDates(requests, calendar);
         for (CalendarDate calendarDate : calendarDates) {
             calendarDate.setCalendar(calendar);
+            calendarDate.initializeCode(codeGenerator.nextCode(CodePrefixes.CALENDAR_DATE));
         }
 
         return calendarDateRepository.saveAll(calendarDates);
@@ -74,6 +78,7 @@ public class CalendarDateServiceImpl implements CalendarDateService {
             }
 
             requestedCalendarDate.setCalendar(calendar);
+            requestedCalendarDate.initializeCode(codeGenerator.nextCode(CodePrefixes.CALENDAR_DATE));
             calendarDatesToCreate.add(requestedCalendarDate);
             orderedCalendarDates.add(requestedCalendarDate);
         }

@@ -15,6 +15,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.dat.erp.constants.CodePrefixes;
 import com.dat.erp.constants.Messages;
 import com.dat.erp.constants.SalaryCalculateMethod;
 import com.dat.erp.dto.request.SalaryTemplateDetailRequest;
@@ -46,6 +47,7 @@ public class SalaryTemplateServiceImpl implements SalaryTemplateService {
     private final SalaryTemplateRepository salaryTemplateRepository;
     private final SalaryTemplateMapper salaryTemplateMapper;
     private final SalaryTemplateDetailService salaryTemplateDetailService;
+    private final CodeGenerator codeGenerator;
 
     public SalaryTemplateServiceImpl(SalaryTemplateRepository salaryTemplateRepository,
             SalaryTemplateMapper salaryTemplateMapper,
@@ -56,6 +58,7 @@ public class SalaryTemplateServiceImpl implements SalaryTemplateService {
         this.salaryTemplateRepository = salaryTemplateRepository;
         this.salaryTemplateMapper = salaryTemplateMapper;
         this.salaryTemplateDetailService = salaryTemplateDetailService;
+        this.codeGenerator = codeGenerator;
     }
 
     @Override
@@ -85,6 +88,7 @@ public class SalaryTemplateServiceImpl implements SalaryTemplateService {
         }
 
         SalaryTemplate template = salaryTemplateMapper.toEntity(request);
+        template.initializeCode(codeGenerator.nextCode(CodePrefixes.SALARY_TEMPLATE));
         template.setName(name);
         template.setCurrency(request.getCurrency() == null ? null : request.getCurrency().trim().toUpperCase());
         template.setTotalAmount(BigDecimal.ZERO);

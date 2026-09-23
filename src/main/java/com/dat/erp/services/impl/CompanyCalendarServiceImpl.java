@@ -11,6 +11,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.dat.erp.constants.CodePrefixes;
 import com.dat.erp.constants.Messages;
 import com.dat.erp.dto.request.CompanyCalendarRequest;
 import com.dat.erp.dto.response.CompanyCalendarDateResponse;
@@ -24,6 +25,7 @@ import com.dat.erp.exceptions.ResourceNotFoundException;
 import com.dat.erp.mapper.interfaces.CompanyCalendarMapper;
 import com.dat.erp.repositories.customrepositories.CompanyCalendarRepository;
 import com.dat.erp.services.CalendarDateService;
+import com.dat.erp.services.CodeGenerator;
 import com.dat.erp.services.CompanyCalendarService;
 import com.dat.erp.services.SecurityContextService;
 import com.dat.erp.utils.CustomStringUtils;
@@ -39,6 +41,7 @@ public class CompanyCalendarServiceImpl  implements CompanyCalendarService {
     private final CalendarDateService calendarDateService;
     private final CompanyCalendarMapper companyCalendarMapper;
     private final SecurityContextService securityContextService;
+    private final CodeGenerator codeGenerator;
 
     @Override
     @Transactional
@@ -62,6 +65,7 @@ public class CompanyCalendarServiceImpl  implements CompanyCalendarService {
 
         CompanyCalendar calendar = companyCalendarMapper.toEntity(request);
         validateCalendar(calendar);
+        calendar.initializeCode(codeGenerator.nextCode(CodePrefixes.COMPANY_CALENDAR));
 
         CompanyCalendar savedCalendar = companyCalendarRepository.save(calendar);
         List<CalendarDate> savedDates = calendarDateService.createCalendarDates(request.getDates(), savedCalendar);

@@ -10,6 +10,7 @@ import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 
+import com.dat.erp.constants.CodePrefixes;
 import com.dat.erp.constants.Messages;
 import com.dat.erp.dto.request.SalaryTemplateDetailRequest;
 import com.dat.erp.dto.response.SalaryTemplateDetailListResponse;
@@ -39,6 +40,7 @@ public class SalaryTemplateDetailServiceImpl implements SalaryTemplateDetailServ
     private final SystemUnitRepository systemUnitRepository;
     private final SalaryTemplateRepository salaryTemplateRepository;
     private final SalaryTemplateDetailMapper salaryTemplateDetailMapper;
+    private final CodeGenerator codeGenerator;
 
     public SalaryTemplateDetailServiceImpl(SalaryTemplateDetailRepository salaryTemplateDetailRepository,
             SalaryRepository salaryRepository,
@@ -53,6 +55,7 @@ public class SalaryTemplateDetailServiceImpl implements SalaryTemplateDetailServ
         this.systemUnitRepository = systemUnitRepository;
         this.salaryTemplateRepository = salaryTemplateRepository;
         this.salaryTemplateDetailMapper = salaryTemplateDetailMapper;
+        this.codeGenerator = codeGenerator;
     }
 
     @Override
@@ -155,6 +158,7 @@ public class SalaryTemplateDetailServiceImpl implements SalaryTemplateDetailServ
                     .sequenceOrder(sequenceOrder)
                     .isFixed(Boolean.TRUE.equals(request.getIsFixed()))
                     .build();
+            detail.initializeCode(codeGenerator.nextCode(CodePrefixes.SALARY_TEMPLATE_DETAIL));
             details.add(detail);
         }
 
