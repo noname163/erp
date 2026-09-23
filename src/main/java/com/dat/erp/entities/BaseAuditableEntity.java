@@ -2,6 +2,7 @@ package com.dat.erp.entities;
 
 import java.time.LocalDateTime;
 import java.util.Objects;
+import java.util.function.Supplier;
 
 import org.hibernate.annotations.Filter;
 import org.hibernate.annotations.FilterDef;
@@ -98,6 +99,23 @@ public abstract class BaseAuditableEntity {
         }
 
         this.code = code;
+    }
+
+    public final void initializeCodeIfMissing(Supplier<String> codeSupplier) {
+        Objects.requireNonNull(codeSupplier, "Code supplier must not be null");
+        if (code == null || code.isBlank()) {
+            assignCode(codeSupplier.get());
+        }
+    }
+
+    public final void assignCompanyCode(String companyCode) {
+        if (this.companyCode != null && !this.companyCode.isBlank()) {
+            throw new IllegalStateException("Entity company code has already been assigned");
+        }
+        if (companyCode == null || companyCode.isBlank()) {
+            throw new IllegalArgumentException("Entity company code must not be blank");
+        }
+        this.companyCode = companyCode;
     }
 
     protected BaseAuditableEntity(

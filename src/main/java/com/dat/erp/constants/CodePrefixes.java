@@ -11,6 +11,7 @@ public final class CodePrefixes {
     public static final String COMPANY = "CMP-";
     public static final String DEPARTMENT = "DPM-";
     public static final String ACCOUNT = "ACC-";
+    public static final String EMAIL = "EML-";
     public static final String USER = "USR-";
     public static final String USER_IDENTITY = "UID-";
     public static final String ROLE = "ROLE-";

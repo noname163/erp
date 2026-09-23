@@ -7,11 +7,13 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.dat.erp.constants.CodePrefixes;
 import com.dat.erp.dto.request.EmailRequest;
 import com.dat.erp.entities.Email;
 import com.dat.erp.mapper.interfaces.EmailMapper;
 import com.dat.erp.repositories.customrepositories.EmailRepository;
 import com.dat.erp.services.EmailService;
+import com.dat.erp.services.CodeGenerator;
 import com.dat.erp.services.EmailTemplateEngine;
 import com.dat.erp.services.SystemMailSender;
 
@@ -26,6 +28,7 @@ public class EmailServiceImpl implements EmailService {
     private final EmailMapper emailMapper;
     private final EmailTemplateEngine emailTemplateEngine;
     private final SystemMailSender systemMailSender;
+    private final CodeGenerator codeGenerator;
     private final int maxRetry;
     private final String defaultFrom;
 
@@ -34,12 +37,14 @@ public class EmailServiceImpl implements EmailService {
             EmailMapper emailMapper,
             EmailTemplateEngine emailTemplateEngine,
             SystemMailSender systemMailSender,
+            CodeGenerator codeGenerator,
             @Value("${email.maxRetry:3}") int maxRetry,
             @Value("${email.defaultFrom:}") String defaultFrom) {
         this.emailRepository = emailRepository;
         this.emailMapper = emailMapper;
         this.emailTemplateEngine = emailTemplateEngine;
         this.systemMailSender = systemMailSender;
+        this.codeGenerator = codeGenerator;
         this.maxRetry = Math.max(0, maxRetry);
         this.defaultFrom = defaultFrom;
     }
@@ -49,6 +54,7 @@ public class EmailServiceImpl implements EmailService {
     @Override
     public void sendCreateAccountMail(EmailRequest request) {
         Email email = emailMapper.toEntity(request);
+        email.initializeCodeIfMissing(() -> codeGenerator.nextCode(CodePrefixes.EMAIL));
         email.setSubject("Create account");
         email.setRetryTime(0);
         email.setNeedRetry(NEED_RETRY_NO);

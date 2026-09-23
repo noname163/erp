@@ -21,6 +21,7 @@ import com.dat.erp.dto.request.EmailRequest;
 import com.dat.erp.entities.Email;
 import com.dat.erp.mapper.interfaces.EmailMapper;
 import com.dat.erp.repositories.customrepositories.EmailRepository;
+import com.dat.erp.services.CodeGenerator;
 import com.dat.erp.services.EmailTemplateEngine;
 import com.dat.erp.services.SystemMailSender;
 
@@ -38,6 +39,9 @@ class EmailServiceImplTest {
     @Mock
     private SystemMailSender systemMailSender;
 
+    @Mock
+    private CodeGenerator codeGenerator;
+
     private EmailServiceImpl emailService;
 
     private EmailRequest request;
@@ -46,7 +50,8 @@ class EmailServiceImplTest {
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
-        emailService = new EmailServiceImpl(emailRepository, emailMapper, emailTemplateEngine, systemMailSender, 3,
+        emailService = new EmailServiceImpl(emailRepository, emailMapper, emailTemplateEngine, systemMailSender,
+                codeGenerator, 3,
                 "default-from@example.com");
 
         request = new EmailRequest();
@@ -57,7 +62,6 @@ class EmailServiceImplTest {
         request.setHtmlFilePath("templates/mail/create-account.html");
 
         mappedEmail = new Email();
-        com.dat.erp.testutils.EntityTestData.setCode(mappedEmail, "EML-TEST");
         mappedEmail.setEmailFrom(request.getFrom());
         mappedEmail.setEmailTo(request.getTo());
         mappedEmail.setFullName(request.getFullName());
@@ -66,6 +70,7 @@ class EmailServiceImplTest {
 
         when(emailRepository.save(any(Email.class))).thenAnswer(inv -> inv.getArgument(0));
         when(emailMapper.toEntity(any(EmailRequest.class))).thenReturn(mappedEmail);
+        when(codeGenerator.nextCode("EML-")).thenReturn("EML-000001");
         when(emailTemplateEngine.renderHtmlTemplate(any(EmailRequest.class))).thenReturn("<html>Hello</html>");
     }
 
@@ -86,7 +91,17 @@ class EmailServiceImplTest {
         assertThat(finalSaved.getErrorMessage()).isNull();
         assertThat(finalSaved.getRetryTime()).isEqualTo(0);
         assertThat(finalSaved.getSubject()).isEqualTo("Create account");
-        assertThat(finalSaved.getCode()).startsWith("EML-");
+        assertThat(finalSaved.getCode()).isEqualTo("EML-000001");
+    }
+
+    @Test
+    void sendCreateAccountMail_existingCode_keepsCodeAndDoesNotGenerateAnother() {
+        com.dat.erp.testutils.EntityTestData.setCode(mappedEmail, "EML-EXISTING");
+
+        emailService.sendCreateAccountMail(request);
+
+        assertThat(mappedEmail.getCode()).isEqualTo("EML-EXISTING");
+        verify(codeGenerator, never()).nextCode(any());
     }
 
     @Test
@@ -118,7 +133,7 @@ class EmailServiceImplTest {
     @Test
     void retryPendingEmails_maxRetryZero_doesNothing() {
         EmailServiceImpl service = new EmailServiceImpl(emailRepository, emailMapper, emailTemplateEngine,
-                systemMailSender, 0, "default-from@example.com");
+                systemMailSender, codeGenerator, 0, "default-from@example.com");
 
         service.retryPendingEmails();
 
@@ -172,7 +187,7 @@ class EmailServiceImplTest {
     @Test
     void retryPendingEmails_failure_incrementsRetryAndStopsRetryAtLimit() {
         EmailServiceImpl service = new EmailServiceImpl(emailRepository, emailMapper, emailTemplateEngine,
-                systemMailSender, 2, "default-from@example.com");
+                systemMailSender, codeGenerator, 2, "default-from@example.com");
 
         Email email = new Email();
         com.dat.erp.testutils.EntityTestData.setId(email, 1L);
