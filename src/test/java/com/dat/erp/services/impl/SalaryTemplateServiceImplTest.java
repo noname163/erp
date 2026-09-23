@@ -190,6 +190,7 @@ class SalaryTemplateServiceImplTest {
 
         SalaryTemplate entity = new SalaryTemplate();
         when(salaryTemplateMapper.toEntity(request)).thenReturn(entity);
+        when(codeGenerator.nextCode("STP-")).thenReturn("STP-000002");
 
         SalaryTemplate saved = new SalaryTemplate();
         com.dat.erp.testutils.EntityTestData.setCode(saved, "STP-000002");

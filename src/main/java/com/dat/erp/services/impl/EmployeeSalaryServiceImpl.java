@@ -18,6 +18,7 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.dat.erp.constants.CodePrefixes;
 import com.dat.erp.constants.DayType;
 import com.dat.erp.constants.Messages;
 import com.dat.erp.constants.PayrollResultCalcBasis;
@@ -43,6 +44,7 @@ import com.dat.erp.repositories.customrepositories.PayrollRunRepository;
 import com.dat.erp.repositories.customrepositories.UserProfileRepository;
 import com.dat.erp.services.EmployeeSalaryDetailService;
 import com.dat.erp.services.EmployeeSalaryService;
+import com.dat.erp.services.CodeGenerator;
 import com.dat.erp.services.MonthlySalaryCalculationService;
 import com.dat.erp.services.SecurityContextService;
 import com.dat.erp.services.payroll.PayrollResultDetailService;
@@ -67,6 +69,7 @@ public class EmployeeSalaryServiceImpl implements EmployeeSalaryService {
     private final PayrollResultRepository payrollResultRepository;
     private final PayrollRunRepository payrollRunRepository;
     private final PayrollResultDetailService payrollResultDetailService;
+    private final CodeGenerator codeGenerator;
 
     @Override
     @Transactional
@@ -110,6 +113,7 @@ public class EmployeeSalaryServiceImpl implements EmployeeSalaryService {
         }
 
         EmployeeSalary employeeSalary = employeeSalaryMapper.toEntity(request);
+        employeeSalary.initializeCode(codeGenerator.nextCode(CodePrefixes.EMPLOYEE_SALARY));
         employeeSalary.setUserProfile(userProfile);
         employeeSalary
                 .setTotalAmount(CompanySecretKeyCryptoUtils.encrypt(totalAmount.toPlainString(), companySecretKey));

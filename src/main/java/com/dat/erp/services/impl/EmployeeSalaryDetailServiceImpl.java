@@ -12,6 +12,7 @@ import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.dat.erp.constants.CodePrefixes;
 import com.dat.erp.constants.Messages;
 import com.dat.erp.dto.request.EmployeeSalaryDetailRequest;
 import com.dat.erp.entities.EmployeeSalary;
@@ -36,6 +37,7 @@ public class EmployeeSalaryDetailServiceImpl implements EmployeeSalaryDetailServ
     private final EmployeeSalaryDetailRepository employeeSalaryDetailRepository;
     private final EmployeeSalaryRepository employeeSalaryRepository;
     private final SalaryRepository salaryRepository;
+    private final CodeGenerator codeGenerator;
 
     public EmployeeSalaryDetailServiceImpl(EmployeeSalaryDetailRepository employeeSalaryDetailRepository,
             EmployeeSalaryRepository employeeSalaryRepository,
@@ -46,6 +48,7 @@ public class EmployeeSalaryDetailServiceImpl implements EmployeeSalaryDetailServ
         this.employeeSalaryDetailRepository = employeeSalaryDetailRepository;
         this.employeeSalaryRepository = employeeSalaryRepository;
         this.salaryRepository = salaryRepository;
+        this.codeGenerator = codeGenerator;
     }
 
     @Override
@@ -145,6 +148,7 @@ public class EmployeeSalaryDetailServiceImpl implements EmployeeSalaryDetailServ
                     .isFixed(Boolean.TRUE.equals(request.getIsFixed()))
                     .unitType(request.getUnitType())
                     .build();
+            detail.initializeCode(codeGenerator.nextCode(CodePrefixes.EMPLOYEE_SALARY_DETAIL));
             details.add(detail);
         }
 

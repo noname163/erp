@@ -7,6 +7,7 @@ import java.util.List;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.dat.erp.constants.CodePrefixes;
 import com.dat.erp.constants.Messages;
 import com.dat.erp.dto.request.PayrollPolicyRequest;
 import com.dat.erp.dto.response.PayrollPolicyResponse;
@@ -30,6 +31,7 @@ public class PayrollPolicyServiceImpl implements PayrollPolicyService {
     private final PayrollPolicyRepository payrollPolicyRepository;
     private final SystemUnitRepository systemUnitRepository;
     private final PayrollPolicyMapper payrollPolicyMapper;
+    private final CodeGenerator codeGenerator;
 
     public PayrollPolicyServiceImpl(PayrollPolicyRepository payrollPolicyRepository,
             SystemUnitRepository systemUnitRepository,
@@ -40,6 +42,7 @@ public class PayrollPolicyServiceImpl implements PayrollPolicyService {
         this.payrollPolicyRepository = payrollPolicyRepository;
         this.systemUnitRepository = systemUnitRepository;
         this.payrollPolicyMapper = payrollPolicyMapper;
+        this.codeGenerator = codeGenerator;
     }
 
     @Override
@@ -94,6 +97,7 @@ public class PayrollPolicyServiceImpl implements PayrollPolicyService {
                 .effectiveFrom(request.getEffectiveFrom())
                 .effectiveTo(request.getEffectiveTo())
                 .build();
+        payrollPolicy.initializeCode(codeGenerator.nextCode(CodePrefixes.PAYROLL_POLICY));
 
         return payrollPolicyMapper.toResponse(payrollPolicyRepository.save(payrollPolicy));
     }

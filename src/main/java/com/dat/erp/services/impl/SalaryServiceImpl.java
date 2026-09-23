@@ -10,6 +10,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.dat.erp.constants.CodePrefixes;
 import com.dat.erp.constants.Messages;
 import com.dat.erp.constants.SalaryCalculateMethod;
 import com.dat.erp.dto.request.SalaryRequest;
@@ -35,6 +36,7 @@ public class SalaryServiceImpl implements SalaryService {
 
     private final SalaryRepository salaryRepository;
     private final SalaryMapper salaryMapper;
+    private final CodeGenerator codeGenerator;
 
     public SalaryServiceImpl(SalaryRepository salaryRepository,
             SalaryMapper salaryMapper,
@@ -43,6 +45,7 @@ public class SalaryServiceImpl implements SalaryService {
         this.securityContextService = securityContextService;
         this.salaryRepository = salaryRepository;
         this.salaryMapper = salaryMapper;
+        this.codeGenerator = codeGenerator;
     }
 
     @Override
@@ -86,6 +89,7 @@ public class SalaryServiceImpl implements SalaryService {
             salary.setName(normalizedNames.get(i));
             salary.setCalculateMethod(parseCalculateMethod(requests.get(i).getCalculateMethod()));
             salary.setIsDeduct(requests.get(i).getIsDeduct());
+            salary.initializeCode(codeGenerator.nextCode(CodePrefixes.SALARY));
         }
 
         List<Salary> persisted = salaryRepository.saveAll(entities);

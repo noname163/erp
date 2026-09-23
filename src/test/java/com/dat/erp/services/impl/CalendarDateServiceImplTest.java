@@ -99,8 +99,6 @@ class CalendarDateServiceImplTest {
         List<CalendarDate> mappedDates = List.of(
                 CalendarDate.builder().calDate(LocalDate.of(2026, 1, 1)).dayType(DayType.HOLIDAY_WORK).note("New Year holiday").build(),
                 CalendarDate.builder().calDate(LocalDate.of(2026, 1, 4)).dayType(DayType.WEEKEND_WORK).note("First weekend").build());
-        com.dat.erp.testutils.EntityTestData.setCode(mappedDates.get(0), "CAD-000001");
-        com.dat.erp.testutils.EntityTestData.setCode(mappedDates.get(1), "CAD-000002");
         com.dat.erp.testutils.EntityTestData.setCompanyCode(mappedDates.get(0), "CMP-001");
         com.dat.erp.testutils.EntityTestData.setCompanyCode(mappedDates.get(1), "CMP-001");
         when(calendarDateMapper.toEntities(requests)).thenReturn(mappedDates);
@@ -187,7 +185,6 @@ class CalendarDateServiceImplTest {
                 .dayType(DayType.NORMAL)
                 .note("Back to work")
                 .build();
-        com.dat.erp.testutils.EntityTestData.setCode(newRequestedDate, "CAD-000003");
         CalendarDate existingDateToUpdate = CalendarDate.builder()
                 .calDate(LocalDate.of(2026, 1, 1))
                 .dayType(DayType.HOLIDAY_WORK)

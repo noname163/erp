@@ -24,6 +24,7 @@ import org.mockito.MockitoAnnotations;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 
+import com.dat.erp.constants.CodePrefixes;
 import com.dat.erp.constants.DailyWorkUnit;
 import com.dat.erp.constants.DayType;
 import com.dat.erp.constants.Messages;
@@ -42,6 +43,7 @@ import com.dat.erp.exceptions.ResourceNotFoundException;
 import com.dat.erp.mapper.interfaces.EmployeeDailyWorkMapper;
 import com.dat.erp.repositories.customrepositories.DailyWorkRepository;
 import com.dat.erp.repositories.customrepositories.UserProfileRepository;
+import com.dat.erp.services.CodeGenerator;
 import com.dat.erp.services.SecurityContextService;
 import com.dat.erp.systemconfigs.CustomUserDetails;
 
@@ -55,6 +57,9 @@ class EmployeeDailyWorkServiceImplTest {
 
     @Mock
     private SecurityContextService securityContextService;
+
+    @Mock
+    private CodeGenerator codeGenerator;
 
     private EmployeeDailyWorkServiceImpl employeeDailyWorkService;
 
@@ -83,7 +88,8 @@ class EmployeeDailyWorkServiceImplTest {
                 dailyWorkRepository,
                 userProfileRepository,
                 employeeDailyWorkMapper,
-                securityContextService);
+                securityContextService,
+                codeGenerator);
 
         EmployeeDailyWorkRequest request = new EmployeeDailyWorkRequest();
         request.setUserProfileCode("EMP001");
@@ -120,11 +126,8 @@ class EmployeeDailyWorkServiceImplTest {
                 anyCollection(),
                 anyCollection()))
                 .thenReturn(List.of());
-        when(dailyWorkRepository.saveAll(anyList())).thenAnswer(invocation -> {
-            List<DailyWork> saved = invocation.getArgument(0);
-            com.dat.erp.testutils.EntityTestData.setCode(saved.get(0), "DWK-000001");
-            return saved;
-        });
+        when(codeGenerator.nextCodes(CodePrefixes.DAILY_WORK, 1)).thenReturn(List.of("DWK-000001"));
+        when(dailyWorkRepository.saveAll(anyList())).thenAnswer(invocation -> invocation.getArgument(0));
 
         String result = employeeDailyWorkService.createEmployeeDailyWorks(requests);
 
@@ -133,6 +136,7 @@ class EmployeeDailyWorkServiceImplTest {
         @SuppressWarnings("unchecked")
         ArgumentCaptor<List<DailyWork>> captor = ArgumentCaptor.forClass(List.class);
         verify(dailyWorkRepository).saveAll(captor.capture());
+        verify(codeGenerator).nextCodes(CodePrefixes.DAILY_WORK, 1);
         assertEquals(1, captor.getValue().size());
         DailyWork persisted = captor.getValue().get(0);
         assertEquals("DWK-000001", persisted.getCode());

@@ -131,7 +131,6 @@ class CompanyCalendarServiceImplTest {
                         new CompanyCalendarDateResponse(LocalDate.of(2026, 1, 4), DayType.WEEKEND_WORK, "First weekend")));
 
         when(companyCalendarMapper.toEntity(request)).thenReturn(mappedCalendar);
-        com.dat.erp.testutils.EntityTestData.setCode(mappedCalendar, "CCA-000001");
         com.dat.erp.testutils.EntityTestData.setCompanyCode(mappedCalendar, "CMP-001");
         when(codeGenerator.nextCode("CCA-")).thenReturn("CCA-000001");
         when(companyCalendarRepository.save(any(CompanyCalendar.class))).thenAnswer(invocation -> invocation.getArgument(0));
