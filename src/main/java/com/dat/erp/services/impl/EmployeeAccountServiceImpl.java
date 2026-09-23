@@ -19,6 +19,7 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.dat.erp.constants.CodePrefixes;
 import com.dat.erp.constants.Messages;
 import com.dat.erp.constants.RoleType;
 import com.dat.erp.dto.request.CreateEmployeeRequest;
@@ -43,6 +44,7 @@ import com.dat.erp.repositories.customrepositories.RoleRepository;
 import com.dat.erp.repositories.customrepositories.UserProfileRepository;
 import com.dat.erp.repositories.customrepositories.UserSkillRepository;
 import com.dat.erp.repositories.projections.EmployeeSkillRow;
+import com.dat.erp.services.CodeGenerator;
 import com.dat.erp.services.EmailService;
 import com.dat.erp.services.EmployeeAccountService;
 import com.dat.erp.services.PasswordGenerator;
@@ -89,6 +91,7 @@ public class EmployeeAccountServiceImpl implements EmployeeAccountService {
     private final UserProfileService userProfileService;
     private final EmailService emailService;
     private final PasswordGenerator passwordGenerator;
+    private final CodeGenerator codeGenerator;
     private final EmployeeAccountMapper employeeAccountMapper;
     private final UserProfileMapper userProfileMapper;
     private final UserProfileRepository userProfileRepository;
@@ -122,6 +125,8 @@ public class EmployeeAccountServiceImpl implements EmployeeAccountService {
         account.setPasswordHash(CryptoUtils.hash(rawPassword));
         account.setIsActive(true);
         account.setRole(role);
+        account.initializeCode(codeGenerator.nextCode(CodePrefixes.ACCOUNT));
+        account.assignCompanyCode(companyCode);
         accountRepository.save(account);
 
         UserProfileCreateRequest profileCreateRequest = employeeAccountMapper.toUserProfileCreateRequest(request,

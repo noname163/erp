@@ -18,6 +18,7 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.springframework.data.jpa.domain.Specification;
 
+import com.dat.erp.constants.CodePrefixes;
 import com.dat.erp.dto.request.CreateEmployeeRequest;
 import com.dat.erp.dto.request.EmailRequest;
 import com.dat.erp.dto.request.EmployeeListRequest;
@@ -37,6 +38,7 @@ import com.dat.erp.repositories.customrepositories.DepartmentRepository;
 import com.dat.erp.repositories.customrepositories.RoleRepository;
 import com.dat.erp.repositories.customrepositories.UserProfileRepository;
 import com.dat.erp.repositories.customrepositories.UserSkillRepository;
+import com.dat.erp.services.CodeGenerator;
 import com.dat.erp.services.EmailService;
 import com.dat.erp.services.PasswordGenerator;
 import com.dat.erp.services.SecurityContextService;
@@ -65,6 +67,8 @@ class EmployeeAccountServiceImplTest {
     @Mock
     private PasswordGenerator passwordGenerator;
     @Mock
+    private CodeGenerator codeGenerator;
+    @Mock
     private SecurityContextService securityContextService;
     @Mock
     private UserProfileRepository userProfileRepository;
@@ -88,6 +92,7 @@ class EmployeeAccountServiceImplTest {
                 userProfileService,
                 emailService,
                 passwordGenerator,
+                codeGenerator,
                 employeeAccountMapper,
                 userProfileMapper,
                 userProfileRepository,
@@ -128,8 +133,8 @@ class EmployeeAccountServiceImplTest {
         when(roleRepository.findByName("EMPLOYEE")).thenReturn(Optional.of(employeeRole));
 
         when(passwordGenerator.generate()).thenReturn("P@ssw0rd!");
+        when(codeGenerator.nextCode(CodePrefixes.ACCOUNT)).thenReturn("ACC-000001");
         Account mappedAccount = new Account();
-        com.dat.erp.testutils.EntityTestData.setCode(mappedAccount, "ACC-000001");
         mappedAccount.setEmail("employee@company.com");
         when(employeeAccountMapper.toAccount(request)).thenReturn(mappedAccount);
         when(employeeAccountMapper.toUserProfileCreateRequest(request, "ACC-000001")).thenReturn(new UserProfileCreateRequest());
@@ -162,6 +167,9 @@ class EmployeeAccountServiceImplTest {
         assertEquals("EMPLOYEE", resp.getRole());
 
         verify(accountRepository).save(any(Account.class));
+        assertEquals("ACC-000001", mappedAccount.getCode());
+        assertEquals("CMP-1", mappedAccount.getCompanyCode());
+        verify(codeGenerator).nextCode(CodePrefixes.ACCOUNT);
         verify(userProfileService).createUserProfile(any(UserProfileCreateRequest.class));
         verify(emailService).sendCreateAccountMail(any(EmailRequest.class));
     }
