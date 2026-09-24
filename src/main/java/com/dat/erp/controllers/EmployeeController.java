@@ -4,8 +4,11 @@ import java.util.List;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -14,6 +17,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.dat.erp.builders.ResponseBuilder;
 import com.dat.erp.dto.request.CreateEmployeeRequest;
 import com.dat.erp.dto.request.EmployeeListRequest;
+import com.dat.erp.dto.request.UpdateEmployeeRequest;
 import com.dat.erp.dto.request.enums.EmployeeStatusFilter;
 import com.dat.erp.dto.request.enums.SortType;
 import com.dat.erp.dto.response.CustomApiResponse;
@@ -53,6 +57,21 @@ public class EmployeeController {
     public ResponseEntity<CustomApiResponse<EmployeeResponse>> createEmployee(
             @Valid @RequestBody CreateEmployeeRequest request) {
         return ResponseBuilder.created(employeeAccountService.createEmployee(request));
+    }
+
+    @PutMapping("/{code}")
+    @PreAuthorize("hasRoles({'ADMIN', 'HR', 'HUMAN_RESOURCES', 'COMPANY_MANAGER'})")
+    public ResponseEntity<CustomApiResponse<EmployeeResponse>> updateEmployee(
+            @PathVariable String code,
+            @Valid @RequestBody UpdateEmployeeRequest request) {
+        return ResponseBuilder.ok(employeeAccountService.updateEmployee(code, request));
+    }
+
+    @DeleteMapping("/{code}")
+    @PreAuthorize("hasRoles({'ADMIN', 'HR', 'HUMAN_RESOURCES', 'COMPANY_MANAGER'})")
+    public ResponseEntity<Void> deleteEmployee(@PathVariable String code) {
+        employeeAccountService.deleteEmployee(code);
+        return ResponseEntity.noContent().build();
     }
 
     @Operation(summary = "Get list employee", description = "Returns paginated employees with role-based data scope enforcement.")

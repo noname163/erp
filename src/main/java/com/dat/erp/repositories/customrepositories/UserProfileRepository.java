@@ -26,6 +26,9 @@ public interface UserProfileRepository extends JpaRepository<UserProfile, Long>,
 
     Optional<UserProfile> findByCodeAndIsDeletedFalse(String code);
 
+    @EntityGraph(attributePaths = { "account", "account.role", "department" })
+    Optional<UserProfile> findByCodeAndCompanyCodeAndIsDeletedFalse(String code, String companyCode);
+
     @Query("""
             select distinct up
             from UserProfile up
