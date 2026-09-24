@@ -80,6 +80,7 @@ public final class Messages {
 
     // Employee
     public static final String EMPLOYEE_CODE_CANNOT_BLANK = "Employee code is invalid";
+    public static final String ERROR_EMPLOYEE_NOT_FOUND_WITH_CODE = "Employee not found with code %s";
 
     // Employee salary
     public static final String ERROR_EMPLOYEE_SALARY_EFFECTIVE_DATES_INVALID = "effectiveFrom/effectiveTo is invalid";

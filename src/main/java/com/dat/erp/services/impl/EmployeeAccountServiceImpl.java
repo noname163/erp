@@ -26,20 +26,24 @@ import com.dat.erp.dto.request.CreateEmployeeRequest;
 import com.dat.erp.dto.request.EmailRequest;
 import com.dat.erp.dto.request.EmployeeListRequest;
 import com.dat.erp.dto.request.UserProfileCreateRequest;
+import com.dat.erp.dto.request.UpdateEmployeeRequest;
 import com.dat.erp.dto.request.enums.EmployeeStatusFilter;
 import com.dat.erp.dto.request.enums.SortType;
 import com.dat.erp.dto.response.EmployeeResponse;
 import com.dat.erp.dto.response.PaginationResponse;
 import com.dat.erp.dto.response.employee.EmployeeListItem;
 import com.dat.erp.entities.Account;
+import com.dat.erp.entities.Department;
 import com.dat.erp.entities.Role;
 import com.dat.erp.entities.UserProfile;
 import com.dat.erp.exceptions.BadRequestException;
 import com.dat.erp.exceptions.ConflictException;
 import com.dat.erp.exceptions.ForbiddenException;
+import com.dat.erp.exceptions.ResourceNotFoundException;
 import com.dat.erp.mapper.interfaces.EmployeeAccountMapper;
 import com.dat.erp.mapper.interfaces.UserProfileMapper;
 import com.dat.erp.repositories.customrepositories.AccountRepository;
+import com.dat.erp.repositories.customrepositories.DepartmentRepository;
 import com.dat.erp.repositories.customrepositories.RoleRepository;
 import com.dat.erp.repositories.customrepositories.UserProfileRepository;
 import com.dat.erp.repositories.customrepositories.UserSkillRepository;
@@ -96,6 +100,7 @@ public class EmployeeAccountServiceImpl implements EmployeeAccountService {
     private final UserProfileMapper userProfileMapper;
     private final UserProfileRepository userProfileRepository;
     private final UserSkillRepository userSkillRepository;
+    private final DepartmentRepository departmentRepository;
     private final SecurityContextService securityContextService;
 
     @Transactional
@@ -141,6 +146,110 @@ public class EmployeeAccountServiceImpl implements EmployeeAccountService {
                 actorCode, companyCode, profile.getCode(), account.getEmail());
 
         return response;
+    }
+
+    @Transactional
+    @Override
+    public EmployeeResponse updateEmployee(String code, UpdateEmployeeRequest request) {
+        CustomUserDetails currentUser = securityContextService.getCurrentUser();
+        String companyCode = requireCompanyCode(currentUser);
+        UserProfile profile = findEmployee(code, companyCode);
+        enforceMutationScope(currentUser, profile);
+        Account account = profile.getAccount();
+        if (account == null) {
+            throw new ResourceNotFoundException(Messages.ERROR_EMPLOYEE_NOT_FOUND_WITH_CODE.formatted(code));
+        }
+
+        String normalizedEmail = request.getEmail().trim().toLowerCase(Locale.ROOT);
+        accountRepository.findByEmail(normalizedEmail)
+                .filter(existing -> !existing.getCode().equals(account.getCode()))
+                .ifPresent(existing -> {
+                    throw new ConflictException(Messages.ERROR_ACCOUNT_EMAIL_EXISTS);
+                });
+
+        Role role = resolveRole(request.getRoleCode());
+        rejectPrivilegedRole(role);
+        Department department = departmentRepository
+                .findByCodeAndCompanyCode(request.getDepartmentCode(), companyCode)
+                .orElseThrow(() -> new BadRequestException(
+                        String.format(Messages.ERROR_DEPARTMENT_NOT_FOUND_WITH_CODE, request.getDepartmentCode())));
+
+        profile.setFirstName(request.getFirstName().trim());
+        profile.setLastName(request.getLastName().trim());
+        profile.setPhoneNumber(request.getPhone().trim());
+        profile.setDepartment(department);
+        account.setEmail(normalizedEmail);
+        account.setRole(role);
+
+        accountRepository.save(account);
+        UserProfile saved = userProfileRepository.save(profile);
+        log.info("AUDIT action=UPDATE_EMPLOYEE actor={} companyCode={} result=SUCCESS employeeCode={}",
+                currentUser.getCode(), companyCode, code);
+        return userProfileMapper.toEmployeeResponse(saved);
+    }
+
+    @Transactional
+    @Override
+    public void deleteEmployee(String code) {
+        CustomUserDetails currentUser = securityContextService.getCurrentUser();
+        String companyCode = requireCompanyCode(currentUser);
+        UserProfile profile = findEmployee(code, companyCode);
+        enforceMutationScope(currentUser, profile);
+        Account account = profile.getAccount();
+
+        profile.setIsActive(false);
+        profile.markDeleted();
+        if (account != null) {
+            account.setIsActive(false);
+            account.markDeleted();
+            accountRepository.save(account);
+        }
+        userProfileRepository.save(profile);
+        log.info("AUDIT action=DELETE_EMPLOYEE actor={} companyCode={} result=SUCCESS employeeCode={}",
+                currentUser.getCode(), companyCode, code);
+    }
+
+    private UserProfile findEmployee(String code, String companyCode) {
+        if (code == null || code.isBlank()) {
+            throw new BadRequestException(Messages.EMPLOYEE_CODE_CANNOT_BLANK);
+        }
+        return userProfileRepository.findByCodeAndCompanyCodeAndIsDeletedFalse(code.trim(), companyCode)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        Messages.ERROR_EMPLOYEE_NOT_FOUND_WITH_CODE.formatted(code.trim())));
+    }
+
+    private String requireCompanyCode(CustomUserDetails currentUser) {
+        String companyCode = currentUser.getAccount() == null ? null : currentUser.getAccount().getCompanyCode();
+        if (companyCode == null || companyCode.isBlank()) {
+            throw new BadRequestException(Messages.ERROR_CURRENT_USER_COMPANY_MISSING);
+        }
+        return companyCode;
+    }
+
+    private static void enforceMutationScope(CustomUserDetails currentUser, UserProfile profile) {
+        Account requester = currentUser.getAccount();
+        Role requesterRole = requester == null ? null : requester.getRole();
+        String role = requesterRole == null || requesterRole.getType() == null || requesterRole.getType().isBlank()
+                ? requesterRole == null ? null : requesterRole.getName()
+                : requesterRole.getType();
+        if (!isHumanResources(role)) {
+            return;
+        }
+
+        UserProfile self = currentUser.getUserProfile();
+        boolean isSelf = self != null && self.getId() != null && self.getId().equals(profile.getId());
+        boolean createdByRequester = currentUser.getCode() != null
+                && currentUser.getCode().equals(profile.getCreatedBy());
+        if (!isSelf && !createdByRequester) {
+            throw new ForbiddenException("AUTH_403_001: Employee is outside your data scope");
+        }
+    }
+
+    private static void rejectPrivilegedRole(Role role) {
+        if (RoleType.ROLE_ADMIN.equals(role.getCode()) || RoleType.ROLE_SYSTEM_ADMIN.equals(role.getCode())
+                || RoleType.ROLE_ADMIN.equals(role.getType()) || RoleType.ROLE_SYSTEM_ADMIN.equals(role.getType())) {
+            throw new BadRequestException(Messages.ERROR_CANNOT_CREATE_ADMIN_OR_MANAGER_EMPLOYEE);
+        }
     }
 
     @Transactional(readOnly = true)
@@ -497,11 +606,17 @@ public class EmployeeAccountServiceImpl implements EmployeeAccountService {
 
         return EmployeeListItem.builder()
                 .id(profile.getId())
+                .profileCode(profile.getCode())
                 .code(profile.getEmployeeNumber())
                 .name(name)
+                .firstName(profile.getFirstName())
+                .lastName(profile.getLastName())
                 .email(email)
                 .age(age)
                 .department(department)
+                .departmentCode(profile.getDepartment() == null ? null : profile.getDepartment().getCode())
+                .phone(profile.getPhoneNumber())
+                .roleCode(account == null || account.getRole() == null ? null : account.getRole().getCode())
                 .skills(skills == null ? List.of() : skills)
                 .status(Boolean.TRUE.equals(profile.getIsActive()) ? "ACTIVE" : "INACTIVE")
                 .createdAt(profile.getCreatedAt())

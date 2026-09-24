@@ -97,6 +97,7 @@ class EmployeeAccountServiceImplTest {
                 userProfileMapper,
                 userProfileRepository,
                 userSkillRepository,
+                departmentRepository,
                 securityContextService);
         request = new CreateEmployeeRequest();
         request.setEmail("employee@company.com");
